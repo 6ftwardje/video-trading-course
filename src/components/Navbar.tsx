@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Home, BookOpen, FileText } from 'lucide-react'
+import { Menu, X, Home, BookOpen } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function Navbar() {
@@ -13,13 +13,17 @@ export default function Navbar() {
 
   useEffect(() => {
     const fetchProgress = async () => {
-      const { data: lessons } = await supabase.from('lessons').select('id')
-      const { data: progressData } = await supabase.from('progress').select('lesson_id').eq('watched', true)
-      
-      const total = lessons?.length || 0
-      const completed = progressData?.length || 0
-      
-      setProgress({ completed, total })
+      try {
+        const { data: lessons } = await supabase.from('lessons').select('id')
+        const { data: progressData } = await supabase.from('progress').select('lesson_id').eq('watched', true)
+        
+        const total = lessons?.length || 0
+        const completed = progressData?.length || 0
+        
+        setProgress({ completed, total })
+      } catch (error) {
+        console.log('Progress fetch error:', error)
+      }
     }
 
     fetchProgress()
