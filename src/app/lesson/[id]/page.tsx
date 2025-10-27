@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 import { use } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { getStoredStudentId } from '@/lib/student'
-import { Check } from 'lucide-react'
+import { Check, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 
-type Lesson = { id: number; title: string; video_url: string | null }
+type Lesson = { id: number; title: string; video_url: string | null; module_id: number; order: number }
+type NextLesson = { id: number; title: string } | null
 
 function getVimeoEmbedUrl(videoUrl: string): string {
   // Extract Vimeo video ID from various URL formats
@@ -38,11 +40,29 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [alreadyWatched, setAlreadyWatched] = useState(false)
+  const [nextLesson, setNextLesson] = useState<NextLesson>(null)
 
   useEffect(() => {
     const init = async () => {
-      const { data } = await supabase.from('lessons').select('id,title,video_url').eq('id', id).single()
+      // 1) Haal huidige les met module_id en order op
+      const { data } = await supabase
+        .from('lessons')
+        .select('id,title,video_url,module_id,order')
+        .eq('id', id)
+        .single()
+      
+      if (!data) return
       setLesson(data as Lesson)
+
+      // 2) Bepaal "volgende les" (eerstvolgende hogere order binnen dezelfde module)
+      const { data: nextLs } = await supabase
+        .from('lessons')
+        .select('id,title,order')
+        .eq('module_id', data.module_id)
+        .gt('order', data.order)
+        .order('order', { ascending: true })
+        .limit(1)
+      setNextLesson((nextLs && nextLs[0]) || null)
 
       // Check if already watched
       const studentId = getStoredStudentId()
@@ -103,10 +123,24 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-crypto-orange">{lesson.title}</h1>
+        <Link
+          href={`/module/${lesson.module_id}`}
+          className="text-sm text-gray-400 hover:text-white underline underline-offset-4 transition-colors"
+          aria-label="Terug naar module"
+        >
+          ← Terug naar module
+        </Link>
+        <div className="text-sm text-gray-400">
+          {saving ? 'Opslaan…' : saved ? 'Les voltooid ✅' : ' '}
+        </div>
       </div>
 
+      {/* Titel */}
+      <h1 className="text-2xl font-semibold text-crypto-orange">{lesson.title}</h1>
+
+      {/* Video */}
       {embedUrl ? (
         <iframe
           src={embedUrl}
@@ -121,25 +155,52 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-        <p className="text-gray-400 text-sm">
-          {saved ? '✅ Deze les is als voltooid gemarkeerd' : 'Markeer de les als voltooid na het bekijken'}
-        </p>
-        <button
-          onClick={markAsCompleted}
-          disabled={saving || saved}
-          className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
-            saved
-              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              : saving
-              ? 'bg-crypto-orange/50 text-white cursor-not-allowed'
-              : 'bg-crypto-orange hover:bg-orange-500 text-white'
-          }`}
-        >
-          <Check className="w-5 h-5" />
-          {saving ? 'Opslaan…' : saved ? 'Voltooid' : 'Markeer als voltooid'}
-        </button>
-      </div>
+      {/* CTA na voltooiing */}
+      {saved && (
+        <div className="flex items-center justify-between bg-gray-800 border border-gray-700 rounded-lg p-4 transition-opacity duration-300">
+          <div className="text-sm text-gray-300">Mooi werk! Deze les is gemarkeerd als voltooid.</div>
+          {nextLesson ? (
+            <Link
+              href={`/lesson/${nextLesson.id}`}
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-crypto-blue/20 border border-crypto-blue/40 hover:bg-crypto-blue/30 transition text-white"
+              aria-label={`Ga verder naar ${nextLesson.title}`}
+            >
+              Volgende les → {nextLesson.title}
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <Link
+              href={`/module/${lesson.module_id}`}
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-crypto-orange/20 border border-crypto-orange/40 hover:bg-crypto-orange/30 transition text-white"
+              aria-label="Terug naar module"
+            >
+              Terug naar module
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* Markeer als voltooid knop (alleen als nog niet voltooid) */}
+      {!saved && (
+        <div className="flex items-center justify-between pt-4 border-t border-gray-800">
+          <p className="text-gray-400 text-sm">
+            Markeer de les als voltooid na het bekijken
+          </p>
+          <button
+            onClick={markAsCompleted}
+            disabled={saving}
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
+              saving
+                ? 'bg-crypto-orange/50 text-white cursor-not-allowed'
+                : 'bg-crypto-orange hover:bg-orange-500 text-white'
+            }`}
+          >
+            <Check className="w-5 h-5" />
+            {saving ? 'Opslaan…' : 'Markeer als voltooid'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
