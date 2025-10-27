@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X, Home, BookOpen } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
+import { getStoredStudentId } from '@/lib/student'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -14,11 +15,22 @@ export default function Navbar() {
   useEffect(() => {
     const fetchProgress = async () => {
       try {
-        const { data: lessons } = await supabase.from('lessons').select('id')
-        const { data: progressData } = await supabase.from('progress').select('lesson_id').eq('watched', true)
+        const studentId = getStoredStudentId()
+        const { data: lessons } = await supabase.from('lessons').select('id').eq('module_id', 1)
         
         const total = lessons?.length || 0
-        const completed = progressData?.length || 0
+        let completed = 0
+        
+        if (studentId) {
+          const { data: progressData } = await supabase
+            .from('progress')
+            .select('lesson_id')
+            .eq('watched', true)
+            .eq('student_id', studentId)
+            .in('lesson_id', (lessons || []).map(l => l.id))
+          
+          completed = progressData?.length || 0
+        }
         
         setProgress({ completed, total })
       } catch (error) {
@@ -27,7 +39,7 @@ export default function Navbar() {
     }
 
     fetchProgress()
-  }, [])
+  }, [pathname])
 
   const progressPercentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import StudentGate from "@/components/StudentGate";
 
 export const metadata: Metadata = {
   title: "Cryptoriez Learning Platform",
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <body className="bg-crypto-dark text-white font-sans min-h-screen">
+        <StudentGate />
         <Navbar />
         <main className="max-w-5xl mx-auto px-4 py-10">{children}</main>
       </body>
