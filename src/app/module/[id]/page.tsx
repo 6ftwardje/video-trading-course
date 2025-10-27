@@ -1,11 +1,12 @@
 import { supabase } from '@/lib/supabaseClient'
 import Link from 'next/link'
 
-export default async function ModulePage({ params }: { params: { id: string } }) {
+export default async function ModulePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const { data: lessons } = await supabase
     .from('lessons')
     .select('*')
-    .eq('module_id', params.id)
+    .eq('module_id', id)
     .order('order', { ascending: true })
 
   return (
