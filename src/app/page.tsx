@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { getStoredStudentEmail, getStoredStudentId } from '@/lib/student'
 import { getLessonsForModules, getModulesSimple, getWatchedLessonIds, findNextLesson } from '@/lib/progress'
+import { getExamByModuleId } from '@/lib/exam'
 
 type ModuleRow = { id: number; title: string; description: string | null; order: number | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
-type ModuleWithProgress = ModuleRow & { totalLessons: number; watchedCount: number; pct: number }
+type ModuleWithProgress = ModuleRow & { totalLessons: number; watchedCount: number; pct: number; examId: number | null }
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true)
@@ -29,14 +30,16 @@ export default function HomePage() {
       // 2) Watched set
       const watchedSet = await getWatchedLessonIds(studentId || '', lessons.map(l => l.id))
 
-      // 3) Per module progress berekenen (x/y en %)
-      const byModule: ModuleWithProgress[] = mods.map((m) => {
+      // 3) Per module progress berekenen (x/y en %) + examen ophalen
+      const byModule: ModuleWithProgress[] = []
+      for (const m of mods) {
         const ls = lessons.filter(l => l.module_id === m.id)
         const total = ls.length
         const watched = ls.reduce((acc, l) => acc + (watchedSet.has(l.id) ? 1 : 0), 0)
         const pct = total ? Math.round((watched / total) * 100) : 0
-        return { ...m, totalLessons: total, watchedCount: watched, pct }
-      })
+        const exam = await getExamByModuleId(m.id)
+        byModule.push({ ...m, totalLessons: total, watchedCount: watched, pct, examId: exam?.id ?? null })
+      }
 
       setModules(byModule)
 
@@ -106,28 +109,45 @@ export default function HomePage() {
         ) : (
           <div className="space-y-4">
             {modules.map((m) => (
-              <a
-                key={m.id}
-                href={`/module/${m.id}`}
-                className="block bg-gray-900 border border-gray-800 p-5 rounded-xl hover:border-crypto-orange transition-all"
-                aria-label={`Open ${m.title}`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-semibold">{m.title}</h3>
-                    {m.description && <p className="text-gray-400 text-sm mt-1">{m.description}</p>}
-                  </div>
+              <div key={m.id}>
+                <a
+                  href={`/module/${m.id}`}
+                  className="block bg-gray-900 border border-gray-800 p-5 rounded-xl hover:border-crypto-orange transition-all"
+                  aria-label={`Open ${m.title}`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-semibold">{m.title}</h3>
+                      {m.description && <p className="text-gray-400 text-sm mt-1">{m.description}</p>}
+                    </div>
 
-                  <div className="text-right min-w-[10rem]">
-                    <div className="text-sm text-gray-300">
-                      {m.watchedCount}/{m.totalLessons} lessen • {m.pct}%
-                    </div>
-                    <div className="mt-2 w-40 h-2 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-crypto-blue" style={{ width: `${m.pct}%` }} />
+                    <div className="text-right min-w-[10rem]">
+                      <div className="text-sm text-gray-300">
+                        {m.watchedCount}/{m.totalLessons} lessen • {m.pct}%
+                      </div>
+                      <div className="mt-2 w-40 h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-crypto-blue" style={{ width: `${m.pct}%` }} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </a>
+                </a>
+                {m.pct === 100 && m.examId && (
+                  <div className="mt-2 bg-gray-900 border border-gray-800 px-5 py-3 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-sm">Examen beschikbaar</div>
+                        <div className="text-xs text-gray-400">Test je kennis van deze module</div>
+                      </div>
+                      <a
+                        href={`/exam/${m.examId}?module=${m.id}`}
+                        className="px-4 py-2 rounded-md bg-crypto-orange/20 border border-crypto-orange/40 hover:bg-crypto-orange/30 transition text-sm"
+                      >
+                        Start examen
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
