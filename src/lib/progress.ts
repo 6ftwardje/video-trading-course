@@ -1,12 +1,14 @@
 import { supabase } from '@/lib/supabaseClient'
 
 export async function getModulesSimple() {
-  const { data } = await supabase.from('modules').select('id,title,description,order').order('order', { ascending: true })
-  return data || []
+  const { data } = await supabase.from('modules').select('id,title,description,"order"')
+  // Sort manually to avoid PostgREST query string issues with 'order' column
+  const sorted = data ? [...data].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999)) : []
+  return sorted
 }
 
 export async function getLessonsForModules(moduleIds: number[]) {
-  const { data } = await supabase.from('lessons').select('id,module_id,order,title').in('module_id', moduleIds)
+  const { data } = await supabase.from('lessons').select('id,module_id,"order",title').in('module_id', moduleIds)
   return data || []
 }
 

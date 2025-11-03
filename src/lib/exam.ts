@@ -5,14 +5,15 @@ export async function getExamByModuleId(moduleId: number) {
     // First try to get active exam if 'active' column exists
     const { data: activeData, error: activeError } = await supabase
       .from('exams')
-      .select('id,title,module_id,active')
+      .select('id,title,module_id')
       .eq('module_id', moduleId)
-      .eq('active', true)
       .maybeSingle()
     
-    // If active exam exists, return it
-    if (!activeError && activeData) {
-      console.log('Using active exam:', activeData.id)
+    // Check if error is due to missing 'active' column
+    if (activeError && activeError.code !== 'PGRST116') {
+      console.error('Error fetching active exam:', activeError)
+      // Continue to fallback
+    } else if (!activeError && activeData) {
       return activeData
     }
     
@@ -91,9 +92,10 @@ export async function getModuleLessons(moduleId: number) {
     .from('lessons')
     .select('id,module_id,"order"')
     .eq('module_id', moduleId)
-    .order('order', { ascending: true })
   if (error) return []
-  return data || []
+  // Sort manually to avoid PostgREST query string issues with 'order' column
+  const sorted = data ? [...data].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : []
+  return sorted
 }
 
 export async function getWatchedLessonIds(studentId: string, lessonIds: number[]) {
