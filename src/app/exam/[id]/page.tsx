@@ -38,17 +38,26 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   const [result, setResult] = useState<{ score: number; passed: boolean } | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [gatedBlocked, setGatedBlocked] = useState(false)
+  const [started, setStarted] = useState(false)
+  const [confirmSubmit, setConfirmSubmit] = useState(false)
 
   // keyboard shortcuts: pijltjes links/rechts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (result) return
+      if (result || confirmSubmit || !started) return
       if (e.key === 'ArrowRight') setIdx(v => Math.min(v + 1, Math.max(0, questions.length - 1)))
       if (e.key === 'ArrowLeft') setIdx(v => Math.max(0, v - 1))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [questions.length, result])
+  }, [questions.length, result, confirmSubmit, started])
+
+  // Smooth scroll to top when question changes
+  useEffect(() => {
+    if (started && !result) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [idx, started, result])
 
   useEffect(() => {
     const loadParams = async () => {
@@ -166,21 +175,32 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     setIdx(0)
     setResult(null)
     setErrorMsg(null)
+    setStarted(false)
+    setConfirmSubmit(false)
+  }
+
+  const handleSubmitClick = () => {
+    setConfirmSubmit(true)
+  }
+
+  const handleConfirmSubmit = async () => {
+    setConfirmSubmit(false)
+    await submit()
   }
 
   if (loading) return <p className="text-gray-400">Laden…</p>
 
   if (errorMsg) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold text-crypto-orange">Examen</h1>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="space-y-4 pt-24 px-4">
+        <h1 className="text-2xl font-semibold text-[var(--accent)]">Examen</h1>
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6">
           <p className="text-red-400">{errorMsg}</p>
           <div className="mt-4 flex gap-3">
-            <Link href={`/module/${moduleId}`} className="px-4 py-2 rounded-md bg-gray-800 border border-gray-700">
+            <Link href={`/module/${moduleId}`} className="px-4 py-2 rounded-lg bg-[var(--muted)] border border-[var(--border)] hover:bg-[var(--border)] transition">
               Terug naar module
             </Link>
-            <button onClick={() => router.refresh()} className="px-4 py-2 rounded-md bg-crypto-blue/20 border border-crypto-blue/40 hover:bg-crypto-blue/30">
+            <button onClick={() => router.refresh()} className="px-4 py-2 rounded-lg bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-[var(--accent)]">
               Opnieuw laden
             </button>
           </div>
@@ -191,13 +211,42 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   if (gatedBlocked) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold text-crypto-orange">Examen geblokkeerd</h1>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="space-y-4 pt-24 px-4">
+        <h1 className="text-2xl font-semibold text-[var(--accent)]">Examen geblokkeerd</h1>
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6">
           <p className="text-gray-300">Je moet eerst alle lessen van deze module volledig bekijken.</p>
-          <Link href={`/module/${moduleId}`} className="mt-4 inline-block px-4 py-2 rounded-md bg-crypto-orange/20 border border-crypto-orange/40 hover:bg-crypto-orange/30">
+          <Link href={`/module/${moduleId}`} className="mt-4 inline-block px-4 py-2 rounded-lg bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-[var(--accent)]">
             Ga naar de module
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+
+  // Intro screen before exam starts
+  if (!started && !result && !loading && questions.length > 0) {
+    return (
+      <div className="max-w-2xl mx-auto pt-24 px-4">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-8 md:p-12 text-center space-y-6">
+          <h1 className="text-3xl font-semibold text-[var(--accent)]">Examen: {title}</h1>
+          <div className="space-y-4 text-gray-300">
+            <p className="text-lg">
+              Dit examen bevat <strong className="text-[var(--accent)]">{total}</strong> vragen.
+            </p>
+            <p>
+              Je hebt minstens <strong className="text-[var(--accent)]">75%</strong> nodig om te slagen.
+            </p>
+            <p className="text-sm text-gray-400 pt-2">
+              Zodra je start, kan je niet meer terug. Zorg dat je alle vragen beantwoord hebt voordat je indient.
+            </p>
+          </div>
+          <button
+            onClick={() => setStarted(true)}
+            className="px-8 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition text-lg"
+          >
+            Start examen
+          </button>
         </div>
       </div>
     )
@@ -206,28 +255,37 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   if (result) {
     const pctText = Math.round((result.score / total) * 100)
     return (
-      <div className="space-y-6">
-        <div className="flex items-end justify-between">
-          <h1 className="text-2xl font-semibold text-crypto-orange">{title}</h1>
-          <div className="w-44 h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div className="h-full bg-crypto-blue" style={{ width: `${100}%` }} />
+      <div className="space-y-6 max-w-3xl mx-auto pt-24 px-4">
+        <h1 className="text-3xl font-semibold text-[var(--accent)] text-center">{title}</h1>
+        <div className={`bg-[var(--card)] border rounded-xl p-8 md:p-10 ${result.passed ? 'border-green-500/50 bg-green-900/10' : 'border-red-500/50 bg-red-900/10'}`}>
+          <div className="text-center space-y-4">
+            <h2 className={`text-3xl font-semibold ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
+              {result.passed ? '✅ Geslaagd!' : '❌ Niet geslaagd'}
+            </h2>
+            <div className="space-y-2">
+              <p className="text-xl text-gray-300">
+                Je score: <span className="font-bold text-[var(--accent)]">{result.score}/{total}</span>
+              </p>
+              <p className="text-2xl font-semibold text-[var(--accent)]">{pctText}%</p>
+            </div>
+            {result.passed ? (
+              <p className="text-gray-400 pt-2">Je hebt deze module succesvol afgerond. Ga verder naar de volgende module →</p>
+            ) : (
+              <p className="text-gray-400 pt-2">Je hebt minimaal 75% nodig. Probeer opnieuw wanneer je er klaar voor bent.</p>
+            )}
           </div>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <p className="text-lg">
-            Je score: <span className="font-semibold">{result.score}/{total}</span> ({pctText}%)
-          </p>
-          {result.passed ? (
-            <p className="mt-2 text-green-400">✅ Geslaagd! Knap werk.</p>
-          ) : (
-            <p className="mt-2 text-red-400">❌ Niet geslaagd. Je hebt minstens 75% nodig om te slagen.</p>
-          )}
 
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button onClick={retry} className="px-4 py-2 rounded-md bg-gray-800 border border-gray-700 hover:bg-gray-700">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+            <button 
+              onClick={retry} 
+              className="px-6 py-3 rounded-lg bg-[var(--muted)] border border-[var(--border)] hover:bg-[var(--border)] transition font-medium"
+            >
               Opnieuw proberen
             </button>
-            <Link href={`/module/${moduleId}`} className="px-4 py-2 rounded-md bg-crypto-orange/20 border border-crypto-orange/40 hover:bg-crypto-orange/30">
+            <Link 
+              href={`/module/${moduleId}`} 
+              className="px-6 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition text-center"
+            >
               Terug naar module
             </Link>
           </div>
@@ -236,77 +294,139 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     )
   }
 
-  if (!current) {
+  if (!current || !started) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold text-crypto-orange">{title}</h1>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="space-y-4 pt-24 px-4">
+        <h1 className="text-2xl font-semibold text-[var(--accent)]">{title}</h1>
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6">
           <p className="text-gray-400">Geen vragen beschikbaar.</p>
         </div>
       </div>
     )
   }
 
+  const answeredCount = Object.keys(answers).length
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-crypto-orange">{title}</h1>
-          <p className="text-sm text-gray-400">Vraag {idx + 1} van {total}</p>
+    <>
+      <div className="space-y-6 max-w-4xl mx-auto pb-20 pt-24 px-4">
+        {/* Progress bar at top */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm text-gray-400">
+            <span className="font-medium text-white">Vraag {idx + 1} van {total}</span>
+            <span>Multiple choice</span>
+          </div>
+          <div className="w-full h-3 bg-[var(--muted)] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[var(--accent)] transition-all duration-300 rounded-full"
+              style={{ width: `${Math.max(5, progressPct)}%` }}
+            />
+          </div>
         </div>
-        <div className="w-44 h-2 bg-gray-800 rounded-full overflow-hidden">
-          <div className="h-full bg-crypto-blue" style={{ width: `${Math.max(5, progressPct)}%` }} />
-        </div>
-      </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <p className="font-medium mb-4">{current.question}</p>
-        <div className="space-y-2">
-          {current.options.map((opt, i) => {
-            const selected = answers[current.id] === opt
-            return (
+        {/* Mini-map navigation */}
+        <div className="flex flex-wrap gap-2 justify-center py-2">
+          {questions.map((q, i) => (
+            <button
+              key={q.id}
+              onClick={() => setIdx(i)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                answers[q.id] 
+                  ? 'bg-[var(--accent)]' 
+                  : 'bg-[var(--muted)] hover:bg-[var(--border)]'
+              } ${idx === i ? 'ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--bg)]' : ''}`}
+              aria-label={`Ga naar vraag ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Question card */}
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 md:p-8">
+          <h2 className="text-xl font-semibold mb-6 text-white">{current.question}</h2>
+          <div className="space-y-3">
+            {current.options.map((opt, i) => {
+              const selected = answers[current.id] === opt
+              return (
+                <button
+                  key={i}
+                  onClick={() => onSelect(current.id, opt)}
+                  className={`w-full text-left px-4 py-3 rounded-lg border transition flex items-center justify-between font-medium
+                    ${selected
+                      ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
+                      : 'border-[var(--border)] hover:border-[var(--accent)]/40 hover:bg-[var(--muted)] text-gray-300'
+                    }
+                  `}
+                  aria-pressed={selected}
+                >
+                  <span>{opt}</span>
+                  {selected && <span className="text-[var(--accent)] text-xl">✓</span>}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Navigation - sticky on mobile */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-[var(--border)]">
+            <button
+              onClick={() => setIdx(v => Math.max(0, v - 1))}
+              disabled={!canPrev}
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[var(--muted)] border border-[var(--border)] hover:bg-[var(--border)] transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              Vorige
+            </button>
+
+            <div className="text-sm text-gray-400">
+              {answeredCount} van {total} beantwoord
+            </div>
+
+            {canNext ? (
               <button
-                key={i}
-                onClick={() => onSelect(current.id, opt)}
-                className={`w-full text-left px-4 py-2 rounded-md border transition
-                  ${selected ? 'border-crypto-orange bg-crypto-orange/10' : 'border-gray-700 hover:bg-gray-800'}
-                `}
-                aria-pressed={selected}
+                onClick={() => setIdx(v => Math.min(total - 1, v + 1))}
+                className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition"
               >
-                {opt}
+                Volgende
               </button>
-            )
-          })}
-        </div>
-
-        <div className="mt-6 flex items-center justify-between">
-          <button
-            onClick={() => setIdx(v => Math.max(0, v - 1))}
-            disabled={!canPrev}
-            className="px-4 py-2 rounded-md bg-gray-800 border border-gray-700 disabled:opacity-50"
-          >
-            Vorige
-          </button>
-
-          {canNext ? (
-            <button
-              onClick={() => setIdx(v => Math.min(total - 1, v + 1))}
-              className="px-4 py-2 rounded-md bg-crypto-blue/20 border border-crypto-blue/40 hover:bg-crypto-blue/30"
-            >
-              Volgende
-            </button>
-          ) : (
-            <button
-              onClick={submit}
-              disabled={submitting}
-              className="px-4 py-2 rounded-md bg-crypto-orange/20 border border-crypto-orange/40 hover:bg-crypto-orange/30 disabled:opacity-50"
-            >
-              {submitting ? 'Indienen…' : 'Examen indienen'}
-            </button>
-          )}
+            ) : (
+              <button
+                onClick={handleSubmitClick}
+                disabled={submitting}
+                className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? 'Indienen…' : 'Examen indienen'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Confirmation modal overlay */}
+      {confirmSubmit && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setConfirmSubmit(false)}>
+          <div 
+            className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-8 text-center space-y-4 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-semibold text-white">Examen indienen?</h2>
+            <p className="text-gray-400">Ben je zeker dat je je examen wilt indienen? Je kan daarna niets meer wijzigen.</p>
+            <div className="flex justify-center gap-3 pt-2">
+              <button 
+                onClick={handleConfirmSubmit} 
+                disabled={submitting}
+                className="px-6 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition disabled:opacity-50"
+              >
+                {submitting ? 'Indienen…' : 'Ja, indienen'}
+              </button>
+              <button 
+                onClick={() => setConfirmSubmit(false)} 
+                className="px-6 py-3 rounded-lg bg-[var(--muted)] border border-[var(--border)] hover:bg-[var(--border)] transition"
+              >
+                Annuleer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
