@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import StudentGate from "@/components/StudentGate";
 
 export const metadata: Metadata = {
@@ -15,10 +16,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nl">
-      <body className="bg-crypto-dark text-white font-sans min-h-screen">
+      <body className="bg-[var(--bg)] text-white font-sans min-h-screen">
         <StudentGate />
         <Navbar />
-        <main className="max-w-5xl mx-auto px-4 py-10">{children}</main>
+        <main className="min-h-screen">{children}</main>
+        <Footer />
       </body>
     </html>
   );

@@ -6,6 +6,7 @@ import { getStoredStudentId } from '@/lib/student'
 import { getExamByModuleId } from '@/lib/exam'
 import { CheckCircle2, Lock } from 'lucide-react'
 import Link from 'next/link'
+import Container from '@/components/ui/Container'
 
 type Lesson = { id: number; title: string; order: number; module_id: number }
 type ProgressRow = { lesson_id: number; watched: boolean }
@@ -80,19 +81,19 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   const pct = total ? Math.round((watchedCount / total) * 100) : 0
 
   return (
-    <div>
+    <Container className="pt-20 pb-16">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-crypto-orange">Module {moduleId}</h1>
-          <p className="text-gray-400 text-sm">Voortgang: {watchedCount}/{total} • {pct}%</p>
+          <h1 className="text-3xl font-bold text-[var(--accent)]">Module {moduleId}</h1>
+          <p className="text-[var(--text-dim)] text-sm">Voortgang: {watchedCount}/{total} • {pct}%</p>
         </div>
-        <div className="w-44 h-2 bg-gray-800 rounded-full overflow-hidden">
-          <div className="h-full bg-crypto-blue" style={{ width: `${pct}%` }} />
+        <div className="w-44 h-2 bg-[var(--muted)] rounded-full overflow-hidden">
+          <div className="h-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
         </div>
       </div>
 
       {loading ? (
-        <p className="text-gray-400">Laden…</p>
+        <p className="text-[var(--text-dim)]">Laden…</p>
       ) : (
         <>
           <div className="space-y-3">
@@ -102,33 +103,33 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
               return (
                 <div
                   key={lesson.id}
-                  className="flex items-center justify-between bg-gray-800 border border-gray-700 rounded-lg p-4"
+                  className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-lg p-4"
                 >
                   <div className="flex items-center gap-3">
                     {isWatched ? (
-                      <CheckCircle2 className="text-crypto-orange" />
+                      <CheckCircle2 className="text-[var(--accent)]" />
                     ) : isUnlocked ? (
-                      <div className="w-5 h-5 rounded-full border border-gray-600" />
+                      <div className="w-5 h-5 rounded-full border border-[var(--border)]" />
                     ) : (
-                      <Lock className="text-gray-500" />
+                      <Lock className="text-[var(--text-dim)]" />
                     )}
                     <div>
                       <div className="font-medium">{lesson.title}</div>
-                      <div className="text-xs text-gray-500">Les {lesson.order}</div>
+                      <div className="text-xs text-[var(--text-dim)]">Les {lesson.order}</div>
                     </div>
                   </div>
 
                   {isUnlocked ? (
                     <a
                       href={`/lesson/${lesson.id}`}
-                      className="px-4 py-2 rounded-md bg-crypto-blue/20 border border-crypto-blue/40 hover:bg-crypto-blue/30 transition text-white"
+                      className="px-4 py-2 rounded-md bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-white"
                     >
                       Openen
                     </a>
                   ) : (
                     <button
                       disabled
-                      className="px-4 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-400 cursor-not-allowed"
+                      className="px-4 py-2 rounded-md bg-[var(--muted)] border border-[var(--border)] text-[var(--text-dim)] cursor-not-allowed"
                       title="Deze les wordt ontgrendeld nadat je de vorige volledig bekeek."
                     >
                       Vergrendeld
@@ -141,14 +142,14 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
 
           {/* EXAMEN CTA (zichtbaar als alle lessen watched zijn) */}
           {lessons.length > 0 && watchedCount === total && examId && (
-            <div className="mt-8 bg-gray-900 border border-gray-800 rounded-xl p-5 flex items-center justify-between">
+            <div className="mt-8 bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 flex items-center justify-between">
               <div>
                 <div className="font-semibold">Examen van deze module is klaar</div>
-                <div className="text-sm text-gray-400">Je hebt alle lessen bekeken. Start het examen om door te gaan.</div>
+                <div className="text-sm text-[var(--text-dim)]">Je hebt alle lessen bekeken. Start het examen om door te gaan.</div>
               </div>
               <Link
                 href={`/exam/${examId}?module=${moduleId}`}
-                className="px-4 py-2 rounded-md bg-crypto-orange/20 border border-crypto-orange/40 hover:bg-crypto-orange/30 transition"
+                className="px-4 py-2 rounded-md bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-white"
                 aria-label="Start examen"
               >
                 Start examen
@@ -157,7 +158,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
           )}
         </>
       )}
-    </div>
+    </Container>
   )
 }
 

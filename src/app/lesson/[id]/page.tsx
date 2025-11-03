@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { getStoredStudentId } from '@/lib/student'
 import { Check, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import Container from '@/components/ui/Container'
 
 type Lesson = { id: number; title: string; video_url: string | null; module_id: number; order: number }
 type NextLesson = { id: number; title: string } | null
@@ -117,28 +118,29 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     setSaving(false)
   }
 
-  if (!lesson) return <p className="text-gray-400">Laden…</p>
+  if (!lesson) return <Container className="pt-20 pb-16"><p className="text-[var(--text-dim)]">Laden…</p></Container>
 
   const embedUrl = lesson.video_url ? getVimeoEmbedUrl(lesson.video_url) : null
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Link
-          href={`/module/${lesson.module_id}`}
-          className="text-sm text-gray-400 hover:text-white underline underline-offset-4 transition-colors"
-          aria-label="Terug naar module"
-        >
-          ← Terug naar module
-        </Link>
-        <div className="text-sm text-gray-400">
-          {saving ? 'Opslaan…' : saved ? 'Les voltooid ✅' : ' '}
+    <Container className="pt-20 pb-16">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <Link
+            href={`/module/${lesson.module_id}`}
+            className="text-sm text-[var(--text-dim)] hover:text-white underline underline-offset-4 transition-colors"
+            aria-label="Terug naar module"
+          >
+            ← Terug naar module
+          </Link>
+          <div className="text-sm text-[var(--text-dim)]">
+            {saving ? 'Opslaan…' : saved ? 'Les voltooid ✅' : ' '}
+          </div>
         </div>
-      </div>
 
-      {/* Titel */}
-      <h1 className="text-2xl font-semibold text-crypto-orange">{lesson.title}</h1>
+        {/* Titel */}
+        <h1 className="text-2xl font-semibold text-[var(--accent)]">{lesson.title}</h1>
 
       {/* Video */}
       {embedUrl ? (
@@ -150,58 +152,59 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
           title={lesson.title}
         />
       ) : (
-        <div className="aspect-video w-full rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center text-gray-500">
+        <div className="aspect-video w-full rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center text-[var(--text-dim)]">
           Geen video URL beschikbaar
         </div>
       )}
 
-      {/* CTA na voltooiing */}
-      {saved && (
-        <div className="flex items-center justify-between bg-gray-800 border border-gray-700 rounded-lg p-4 transition-opacity duration-300">
-          <div className="text-sm text-gray-300">Mooi werk! Deze les is gemarkeerd als voltooid.</div>
-          {nextLesson ? (
-            <Link
-              href={`/lesson/${nextLesson.id}`}
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-crypto-blue/20 border border-crypto-blue/40 hover:bg-crypto-blue/30 transition text-white"
-              aria-label={`Ga verder naar ${nextLesson.title}`}
-            >
-              Volgende les → {nextLesson.title}
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          ) : (
-            <Link
-              href={`/module/${lesson.module_id}`}
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-crypto-orange/20 border border-crypto-orange/40 hover:bg-crypto-orange/30 transition text-white"
-              aria-label="Terug naar module"
-            >
-              Terug naar module
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          )}
-        </div>
-      )}
+        {/* CTA na voltooiing */}
+        {saved && (
+          <div className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 transition-opacity duration-300">
+            <div className="text-sm text-white/90">Mooi werk! Deze les is gemarkeerd als voltooid.</div>
+            {nextLesson ? (
+              <Link
+                href={`/lesson/${nextLesson.id}`}
+                className="flex items-center gap-2 px-4 py-2 rounded-md bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-white"
+                aria-label={`Ga verder naar ${nextLesson.title}`}
+              >
+                Volgende les → {nextLesson.title}
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <Link
+                href={`/module/${lesson.module_id}`}
+                className="flex items-center gap-2 px-4 py-2 rounded-md bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-white"
+                aria-label="Terug naar module"
+              >
+                Terug naar module
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
+        )}
 
-      {/* Markeer als voltooid knop (alleen als nog niet voltooid) */}
-      {!saved && (
-        <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-          <p className="text-gray-400 text-sm">
-            Markeer de les als voltooid na het bekijken
-          </p>
-          <button
-            onClick={markAsCompleted}
-            disabled={saving}
-            className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
-              saving
-                ? 'bg-crypto-orange/50 text-white cursor-not-allowed'
-                : 'bg-crypto-orange hover:bg-orange-500 text-white'
-            }`}
-          >
-            <Check className="w-5 h-5" />
-            {saving ? 'Opslaan…' : 'Markeer als voltooid'}
-          </button>
-        </div>
-      )}
-    </div>
+        {/* Markeer als voltooid knop (alleen als nog niet voltooid) */}
+        {!saved && (
+          <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+            <p className="text-[var(--text-dim)] text-sm">
+              Markeer de les als voltooid na het bekijken
+            </p>
+            <button
+              onClick={markAsCompleted}
+              disabled={saving}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
+                saving
+                  ? 'bg-[var(--accent)]/50 text-white cursor-not-allowed'
+                  : 'bg-[var(--accent)] hover:opacity-90 text-black'
+              }`}
+            >
+              <Check className="w-5 h-5" />
+              {saving ? 'Opslaan…' : 'Markeer als voltooid'}
+            </button>
+          </div>
+        )}
+      </div>
+    </Container>
   )
 }
 

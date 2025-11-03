@@ -1,16 +1,23 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { BrandLogo } from "@/components/ui/Brand";
+import Container from "@/components/ui/Container";
+import { useState, useEffect } from "react";
 import { Menu, X, Home, BookOpen } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import { getStoredStudentId } from '@/lib/student'
 
+const links = [
+  { href: "/", label: "Dashboard", icon: Home },
+  { href: "/module/1", label: "Modules", icon: BookOpen },
+];
+
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [progress, setProgress] = useState({ completed: 0, total: 0 })
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const [progress, setProgress] = useState({ completed: 0, total: 0 });
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -43,126 +50,97 @@ export default function Navbar() {
 
   const progressPercentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0
 
-  const navLinks = [
-    { href: '/', label: 'Home', icon: Home },
-    { href: '/module/1', label: 'Module', icon: BookOpen },
-  ]
-
-  const isActive = (path: string) => {
-    if (path === '/') {
-      return pathname === path
+  const isActive = (href: string) => {
+    if (href === "/") {
+      return pathname === href;
     }
-    return pathname.startsWith(path)
-  }
+    return pathname.startsWith(href);
+  };
 
   return (
-    <nav className="bg-crypto-dark border-b border-gray-800 sticky top-0 z-50 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo/Brand */}
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-crypto-orange text-xl font-bold">Cryptoriez</span>
-            </Link>
-          </div>
+    <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur">
+      <Container className="h-16 flex items-center justify-between">
+        <BrandLogo />
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link) => {
-              const Icon = link.icon
-              const active = isActive(link.href)
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-                    active
-                      ? 'text-crypto-orange border-b-2 border-crypto-orange'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{link.label}</span>
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* Desktop Progress */}
-          <div className="hidden md:flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-32 bg-gray-800 rounded-full h-2 overflow-hidden">
-                <div
-                  className="h-full bg-crypto-blue transition-all duration-500"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-              <span className="text-sm text-gray-300 whitespace-nowrap">
-                {progress.completed}/{progress.total}
-              </span>
-            </div>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-all"
-            aria-label="Toggle menu"
-            aria-expanded={isOpen}
-            aria-controls="mobile-menu"
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      <div
-        id="mobile-menu"
-        className={`md:hidden transition-all duration-300 ease-in-out ${
-          isOpen
-            ? 'max-h-96 opacity-100'
-            : 'max-h-0 opacity-0 overflow-hidden'
-        }`}
-      >
-        <div className="px-4 py-3 space-y-2 bg-gray-900 border-t border-gray-800">
-          {navLinks.map((link) => {
-            const Icon = link.icon
-            const active = isActive(link.href)
+        <nav className="hidden md:flex items-center gap-6 text-sm">
+          {links.map(l => {
+            const active = isActive(l.href);
+            const Icon = l.icon;
             return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                  active
-                    ? 'text-crypto-orange bg-crypto-orange/10 border-l-2 border-crypto-orange'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                }`}
+              <Link 
+                key={l.href} 
+                href={l.href} 
+                className={`flex items-center gap-2 ${active ? "text-[var(--accent)]" : "text-[var(--text-dim)] hover:text-white"}`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{link.label}</span>
+                <Icon className="w-4 h-4" />
+                <span>{l.label}</span>
               </Link>
-            )
+            );
           })}
-          
-          {/* Mobile Progress */}
-          <div className="px-4 py-3 border-t border-gray-700 mt-2">
-            <div className="flex items-center space-x-3">
-              <div className="flex-1 bg-gray-700 rounded-full h-2 overflow-hidden">
-                <div
-                  className="h-full bg-crypto-blue transition-all duration-500"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-              <span className="text-sm text-gray-300 whitespace-nowrap font-medium">
-                {progress.completed}/{progress.total} lessen
-              </span>
+        </nav>
+
+        {/* Desktop Progress */}
+        <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-32 bg-[var(--muted)] rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-[var(--accent)] transition-all duration-500"
+                style={{ width: `${progressPercentage}%` }}
+              />
             </div>
+            <span className="text-sm text-[var(--text-dim)] whitespace-nowrap">
+              {progress.completed}/{progress.total}
+            </span>
           </div>
         </div>
-      </div>
-    </nav>
-  )
+
+        <button 
+          className="md:hidden text-[var(--text-dim)] hover:text-white p-2" 
+          onClick={()=>setOpen(v=>!v)} 
+          aria-label="Menu"
+        >
+          {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </Container>
+
+      {/* mobile */}
+      {open && (
+        <div className="md:hidden border-t border-[var(--border)] bg-[var(--bg)]">
+          <Container className="py-3 flex flex-col gap-2">
+            {links.map(l => {
+              const active = isActive(l.href);
+              const Icon = l.icon;
+              return (
+                <Link 
+                  key={l.href} 
+                  href={l.href} 
+                  onClick={()=>setOpen(false)} 
+                  className={`flex items-center gap-2 py-2 ${active ? "text-[var(--accent)]" : "text-white/80"}`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{l.label}</span>
+                </Link>
+              );
+            })}
+            
+            {/* Mobile Progress */}
+            <div className="pt-3 border-t border-[var(--border)] mt-2">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-[var(--muted)] rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-[var(--accent)] transition-all duration-500"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+                <span className="text-sm text-[var(--text-dim)] whitespace-nowrap font-medium">
+                  {progress.completed}/{progress.total} lessen
+                </span>
+              </div>
+            </div>
+          </Container>
+        </div>
+      )}
+    </div>
+  );
 }
 
