@@ -6,6 +6,7 @@ import { getLessonsForModules, getModulesSimple, getWatchedLessonIds, findNextLe
 import { getExamByModuleId } from '@/lib/exam'
 import HeroDashboard from '@/components/HeroDashboard'
 import Container from '@/components/ui/Container'
+import TradingSessionClock from '@/components/TradingSessionClock'
 
 type ModuleRow = { id: number; title: string; description: string | null; order: number | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
@@ -79,6 +80,7 @@ export default function HomePage() {
       />
       <Container className="pb-16">
         <div className="space-y-8">
+          <TradingSessionClock />
 
           {/* MODULE GRID */}
           <section>
