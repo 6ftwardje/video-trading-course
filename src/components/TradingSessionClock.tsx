@@ -52,10 +52,10 @@ function resolveStatus(
   return concurrentlyOpenCount > 1 ? 'overlap' : 'open'
 }
 
-const STATUS_METADATA: Record<SessionStatus, { indicator: string; label: string }> = {
-  open: { indicator: 'bg-[#7C99E3] shadow-[0_0_0_6px_rgba(124,153,227,0.2)]', label: 'Open' },
-  overlap: { indicator: 'bg-[#E9CF80] shadow-[0_0_0_6px_rgba(233,207,128,0.18)]', label: 'Overlap' },
-  closed: { indicator: 'bg-white/25', label: 'Gesloten' },
+const STATUS_METADATA: Record<SessionStatus, { dotClass: string }> = {
+  open: { dotClass: 'bg-[#7C99E3]' },
+  overlap: { dotClass: 'bg-[#E9CF80]' },
+  closed: { dotClass: 'bg-white/30' },
 }
 
 export default function TradingSessionClock() {
@@ -115,19 +115,10 @@ export default function TradingSessionClock() {
             <p className="text-xs text-[var(--text-dim)]">Live status per marktsessie</p>
           </div>
         </div>
-        <div className="flex flex-col items-start gap-2 sm:items-end">
-          <span
-            className="flex items-center gap-2 rounded-full border border-[#7C99E3]/50 bg-[#7C99E3]/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-[#7C99E3]"
-            aria-hidden="true"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-[#7C99E3] animate-pulse" />
-            Live
-          </span>
-          <div className="text-sm text-white/70">
-            <div className="text-[10px] uppercase tracking-wide text-white/60">Huidige tijd</div>
-            <div className="text-lg font-semibold text-white">
-              {now ? currentTimeFormatter.format(now) : '--:--:--'}
-            </div>
+        <div className="flex flex-col items-start gap-1 text-sm text-white/70 sm:items-end">
+          <div className="text-[10px] uppercase tracking-wide text-white/60">Huidige tijd</div>
+          <div className="text-lg font-semibold text-white">
+            {now ? currentTimeFormatter.format(now) : '--:--:--'}
           </div>
         </div>
       </div>
@@ -138,10 +129,6 @@ export default function TradingSessionClock() {
             utcMinutes == null ? 'closed' : resolveStatus(session, utcMinutes, openSessions.length)
           const meta = STATUS_METADATA[status]
 
-          const { startLabel, endLabel } = now
-            ? getTooltipRange(session, now, tooltipFormatter)
-            : { startLabel: '--:--', endLabel: '--:--' }
-
           const isActive = status !== 'closed'
           const localOpenLabel =
             now == null ? '--:--' : getLocalSessionStartLabel(session, now, hourMinuteFormatter)
@@ -149,68 +136,52 @@ export default function TradingSessionClock() {
             utcMinutes == null ? null : minutesUntilSessionOpens(session, utcMinutes)
           const minutesUntilClose =
             utcMinutes == null ? null : minutesUntilSessionCloses(session, utcMinutes)
-          const timingLabel =
-            utcMinutes == null
-              ? 'Synchroniseren...'
-              : status === 'closed'
-              ? minutesUntilOpen === 0
-                ? 'Opent nu'
-                : `Opent over ${formatDuration(minutesUntilOpen ?? 0)}`
-              : minutesUntilClose === 0
-              ? 'Sluit nu'
-              : `Sluit over ${formatDuration(minutesUntilClose ?? 0)}`
+
+          let statusText = 'Synchroniseren...'
+          if (utcMinutes != null) {
+            if (status === 'open') {
+              statusText = minutesUntilClose === 0 ? 'Sluit nu' : `Sluit over ${formatDuration(minutesUntilClose ?? 0)}`
+            } else {
+              statusText = minutesUntilOpen === 0 ? 'Opent nu' : `Opent over ${formatDuration(minutesUntilOpen ?? 0)}`
+            }
+          }
+
+          const tooltipRange = now ? getTooltipRange(session, now, tooltipFormatter) : null
+          const tooltipText = tooltipRange
+            ? `${session.name}: ${tooltipRange.startLabel} – ${tooltipRange.endLabel}`
+            : undefined
 
           return (
             <div
               key={session.id}
               className={[
-                'group relative rounded-xl border bg-[var(--card)]/95 p-4 transition-all',
-                isActive
-                  ? 'border-[#7C99E3]/40 ring-1 ring-[#7C99E3]/30 shadow-[0_0_18px_rgba(124,153,227,0.25)] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(124,153,227,0.25)]'
-                  : 'border-[var(--border)] hover:border-white/15',
+                'rounded-2xl border border-white/5 bg-[var(--card)]/85 p-5 transition-colors hover:border-[#7C99E3]/30',
+                isActive ? 'border-[#7C99E3]/35 shadow-[0_10px_32px_rgba(124,153,227,0.18)]' : '',
               ].join(' ')}
+              title={tooltipText}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
                   <span
                     className={[
-                      'mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full transition-all duration-500',
-                      meta.indicator,
-                      isActive ? 'animate-pulse' : '',
+                      'h-2.5 w-2.5 rounded-full transition-all duration-500',
+                      meta.dotClass,
+                      isActive ? 'shadow-[0_0_0_6px_rgba(124,153,227,0.18)]' : '',
                     ].join(' ')}
                   />
-                  <div>
-                    <div className="text-base font-semibold">{session.name}</div>
-                    <div
-                      className={[
-                        'text-xs font-medium',
-                        status === 'closed' ? 'text-[var(--text-dim)]' : 'text-[#7C99E3]',
-                      ].join(' ')}
-                    >
-                      {meta.label}
-                    </div>
-                    <div className="mt-1 text-xs text-white/70">{timingLabel}</div>
-                  </div>
+                  <span className="text-sm font-semibold text-white/80">{session.name}</span>
                 </div>
+              </div>
 
-                <div className="text-right">
-                  <div className="text-lg font-semibold">{localOpenLabel}</div>
+              <div className="mt-6 flex items-end justify-between gap-4">
+                <div>
+                  <div className="text-2xl font-semibold">{localOpenLabel}</div>
                   <div className="text-xs text-[var(--text-dim)]">Lokale opening</div>
                 </div>
+                <div className="text-sm text-white/70">{statusText}</div>
               </div>
 
-              <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-dim)]">
-                <span>UTC {formatUtcRange(session)}</span>
-                {status !== 'closed' && (
-                  <span className="text-[10px] uppercase tracking-wide text-[#7C99E3]">
-                    Liquiditeit verhoogd
-                  </span>
-                )}
-              </div>
-
-              <div className="pointer-events-none absolute left-4 top-full z-10 hidden w-max -translate-y-1 rounded-lg border border-white/5 bg-black/85 px-3 py-2 text-xs text-white shadow-lg transition-all group-hover:block">
-                {session.name}: {startLabel} – {endLabel}
-              </div>
+              <div className="mt-4 text-xs text-[var(--text-dim)]">UTC {formatUtcRange(session)}</div>
             </div>
           )
         })}

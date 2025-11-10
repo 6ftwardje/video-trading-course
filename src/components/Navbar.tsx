@@ -11,7 +11,7 @@ import { getStoredStudentId } from '@/lib/student'
 
 const links = [
   { href: "/", label: "Dashboard", icon: Home },
-  { href: "/module/1", label: "Modules", icon: BookOpen },
+  { href: "/modules", label: "Modules", icon: BookOpen },
 ];
 
 export default function Navbar() {

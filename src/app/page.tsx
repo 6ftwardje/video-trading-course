@@ -6,7 +6,7 @@ import { getLessonsForModules, getModulesSimple, getWatchedLessonIds, findNextLe
 import { getExamByModuleId } from '@/lib/exam'
 import HeroDashboard from '@/components/HeroDashboard'
 import Container from '@/components/ui/Container'
-import TradingSessionClock from '@/components/TradingSessionClock'
+import ModuleProgressCard from '@/components/ModuleProgressCard'
 
 type ModuleRow = { id: number; title: string; description: string | null; order: number | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
@@ -16,6 +16,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState<string | null>(null)
   const [modules, setModules] = useState<ModuleWithProgress[]>([])
+  const [activeModule, setActiveModule] = useState<ModuleWithProgress | null>(null)
   const [nextLessonHref, setNextLessonHref] = useState<string | null>(null)
   const [progressText, setProgressText] = useState<string>('Welkom terug')
 
@@ -62,14 +63,22 @@ export default function HomePage() {
         setProgressText(`Je staat op ${firstMod.watchedCount}/${firstMod.totalLessons} lessen in ${firstMod.title}`)
       }
 
+      // 6) Bepaal actieve module voor kaartweergave
+      if (byModule.length > 0) {
+        const byId = new Map(byModule.map(m => [m.id, m]))
+        let candidate: ModuleWithProgress | null = null
+        if (next?.module?.id) candidate = byId.get(next.module.id) ?? null
+        if (!candidate) candidate = byModule.find(m => m.pct < 100) ?? null
+        if (!candidate) candidate = byModule[byModule.length - 1] ?? null
+        setActiveModule(candidate)
+      } else {
+        setActiveModule(null)
+      }
+
       setLoading(false)
     }
     run()
   }, [])
-
-  // Totale voortgang (over alle modules): simpel gemiddelde van module-percentages
-  const overallPct =
-    modules.length > 0 ? Math.round(modules.reduce((acc, m) => acc + m.pct, 0) / modules.length) : 0
 
   return (
     <>
@@ -79,61 +88,34 @@ export default function HomePage() {
         progressText={progressText}
       />
       <Container className="pb-16">
-        <div className="space-y-8">
-          <TradingSessionClock />
-
-          {/* MODULE GRID */}
-          <section>
-            <h2 className="text-xl font-semibold mb-3">Jouw modules</h2>
+        <div className="space-y-12">
+          {/* MODULE SECTION */}
+          <section className="space-y-4">
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+              <div>
+                <h2 className="text-xl font-semibold">Jouw huidige module</h2>
+                <p className="text-sm text-[var(--text-dim)]">
+                  Werk verder waar je gebleven bent. Je kan steeds terugkeren naar het overzicht.
+                </p>
+              </div>
+              <a
+                href="/modules"
+                className="text-sm font-medium text-[var(--accent)] underline-offset-4 transition hover:underline"
+              >
+                Bekijk alle modules
+              </a>
+            </div>
 
             {loading ? (
               <div className="space-y-3">
-                <div className="h-20 bg-[var(--card)]/60 rounded-lg animate-pulse" />
-                <div className="h-20 bg-[var(--card)]/60 rounded-lg animate-pulse" />
+                <div className="h-24 rounded-2xl border border-[var(--border)] bg-[var(--card)]/70 animate-pulse" />
+                <div className="h-16 rounded-xl border border-[var(--border)] bg-[var(--card)]/40 animate-pulse" />
               </div>
+            ) : activeModule ? (
+              <ModuleProgressCard module={activeModule} />
             ) : (
-              <div className="space-y-4">
-                {modules.map((m) => (
-                  <div key={m.id}>
-                    <a
-                      href={`/module/${m.id}`}
-                      className="block bg-[var(--card)] border border-[var(--border)] p-5 rounded-xl hover:border-[var(--accent)] transition-all"
-                      aria-label={`Open ${m.title}`}
-                    >
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg sm:text-xl font-semibold">{m.title}</h3>
-                          {m.description && <p className="text-[var(--text-dim)] text-sm mt-1">{m.description}</p>}
-                        </div>
-
-                        <div className="text-right min-w-[10rem]">
-                          <div className="text-sm text-white/90">
-                            {m.watchedCount}/{m.totalLessons} lessen • {m.pct}%
-                          </div>
-                          <div className="mt-2 w-40 h-2 bg-[var(--muted)] rounded-full overflow-hidden">
-                            <div className="h-full bg-[var(--accent)]" style={{ width: `${m.pct}%` }} />
-                          </div>
-                        </div>
-                      </div>
-                    </a>
-                    {m.pct === 100 && m.examId && (
-                      <div className="mt-2 bg-[var(--card)] border border-[var(--border)] px-5 py-3 rounded-xl">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-semibold text-sm">Examen beschikbaar</div>
-                            <div className="text-xs text-[var(--text-dim)]">Test je kennis van deze module</div>
-                          </div>
-                          <a
-                            href={`/exam/${m.examId}?module=${m.id}`}
-                            className="px-4 py-2 rounded-md bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-sm text-white"
-                          >
-                            Start examen
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/70 p-6 text-sm text-[var(--text-dim)]">
+                Nog geen modules beschikbaar. Kom later terug voor nieuwe content.
               </div>
             )}
           </section>
