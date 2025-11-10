@@ -6,7 +6,7 @@ import { BrandLogo } from "@/components/ui/Brand";
 import Container from "@/components/ui/Container";
 import { useState, useEffect } from "react";
 import { Menu, X, Home, BookOpen } from 'lucide-react'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getStoredStudentId } from '@/lib/student'
 
 const links = [
@@ -22,6 +22,7 @@ export default function Navbar() {
   useEffect(() => {
     const fetchProgress = async () => {
       try {
+        const supabase = getSupabaseClient()
         const studentId = getStoredStudentId()
         const { data: lessons } = await supabase.from('lessons').select('id').eq('module_id', 1)
         

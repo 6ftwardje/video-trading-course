@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { use } from 'react'
 import Player from '@vimeo/player'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getStoredStudentId } from '@/lib/student'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -58,6 +58,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     
     const init = async () => {
       try {
+        const supabase = getSupabaseClient()
         const studentId = getStoredStudentId()
         
         const lessonIdNum = Number(id)
@@ -142,6 +143,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
             player.on('ended', async () => {
               if (!studentId) return
 
+              const supabase = getSupabaseClient()
               await supabase.from('progress').upsert({
                 student_id: studentId,
                 lesson_id: current.id,

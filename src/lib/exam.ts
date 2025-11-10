@@ -1,7 +1,8 @@
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 
 export async function getExamByModuleId(moduleId: number) {
   try {
+    const supabase = getSupabaseClient()
     // First try to get active exam if 'active' column exists
     const { data: activeData, error: activeError } = await supabase
       .from('exams')
@@ -40,6 +41,7 @@ export async function getExamByModuleId(moduleId: number) {
 
 export async function getExamById(examId: number) {
   try {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('exams')
       .select('id,title,module_id')
@@ -59,6 +61,7 @@ export async function getExamById(examId: number) {
 
 export async function getExamQuestions(examId: number) {
   try {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('exam_questions')
       .select('id,question,options,correct_answer')
@@ -88,6 +91,7 @@ export async function getExamQuestions(examId: number) {
 }
 
 export async function getModuleLessons(moduleId: number) {
+  const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('lessons')
     .select('id,module_id,"order"')
@@ -100,6 +104,7 @@ export async function getModuleLessons(moduleId: number) {
 
 export async function getWatchedLessonIds(studentId: string, lessonIds: number[]) {
   if (!studentId || lessonIds.length === 0) return new Set<number>()
+  const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('progress')
     .select('lesson_id')
@@ -112,6 +117,7 @@ export async function getWatchedLessonIds(studentId: string, lessonIds: number[]
 
 export async function insertExamResult(studentId: string, examId: number, score: number, passed: boolean) {
   try {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('exam_results')
       .insert([{ student_id: studentId, exam_id: examId, score, passed }])

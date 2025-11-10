@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient'
+import { getSupabaseClient } from './supabaseClient'
 
 const LS_KEY = 'cryptoriez_student_id'
 const LS_EMAIL = 'cryptoriez_student_email'
@@ -21,6 +21,7 @@ export function setStoredStudent(id: string, email: string) {
 
 export async function ensureStudentByEmail(email: string): Promise<{ id: string; email: string }> {
   // 1) Probeer bestaande student te vinden
+  const supabase = getSupabaseClient()
   const { data: found, error: findErr } = await supabase
     .from('students')
     .select('id,email')

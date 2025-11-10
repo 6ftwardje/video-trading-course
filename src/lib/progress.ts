@@ -1,6 +1,7 @@
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 
 export async function getModulesSimple() {
+  const supabase = getSupabaseClient()
   const { data } = await supabase.from('modules').select('id,title,description,"order"')
   // Sort manually to avoid PostgREST query string issues with 'order' column
   const sorted = data ? [...data].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999)) : []
@@ -8,12 +9,14 @@ export async function getModulesSimple() {
 }
 
 export async function getLessonsForModules(moduleIds: number[]) {
+  const supabase = getSupabaseClient()
   const { data } = await supabase.from('lessons').select('id,module_id,"order",title').in('module_id', moduleIds)
   return data || []
 }
 
 export async function getWatchedLessonIds(studentId: string, lessonIds: number[]) {
   if (!studentId || lessonIds.length === 0) return new Set<number>()
+  const supabase = getSupabaseClient()
   const { data } = await supabase
     .from('progress')
     .select('lesson_id')

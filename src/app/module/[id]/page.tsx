@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getStoredStudentId } from '@/lib/student'
 import { getExamByModuleId } from '@/lib/exam'
 import { CheckCircle2, Lock } from 'lucide-react'
@@ -34,6 +34,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         }
         
         setLoading(true)
+        const supabase = getSupabaseClient()
         const { data: ls, error: lessonsError } = await supabase
           .from('lessons')
           .select('id,title,"order",module_id')
