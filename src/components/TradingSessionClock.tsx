@@ -53,8 +53,8 @@ function resolveStatus(
 }
 
 const STATUS_METADATA: Record<SessionStatus, { dotClass: string }> = {
-  open: { dotClass: 'bg-[#7C99E3]' },
-  overlap: { dotClass: 'bg-[#E9CF80]' },
+  open: { dotClass: 'bg-[#3FCF8E]' },
+  overlap: { dotClass: 'bg-[#3FCF8E]' },
   closed: { dotClass: 'bg-white/30' },
 }
 
@@ -134,15 +134,16 @@ export default function TradingSessionClock() {
             now == null ? '--:--' : getLocalSessionStartLabel(session, now, hourMinuteFormatter)
           const minutesUntilOpen =
             utcMinutes == null ? null : minutesUntilSessionOpens(session, utcMinutes)
-          const minutesUntilClose =
-            utcMinutes == null ? null : minutesUntilSessionCloses(session, utcMinutes)
 
           let statusText = 'Synchroniseren...'
           if (utcMinutes != null) {
-            if (status === 'open') {
-              statusText = minutesUntilClose === 0 ? 'Sluit nu' : `Sluit over ${formatDuration(minutesUntilClose ?? 0)}`
+            if (status === 'closed') {
+              statusText =
+                minutesUntilOpen === 0
+                  ? 'Open'
+                  : `Opent over ${formatDuration(minutesUntilOpen ?? 0)}`
             } else {
-              statusText = minutesUntilOpen === 0 ? 'Opent nu' : `Opent over ${formatDuration(minutesUntilOpen ?? 0)}`
+              statusText = 'Open'
             }
           }
 
@@ -155,8 +156,8 @@ export default function TradingSessionClock() {
             <div
               key={session.id}
               className={[
-                'rounded-2xl border border-white/5 bg-[var(--card)]/85 p-5 transition-colors hover:border-[#7C99E3]/30',
-                isActive ? 'border-[#7C99E3]/35 shadow-[0_10px_32px_rgba(124,153,227,0.18)]' : '',
+                'rounded-2xl border border-white/5 bg-[var(--card)]/85 p-5 transition-colors hover:border-[#3FCF8E]/30',
+                isActive ? 'border-[#3FCF8E]/35 shadow-[0_10px_32px_rgba(63,207,142,0.18)]' : '',
               ].join(' ')}
               title={tooltipText}
             >
@@ -166,7 +167,7 @@ export default function TradingSessionClock() {
                     className={[
                       'h-2.5 w-2.5 rounded-full transition-all duration-500',
                       meta.dotClass,
-                      isActive ? 'shadow-[0_0_0_6px_rgba(124,153,227,0.18)]' : '',
+                      isActive ? 'shadow-[0_0_0_6px_rgba(63,207,142,0.2)]' : '',
                     ].join(' ')}
                   />
                   <span className="text-sm font-semibold text-white/80">{session.name}</span>
@@ -230,14 +231,6 @@ function pad(value: number) {
 function minutesUntilSessionOpens(session: SessionDefinition, utcMinutes: number) {
   if (isSessionOpen(session, utcMinutes)) return 0
   return moduloMinutes(session.startMinutes - utcMinutes)
-}
-
-function minutesUntilSessionCloses(session: SessionDefinition, utcMinutes: number) {
-  if (!isSessionOpen(session, utcMinutes)) return 0
-  const wraps = session.startMinutes > session.endMinutes
-  const adjustedEnd =
-    wraps && utcMinutes >= session.startMinutes ? session.endMinutes + 24 * 60 : session.endMinutes
-  return moduloMinutes(adjustedEnd - utcMinutes)
 }
 
 function moduloMinutes(value: number) {
