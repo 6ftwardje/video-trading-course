@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getStoredStudentId } from '@/lib/student'
 import { getExamByModuleId } from '@/lib/exam'
+import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
 import { CheckCircle2, Lock } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -11,6 +12,7 @@ import Container from '@/components/ui/Container'
 
 type Lesson = { id: number; title: string; order: number; module_id: number }
 type ProgressRow = { lesson_id: number; watched: boolean }
+type PracticalLesson = PracticalLessonRecord
 
 export default function ModulePage({ params }: { params: Promise<{ id: string }> }) {
   const [moduleId, setModuleId] = useState<string>('')
@@ -18,6 +20,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   const [progress, setProgress] = useState<Record<number, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [examId, setExamId] = useState<number | null>(null)
+  const [practicalLessons, setPracticalLessons] = useState<PracticalLesson[]>([])
 
   useEffect(() => {
     const load = async () => {
@@ -29,6 +32,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         if (isNaN(moduleIdNum)) {
           console.error('Invalid module ID:', id)
           setLessons([])
+          setPracticalLessons([])
           setLoading(false)
           return
         }
@@ -57,6 +61,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
 
         setLessons(sortedLessons || [])
 
+        const practicals = await getPracticalLessons(moduleIdNum)
+        setPracticalLessons(practicals)
+
         const studentId = getStoredStudentId()
         if (studentId && sortedLessons && sortedLessons.length > 0) {
           const { data: prs, error: progressError } = await supabase
@@ -79,6 +86,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
       } catch (err) {
         console.error('Unexpected error loading module:', err)
         setLessons([])
+        setPracticalLessons([])
       } finally {
         setLoading(false)
       }
@@ -211,6 +219,42 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
               )
             })}
           </div>
+
+          {practicalLessons.length > 0 && (
+            <section className="mt-10">
+              <h2 className="text-xl font-semibold mb-4 text-[#7C99E3]">Praktijklessen</h2>
+              <div className="space-y-3">
+                {practicalLessons.map((pl) => (
+                  <Link
+                    key={pl.id}
+                    href={`/praktijk/${pl.id}`}
+                    className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 hover:border-[#7C99E3]/40 transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-24 h-16 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
+                        <Image
+                          src={(pl as any).thumbnail_url || 'https://placehold.co/320x180?text=Praktijk'}
+                          alt={pl.title}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                      <div>
+                        <div className="font-medium text-white">{pl.title}</div>
+                        {pl.description && (
+                          <div className="text-xs text-[var(--text-dim)] line-clamp-2">{pl.description}</div>
+                        )}
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 rounded-md bg-[#7C99E3]/10 border border-[#7C99E3]/30 text-[#7C99E3] text-sm">
+                      Bekijk
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* EXAMEN CTA (zichtbaar als alle lessen watched zijn) */}
           {lessons.length > 0 && watchedCount === total && examId && (
