@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseClient } from '@/lib/supabaseClient'
-import { getStoredStudentId } from '@/lib/student'
+import {
+  getStoredStudentAccessLevel,
+  getStoredStudentId,
+  getStudentByAuthUserId,
+  setStoredStudent,
+  setStoredStudentAccessLevel,
+} from '@/lib/student'
 import { getExamByModuleId } from '@/lib/exam'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
 import { CheckCircle2, Lock } from 'lucide-react'
@@ -21,6 +27,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   const [loading, setLoading] = useState(true)
   const [examId, setExamId] = useState<number | null>(null)
   const [practicalLessons, setPracticalLessons] = useState<PracticalLesson[]>([])
+  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
 
   useEffect(() => {
     const load = async () => {
@@ -64,7 +71,26 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         const practicals = await getPracticalLessons(moduleIdNum)
         setPracticalLessons(practicals)
 
-        const studentId = getStoredStudentId()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        let studentId = getStoredStudentId()
+        let level = getStoredStudentAccessLevel()
+
+        if (user && (!studentId || level == null)) {
+          const student = await getStudentByAuthUserId(user.id)
+          if (student?.id) {
+            setStoredStudent(student.id, student.email)
+            setStoredStudentAccessLevel(student.access_level ?? 1)
+            studentId = student.id
+            level = student.access_level ?? 1
+          }
+        }
+
+        if (level == null) level = 1
+        setAccessLevel(level)
+
         if (studentId && sortedLessons && sortedLessons.length > 0) {
           const { data: prs, error: progressError } = await supabase
             .from('progress')
@@ -104,6 +130,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   }, [params])
 
   const unlockedIds = useMemo(() => {
+    if ((accessLevel ?? 1) < 2) return new Set<number>()
     // Regel: les n is unlocked als alle vorige lessen watched zijn
     const sorted = [...lessons].sort((a, b) => a.order - b.order)
     const ids: number[] = []
@@ -121,18 +148,28 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   const watchedCount = Object.values(progress).filter(Boolean).length
   const total = lessons.length
   const pct = total ? Math.round((watchedCount / total) * 100) : 0
+  const isBasic = (accessLevel ?? 1) < 2
 
   return (
     <Container className="pt-20 pb-16">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[var(--accent)]">Module {moduleId}</h1>
-          <p className="text-[var(--text-dim)] text-sm">Voortgang: {watchedCount}/{total} • {pct}%</p>
+          <p className="text-[var(--text-dim)] text-sm">
+            Voortgang: {watchedCount}/{total} • {pct}%
+          </p>
         </div>
         <div className="w-44 h-2 bg-[var(--muted)] rounded-full overflow-hidden">
           <div className="h-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
         </div>
       </div>
+
+      {isBasic && (
+        <div className="mb-6 rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
+          🔒 Deze module is zichtbaar maar niet toegankelijk met je Basic toegang. Neem contact op met je mentor om te upgraden
+          en alle videolessen en praktijkcases te openen.
+        </div>
+      )}
 
       {loading ? (
         <p className="text-[var(--text-dim)]">Laden…</p>
@@ -142,8 +179,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
             {lessons.map((lesson) => {
               const isWatched = !!progress[lesson.id]
               const isUnlocked = unlockedIds.has(lesson.id)
+              const lessonLocked = isBasic || !isUnlocked
               
-              if (isUnlocked) {
+              if (!lessonLocked) {
                 return (
                   <Link
                     key={lesson.id}
@@ -187,7 +225,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
               return (
                 <div
                   key={lesson.id}
-                  className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 opacity-60"
+                  className="flex items-center justify-between rounded-xl border border-dashed border-[#7C99E3]/30 bg-[var(--card)]/70 p-4 opacity-70"
                 >
                   <div className="flex items-center gap-4">
                     <div className="relative w-24 h-16 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
@@ -200,27 +238,32 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
                       />
                     </div>
                     <div className="flex items-center gap-3">
-                      <Lock className="text-[var(--text-dim)] flex-shrink-0" />
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#7C99E3]/60 bg-[#7C99E3]/20 text-[#7C99E3]">
+                        <Lock className="h-4 w-4" />
+                      </span>
                       <div>
                         <div className="font-medium text-white">{lesson.title}</div>
                         <div className="text-xs text-[var(--text-dim)]">Les {lesson.order}</div>
+                        {isBasic && (
+                          <div className="text-xs text-[#7C99E3]">Upgrade naar Full om deze les te bekijken</div>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   <button
                     disabled
-                    className="px-4 py-2 rounded-md bg-[var(--muted)] border border-[var(--border)] text-[var(--text-dim)] cursor-not-allowed"
-                    title="Deze les wordt ontgrendeld nadat je de vorige volledig bekeek."
+                    className="cursor-not-allowed rounded-md border border-[#7C99E3]/40 bg-[#7C99E3]/10 px-4 py-2 text-sm text-[#7C99E3]"
+                    title={isBasic ? 'Upgrade om deze les te bekijken' : 'Deze les wordt ontgrendeld nadat je de vorige volledig bekeek.'}
                   >
-                    Vergrendeld
+                    {isBasic ? 'Alleen voor Full members' : 'Vergrendeld'}
                   </button>
                 </div>
               )
             })}
           </div>
 
-          {practicalLessons.length > 0 && (
+          {practicalLessons.length > 0 && !isBasic && (
             <section className="mt-10">
               <h2 className="text-xl font-semibold mb-4 text-[#7C99E3]">Praktijklessen</h2>
               <div className="space-y-3">
@@ -257,7 +300,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
           )}
 
           {/* EXAMEN CTA (zichtbaar als alle lessen watched zijn) */}
-          {lessons.length > 0 && watchedCount === total && examId && (
+          {lessons.length > 0 && watchedCount === total && examId && !isBasic && (
             <div className="mt-8 bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 flex items-center justify-between">
               <div>
                 <div className="font-semibold">Examen van deze module is klaar</div>

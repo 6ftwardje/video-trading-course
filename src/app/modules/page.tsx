@@ -5,7 +5,14 @@ import Container from '@/components/ui/Container'
 import ModuleProgressCard from '@/components/ModuleProgressCard'
 import { getModulesSimple, getLessonsForModules, getWatchedLessonIds } from '@/lib/progress'
 import { getExamByModuleId } from '@/lib/exam'
-import { getStoredStudentId } from '@/lib/student'
+import {
+  getStoredStudentId,
+  getStoredStudentAccessLevel,
+  getStudentByAuthUserId,
+  setStoredStudent,
+  setStoredStudentAccessLevel,
+} from '@/lib/student'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 
 type ModuleRow = { id: number; title: string; description: string | null; order: number | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
@@ -19,11 +26,37 @@ type ModuleWithProgress = ModuleRow & {
 export default function ModulesPage() {
   const [loading, setLoading] = useState(true)
   const [modules, setModules] = useState<ModuleWithProgress[]>([])
+  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
 
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      const studentId = getStoredStudentId()
+      const supabase = getSupabaseClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        setModules([])
+        setLoading(false)
+        return
+      }
+
+      let studentId = getStoredStudentId()
+      let level = getStoredStudentAccessLevel()
+
+      if (!studentId || level == null) {
+        const student = await getStudentByAuthUserId(user.id)
+        if (student?.id) {
+          setStoredStudent(student.id, student.email)
+          setStoredStudentAccessLevel(student.access_level ?? 1)
+          studentId = student.id
+          level = student.access_level ?? 1
+        }
+      }
+
+      if (level == null) level = 1
+      setAccessLevel(level)
 
       const mods = (await getModulesSimple()) as ModuleRow[]
       const moduleIds = mods.map(m => m.id)
@@ -65,6 +98,13 @@ export default function ModulesPage() {
           </p>
         </header>
 
+        {(accessLevel ?? 1) < 2 && (
+          <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
+            🔒 Je hebt momenteel Basic toegang. Modules zijn zichtbaar zodat je weet wat er komt, maar video’s en examens worden
+            ontgrendeld zodra je mentor je account upgrade naar Full.
+          </div>
+        )}
+
         {loading ? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, idx) => (
@@ -77,7 +117,7 @@ export default function ModulesPage() {
         ) : modules.length ? (
           <div className="space-y-6">
             {modules.map(module => (
-              <ModuleProgressCard key={module.id} module={module} />
+              <ModuleProgressCard key={module.id} module={{ ...module, accessLevel: accessLevel ?? 1 }} />
             ))}
           </div>
         ) : (

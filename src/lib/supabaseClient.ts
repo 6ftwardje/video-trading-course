@@ -1,19 +1,12 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+'use client'
 
-let cachedClient: SupabaseClient | null = null
+import { createClient as createBrowserClient, type SupabaseBrowserClient } from '@/utils/supabase/client'
 
-export function getSupabaseClient(): SupabaseClient {
+let cachedClient: SupabaseBrowserClient | null = null
+
+export function getSupabaseClient(): SupabaseBrowserClient {
   if (cachedClient) return cachedClient
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!url || !anonKey) {
-    throw new Error(
-      'Supabase environment variables are missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
-    )
-  }
-
-  cachedClient = createClient(url, anonKey)
+  cachedClient = createBrowserClient()
   return cachedClient
 }

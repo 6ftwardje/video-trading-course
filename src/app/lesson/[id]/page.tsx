@@ -4,10 +4,16 @@ import { useEffect, useState, useRef } from 'react'
 import { use } from 'react'
 import Player from '@vimeo/player'
 import { getSupabaseClient } from '@/lib/supabaseClient'
-import { getStoredStudentId } from '@/lib/student'
+import {
+  getStoredStudentAccessLevel,
+  getStoredStudentId,
+  getStudentByAuthUserId,
+  setStoredStudent,
+  setStoredStudentAccessLevel,
+} from '@/lib/student'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Lock } from 'lucide-react'
 import Container from '@/components/ui/Container'
 
 type Lesson = {
@@ -24,6 +30,11 @@ type LessonListItem = {
   module_id: number
   title: string
   order: number
+}
+
+type LessonProgress = {
+  lesson_id: number
+  watched: boolean
 }
 
 function getVimeoVideoId(videoUrl: string): string | null {
@@ -51,6 +62,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
   const [nextLesson, setNextLesson] = useState<LessonListItem | null>(null)
   const [prevLesson, setPrevLesson] = useState<LessonListItem | null>(null)
   const [progress, setProgress] = useState<Record<number, boolean>>({})
+  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
   const playerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -59,7 +71,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     const init = async () => {
       try {
         const supabase = getSupabaseClient()
-        const studentId = getStoredStudentId()
+        let studentId = getStoredStudentId()
         
         const lessonIdNum = Number(id)
         if (isNaN(lessonIdNum)) {
@@ -89,20 +101,43 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
           return
         }
         
-        setLesson(current)
+        const currentLesson = current as Lesson
+
+        setLesson(currentLesson)
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        let level = getStoredStudentAccessLevel()
+        if (user && (!studentId || level == null)) {
+          const student = await getStudentByAuthUserId(user.id)
+          if (student?.id) {
+            setStoredStudent(student.id, student.email)
+            setStoredStudentAccessLevel(student.access_level ?? 1)
+            studentId = student.id
+            level = student.access_level ?? 1
+          }
+        }
+
+        if (level == null) level = 1
+        setAccessLevel(level)
 
         // Alle lessen in module
         const { data: all, error: allError } = await supabase
           .from('lessons')
           .select('id,module_id,title,"order"')
-          .eq('module_id', current.module_id)
+          .eq('module_id', currentLesson.module_id)
         
         if (allError) {
           console.error('Error fetching lessons in module:', allError)
         }
         
         // Sort manually to avoid PostgREST query string issues with 'order' column
-        const sortedAll: LessonListItem[] = all ? [...all].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : []
+        const allLessons = (all ?? []) as LessonListItem[]
+        const sortedAll: LessonListItem[] = allLessons.length
+          ? [...allLessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          : []
         setLessons(sortedAll)
 
         // Progress van gebruiker ophalen
@@ -117,7 +152,8 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
             console.error('Error fetching progress:', progressError)
           } else {
             const map: Record<number, boolean> = {}
-            pr?.forEach(p => { 
+            const progressRows = (pr ?? []) as LessonProgress[]
+            progressRows.forEach(p => { 
               map[p.lesson_id] = p.watched 
             })
             setProgress(map)
@@ -126,14 +162,14 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
         // Bepaal vorige/volgende
         if (sortedAll.length > 0) {
-          const idx = sortedAll.findIndex(l => l.id === current.id)
+          const idx = sortedAll.findIndex(l => l.id === currentLesson.id)
           setPrevLesson(sortedAll[idx - 1] || null)
           setNextLesson(sortedAll[idx + 1] || null)
         }
 
         // Player instellen
-        if (current.video_url && playerRef.current) {
-          const videoId = getVimeoVideoId(current.video_url)
+        if ((level ?? 1) >= 2 && currentLesson.video_url && playerRef.current) {
+          const videoId = getVimeoVideoId(currentLesson.video_url)
           if (videoId) {
             player = new Player(playerRef.current, { 
               id: parseInt(videoId),
@@ -146,12 +182,12 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
               const supabase = getSupabaseClient()
               await supabase.from('progress').upsert({
                 student_id: studentId,
-                lesson_id: current.id,
+                lesson_id: currentLesson.id,
                 watched: true,
                 watched_at: new Date().toISOString()
               }, { onConflict: 'student_id,lesson_id' })
 
-              setProgress(prev => ({ ...prev, [current.id]: true }))
+              setProgress(prev => ({ ...prev, [currentLesson.id]: true }))
             })
           }
         }
@@ -172,6 +208,8 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
   if (!lesson) return <Container className="pt-20 pb-16"><p className="text-[var(--text-dim)]">Laden…</p></Container>
 
+  const isBasic = (accessLevel ?? 1) < 2
+
   return (
     <Container className="pt-20 pb-16">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -188,7 +226,19 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
           </Link>
 
           {/* Video */}
-          <div ref={playerRef} className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black" />
+          <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
+            {isBasic ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#0B0F17] text-center text-[#7C99E3]">
+                <Lock className="h-10 w-10" />
+                <p className="max-w-sm text-sm">
+                  Deze les is alleen beschikbaar voor leden met volledige toegang. Upgrade via je mentor om de video te
+                  bekijken.
+                </p>
+              </div>
+            ) : (
+              <div ref={playerRef} className="h-full w-full" />
+            )}
+          </div>
 
           {/* Titel en beschrijving */}
           <div>
@@ -210,14 +260,23 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
             {prevLesson ? (
               <Link
                 href={`/lesson/${prevLesson.id}`}
-                className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
+                className={`px-4 py-2 rounded-md border transition text-white ${
+                  isBasic ? 'bg-[var(--muted)]/50 border-[var(--border)]/50 cursor-not-allowed opacity-60 pointer-events-none' : 'bg-[var(--card)] hover:bg-[var(--muted)] border-[var(--border)]'
+                }`}
               >
                 ← {prevLesson.title}
               </Link>
             ) : <div />}
 
             {nextLesson ? (
-              progress[lesson.id] ? (
+              isBasic ? (
+                <button
+                  disabled
+                  className="px-4 py-2 rounded-md border transition bg-[#7C99E3]/10 border-[#7C99E3]/30 text-[#7C99E3] cursor-not-allowed opacity-70"
+                >
+                  Upgrade voor toegang
+                </button>
+              ) : progress[lesson.id] ? (
                 <Link
                   href={`/lesson/${nextLesson.id}`}
                   className="px-4 py-2 rounded-md border transition bg-[var(--accent)]/20 border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 text-[var(--accent)]"
@@ -263,15 +322,17 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                 return (
                   <li key={l.id}>
                     <Link
-                      href={isUnlocked ? `/lesson/${l.id}` : '#'}
+                      href={isBasic || !isUnlocked ? '#' : `/lesson/${l.id}`}
                       onClick={(e) => {
-                        if (!isUnlocked) {
+                        if (isBasic || !isUnlocked) {
                           e.preventDefault()
                         }
                       }}
                       className={`flex items-center gap-3 p-2 rounded-lg border transition ${
                         l.id === lesson.id
                           ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                          : isBasic
+                          ? 'border-[#7C99E3]/40 bg-[#7C99E3]/10 text-[#7C99E3]'
                           : isUnlocked
                           ? 'border-[var(--border)] hover:border-[var(--accent)]/50'
                           : 'border-[var(--border)] opacity-60 cursor-not-allowed'
@@ -287,9 +348,10 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                         />
                       </div>
                       <span className="text-sm text-white/90 flex-1">{l.title}</span>
-                      {progress[l.id] && (
+                      {progress[l.id] && !isBasic && (
                         <span className="text-[var(--accent)] text-xs">✓</span>
                       )}
+                      {isBasic && <Lock className="h-4 w-4 text-[#7C99E3]" />}
                     </Link>
                   </li>
                 )

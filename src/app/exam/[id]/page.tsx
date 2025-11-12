@@ -3,8 +3,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { getStoredStudentId } from '@/lib/student'
+import {
+  getStoredStudentAccessLevel,
+  getStoredStudentId,
+  getStudentByAuthUserId,
+  setStoredStudent,
+  setStoredStudentAccessLevel,
+} from '@/lib/student'
 import { getExamById, getExamByModuleId, getExamQuestions, getModuleLessons, getWatchedLessonIds, insertExamResult } from '@/lib/exam'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 
 type Question = {
   id: number
@@ -38,8 +45,10 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   const [result, setResult] = useState<{ score: number; passed: boolean } | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [gatedBlocked, setGatedBlocked] = useState(false)
+  const [accessBlocked, setAccessBlocked] = useState(false)
   const [started, setStarted] = useState(false)
   const [confirmSubmit, setConfirmSubmit] = useState(false)
+  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
 
   // keyboard shortcuts: pijltjes links/rechts
   useEffect(() => {
@@ -82,11 +91,38 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
       setLoading(true)
       setErrorMsg(null)
       setGatedBlocked(false)
+      setAccessBlocked(false)
 
       // 0) Student check
-      const studentId = getStoredStudentId()
+      const supabase = getSupabaseClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      let studentId = getStoredStudentId()
+      let level = getStoredStudentAccessLevel()
+
+      if (user && (!studentId || level == null)) {
+        const student = await getStudentByAuthUserId(user.id)
+        if (student?.id) {
+          setStoredStudent(student.id, student.email)
+          setStoredStudentAccessLevel(student.access_level ?? 1)
+          studentId = student.id
+          level = student.access_level ?? 1
+        }
+      }
+
+      if (level == null) level = 1
+      setAccessLevel(level)
+
+      if (level < 2) {
+        setAccessBlocked(true)
+        setLoading(false)
+        return
+      }
+
       if (!studentId) {
-        setErrorMsg('Geen student gevonden. Herlaad de pagina of vul je e-mail opnieuw in.')
+        setErrorMsg('Geen student gevonden. Log opnieuw in om verder te gaan.')
         setLoading(false)
         return
       }
@@ -217,6 +253,26 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
           <p className="text-gray-300">Je moet eerst alle lessen van deze module volledig bekijken.</p>
           <Link href={`/module/${moduleId}`} className="mt-4 inline-block px-4 py-2 rounded-lg bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-[var(--accent)]">
             Ga naar de module
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (accessBlocked) {
+    return (
+      <div className="space-y-4 pt-24 px-4">
+        <h1 className="text-2xl font-semibold text-[#7C99E3]">Alleen voor Full leden</h1>
+        <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-6 text-sm text-[#7C99E3]">
+          <p>
+            Dit examen is enkel beschikbaar voor studenten met volledige toegang. Neem contact op met je mentor om je
+            account te upgraden.
+          </p>
+          <Link
+            href={`/module/${moduleId}`}
+            className="mt-4 inline-block rounded-lg border border-[#7C99E3]/40 bg-[#7C99E3]/20 px-4 py-2 text-[#7C99E3] transition hover:bg-[#7C99E3]/30"
+          >
+            Terug naar de module
           </Link>
         </div>
       </div>

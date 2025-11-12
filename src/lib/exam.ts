@@ -1,6 +1,18 @@
 import { getSupabaseClient } from '@/lib/supabaseClient'
 
-export async function getExamByModuleId(moduleId: number) {
+type Exam = {
+  id: number
+  title: string | null
+  module_id: number | null
+}
+
+type Lesson = {
+  id: number
+  module_id: number | null
+  order: number | null
+}
+
+export async function getExamByModuleId(moduleId: number): Promise<Exam | null> {
   try {
     const supabase = getSupabaseClient()
     // First try to get active exam if 'active' column exists
@@ -15,7 +27,7 @@ export async function getExamByModuleId(moduleId: number) {
       console.error('Error fetching active exam:', activeError)
       // Continue to fallback
     } else if (!activeError && activeData) {
-      return activeData
+      return activeData as Exam
     }
     
     // Fallback: get the newest exam (highest ID)
@@ -32,14 +44,14 @@ export async function getExamByModuleId(moduleId: number) {
     }
     
     // Return the newest exam or null
-    return data && data.length > 0 ? data[0] : null
+    return data && data.length > 0 ? (data[0] as Exam) : null
   } catch (err) {
     console.error('Exception fetching exam:', err)
     return null
   }
 }
 
-export async function getExamById(examId: number) {
+export async function getExamById(examId: number): Promise<Exam | null> {
   try {
     const supabase = getSupabaseClient()
     const { data, error } = await supabase
@@ -52,7 +64,7 @@ export async function getExamById(examId: number) {
       return null
     }
     console.log('Found exam:', { id: data.id, title: data.title, module_id: data.module_id })
-    return data
+    return data as Exam
   } catch (err) {
     console.error('Exception fetching exam by ID:', err)
     return null
@@ -90,7 +102,7 @@ export async function getExamQuestions(examId: number) {
   }
 }
 
-export async function getModuleLessons(moduleId: number) {
+export async function getModuleLessons(moduleId: number): Promise<Lesson[]> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('lessons')
@@ -99,7 +111,7 @@ export async function getModuleLessons(moduleId: number) {
   if (error) return []
   // Sort manually to avoid PostgREST query string issues with 'order' column
   const sorted = data ? [...data].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : []
-  return sorted
+  return sorted as Lesson[]
 }
 
 export async function getWatchedLessonIds(studentId: string, lessonIds: number[]) {

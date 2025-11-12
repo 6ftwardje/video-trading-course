@@ -5,9 +5,16 @@ import Player from '@vimeo/player'
 import Link from 'next/link'
 import Image from 'next/image'
 import Container from '@/components/ui/Container'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Lock } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
+import {
+  getStoredStudentAccessLevel,
+  getStoredStudentId,
+  getStudentByAuthUserId,
+  setStoredStudent,
+  setStoredStudentAccessLevel,
+} from '@/lib/student'
 
 type PracticalLesson = PracticalLessonRecord
 
@@ -39,6 +46,7 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
   const [lesson, setLesson] = useState<PracticalLesson | null>(null)
   const [lessons, setLessons] = useState<PracticalLesson[]>([])
   const playerRef = useRef<HTMLDivElement>(null)
+  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
 
   useEffect(() => {
     const load = async () => {
@@ -73,6 +81,25 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
         video_url: (data as any).video_url ?? data.location ?? extractFirstUrl(data.description)
       }
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      let studentId = getStoredStudentId()
+      let level = getStoredStudentAccessLevel()
+
+      if (user && (!studentId || level == null)) {
+        const student = await getStudentByAuthUserId(user.id)
+        if (student?.id) {
+          setStoredStudent(student.id, student.email)
+          setStoredStudentAccessLevel(student.access_level ?? 1)
+          level = student.access_level ?? 1
+        }
+      }
+
+      if (level == null) level = 1
+      setAccessLevel(level)
+
       setLesson(resolvedLesson)
 
       const modulePracticals = await getPracticalLessons(resolvedLesson.module_id)
@@ -83,7 +110,7 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
   }, [id])
 
   useEffect(() => {
-    if (!lesson || !lesson.video_url || !playerRef.current) return
+    if (!lesson || !lesson.video_url || !playerRef.current || (accessLevel ?? 1) < 2) return
 
     const videoId = getVimeoVideoId(lesson.video_url)
     if (!videoId) return
@@ -96,7 +123,7 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
     return () => {
       player.destroy().catch(console.error)
     }
-  }, [lesson])
+  }, [lesson, accessLevel])
 
   const orderedLessons = useMemo(() => {
     return [...lessons].sort((a, b) => a.id - b.id)
@@ -119,6 +146,8 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
     )
   }
 
+  const isBasic = (accessLevel ?? 1) < 2
+
   return (
     <Container className="pt-20 pb-16">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -132,12 +161,20 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
             <span className="text-sm font-medium">Terug naar module</span>
           </Link>
 
-          <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black" ref={playerRef}>
-            {!lesson.video_url && (
+          <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black" ref={isBasic ? undefined : playerRef}>
+            {isBasic ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#0B0F17] text-center text-[#7C99E3]">
+                <Lock className="h-10 w-10" />
+                <p className="max-w-sm text-sm">
+                  Praktijklessen zijn alleen beschikbaar voor leden met volledige toegang. Neem contact op met je mentor
+                  om te upgraden.
+                </p>
+              </div>
+            ) : !lesson.video_url ? (
               <div className="w-full h-full flex items-center justify-center text-[var(--text-dim)]">
                 Geen video beschikbaar voor deze praktijkles.
               </div>
-            )}
+            ) : null}
           </div>
 
           <div>
@@ -154,8 +191,15 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
           <div className="flex items-center justify-between pt-6 border-t border-[var(--border)]">
             {navigation.prev ? (
               <Link
-                href={`/praktijk/${navigation.prev.id}`}
-                className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
+                href={isBasic ? '#' : `/praktijk/${navigation.prev.id}`}
+                onClick={e => {
+                  if (isBasic) e.preventDefault()
+                }}
+                className={`px-4 py-2 rounded-md border transition ${
+                  isBasic
+                    ? 'cursor-not-allowed border-[#7C99E3]/40 bg-[#7C99E3]/10 text-[#7C99E3]'
+                    : 'bg-[var(--card)] hover:bg-[var(--muted)] border-[var(--border)] text-white'
+                }`}
               >
                 ← {navigation.prev.title}
               </Link>
@@ -165,8 +209,15 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
 
             {navigation.next ? (
               <Link
-                href={`/praktijk/${navigation.next.id}`}
-                className="px-4 py-2 rounded-md border transition bg-[#7C99E3]/10 border-[#7C99E3]/30 hover:bg-[#7C99E3]/20 text-[#7C99E3]"
+                href={isBasic ? '#' : `/praktijk/${navigation.next.id}`}
+                onClick={e => {
+                  if (isBasic) e.preventDefault()
+                }}
+                className={`px-4 py-2 rounded-md border transition ${
+                  isBasic
+                    ? 'cursor-not-allowed border-[#7C99E3]/40 bg-[#7C99E3]/10 text-[#7C99E3]'
+                    : 'bg-[#7C99E3]/10 border-[#7C99E3]/30 hover:bg-[#7C99E3]/20 text-[#7C99E3]'
+                }`}
               >
                 Volgende →
               </Link>
@@ -188,10 +239,15 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
               {orderedLessons.map((item) => (
                 <li key={item.id}>
                   <Link
-                    href={`/praktijk/${item.id}`}
+                    href={isBasic ? '#' : `/praktijk/${item.id}`}
+                    onClick={e => {
+                      if (isBasic) e.preventDefault()
+                    }}
                     className={`flex items-center gap-3 p-2 rounded-lg border transition ${
                       item.id === lesson.id
                         ? 'border-[#7C99E3] bg-[#7C99E3]/10'
+                        : isBasic
+                        ? 'border-[#7C99E3]/40 bg-[#7C99E3]/10 text-[#7C99E3]'
                         : 'border-[var(--border)] hover:border-[#7C99E3]/40'
                     }`}
                   >
