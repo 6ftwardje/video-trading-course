@@ -2,6 +2,14 @@ import { getSupabaseClient } from './supabaseClient'
 
 const LS_KEY = 'cryptoriez_student_id'
 const LS_EMAIL = 'cryptoriez_student_email'
+const LS_ACCESS = 'cryptoriez_student_access_level'
+
+type Student = {
+  id: string
+  email: string
+  access_level: number | null
+  auth_user_id: string | null
+}
 
 export function getStoredStudentId(): string | null {
   if (typeof window === 'undefined') return null
@@ -13,10 +21,30 @@ export function getStoredStudentEmail(): string | null {
   return localStorage.getItem(LS_EMAIL)
 }
 
+export function getStoredStudentAccessLevel(): number | null {
+  if (typeof window === 'undefined') return null
+  const raw = localStorage.getItem(LS_ACCESS)
+  if (!raw) return null
+  const level = Number(raw)
+  return Number.isFinite(level) ? level : null
+}
+
 export function setStoredStudent(id: string, email: string) {
   if (typeof window === 'undefined') return
   localStorage.setItem(LS_KEY, id)
   localStorage.setItem(LS_EMAIL, email)
+}
+
+export function setStoredStudentAccessLevel(level: number) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(LS_ACCESS, String(level))
+}
+
+export function clearStoredStudent() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(LS_KEY)
+  localStorage.removeItem(LS_EMAIL)
+  localStorage.removeItem(LS_ACCESS)
 }
 
 export async function ensureStudentByEmail(email: string): Promise<{ id: string; email: string }> {
@@ -39,5 +67,23 @@ export async function ensureStudentByEmail(email: string): Promise<{ id: string;
 
   if (createErr) throw createErr
   return created!
+}
+
+export async function getStudentByAuthUserId(authUserId: string): Promise<Student | null> {
+  if (!authUserId) return null
+
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('students')
+    .select('id,email,access_level,auth_user_id')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching student record:', error)
+    return null
+  }
+
+  return data
 }
 
