@@ -12,6 +12,7 @@ import {
   getStoredStudentEmail,
   clearStoredStudent,
 } from "@/lib/student";
+import UserMenu from "@/components/navbar/UserMenu";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -75,22 +76,16 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-4 md:flex">
-          {studentEmail && (
-            <div className="flex flex-col items-end text-right">
-              <span className="max-w-[12rem] truncate text-xs text-[var(--text-dim)]">{studentEmail}</span>
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#7C99E3]">
-                Level: {levelLabel}
-              </span>
-            </div>
+          {studentEmail ? (
+            <UserMenu />
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-xs font-semibold text-white transition hover:border-[var(--accent)]/50 hover:bg-[var(--muted)]"
+            >
+              Inloggen
+            </Link>
           )}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-xs font-semibold text-white transition hover:border-[var(--accent)]/50 hover:bg-[var(--muted)]"
-          >
-            <LogOut className="h-4 w-4" />
-            Uitloggen
-          </button>
         </div>
 
         <button
