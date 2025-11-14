@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/ui/Brand";
 import Container from "@/components/ui/Container";
 import { useState, useCallback, useEffect } from "react";
-import { Menu, X, Home, BookOpen, LogOut } from "lucide-react";
+import { Menu, X, Home, BookOpen, LogOut, Users } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   getStoredStudentAccessLevel,
@@ -17,6 +17,7 @@ import UserMenu from "@/components/navbar/UserMenu";
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/modules", label: "Modules", icon: BookOpen },
+  { href: "/mentorship", label: "Mentorship", icon: Users },
 ];
 
 export default function Navbar() {
