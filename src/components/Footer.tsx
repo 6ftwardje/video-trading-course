@@ -10,9 +10,9 @@ export default function Footer(){
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <Image src={BRAND.logoUrl} alt="Logo" width={28} height={28} className="rounded"/>
-            <span className="font-semibold">Video Trading Course</span>
+            <span className="font-semibold">Het Trade Platform</span>
           </div>
-          <p className="text-[var(--text-dim)]">Professioneel leerplatform voor traders. Donker, minimalistisch, duidelijk.</p>
+          <p className="text-[var(--text-dim)]">Professioneel leerplatform voor traders.</p>
         </div>
 
         <div>
@@ -20,6 +20,7 @@ export default function Footer(){
           <ul className="space-y-2 text-white/80">
             <li><Link href="/" className="hover:text-[var(--accent)]">Dashboard</Link></li>
             <li><Link href="/module/1" className="hover:text-[var(--accent)]">Modules</Link></li>
+            <li><Link href="/mentorship" className="hover:text-[var(--accent)]">Mentorship</Link></li>
           </ul>
         </div>
 
@@ -34,7 +35,6 @@ export default function Footer(){
       <div className="border-t border-[var(--border)]">
         <Container className="py-4 flex flex-col sm:flex-row items-center justify-between text-xs text-[var(--text-dim)]">
           <span>© {new Date().getFullYear()} Cryptoriez. Alle rechten voorbehouden.</span>
-          <span>Accent: <span className="text-[var(--accent)] font-medium">#7c99e3</span></span>
         </Container>
       </div>
     </footer>
