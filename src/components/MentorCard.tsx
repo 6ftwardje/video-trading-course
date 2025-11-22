@@ -5,10 +5,22 @@ type Props = {
   role: string
   image: string
   isDisabled: boolean
+  isAlwaysLocked?: boolean
+  requiresCompletion?: boolean
+  overallProgress?: number
   onBook: () => void
 }
 
-export default function MentorCard({ name, role, image, isDisabled, onBook }: Props) {
+export default function MentorCard({ 
+  name, 
+  role, 
+  image, 
+  isDisabled, 
+  isAlwaysLocked = false,
+  requiresCompletion = false,
+  overallProgress = 0,
+  onBook 
+}: Props) {
   return (
     <div
       className={`rounded-2xl border border-[var(--border)] bg-[var(--card)]/95 p-6 ${
@@ -50,20 +62,32 @@ export default function MentorCard({ name, role, image, isDisabled, onBook }: Pr
               ? 'cursor-not-allowed bg-gray-700 text-gray-500 opacity-50'
               : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
-          title={isDisabled ? 'Beschikbaar voor Premium leden' : `Plan een sessie met ${name}`}
+          title={isDisabled ? 'Nog niet beschikbaar' : `Plan een gratis call met ${name}`}
         >
           {isDisabled ? (
             <span className="flex items-center justify-center gap-2">
-              <span>Plan een sessie</span>
-              <span className="text-xs">(Premium)</span>
+              <span>Plan een gratis call</span>
+              {requiresCompletion && overallProgress < 100 && (
+                <span className="text-xs">({overallProgress}%)</span>
+              )}
             </span>
           ) : (
-            'Plan een sessie'
+            'Plan een gratis call'
           )}
         </button>
 
         {/* Disabled State Message */}
-        {isDisabled && (
+        {isDisabled && isAlwaysLocked && (
+          <p className="text-xs text-[var(--text-dim)] text-center">
+            Deze mentor is momenteel niet beschikbaar.
+          </p>
+        )}
+        {isDisabled && requiresCompletion && overallProgress < 100 && (
+          <p className="text-xs text-[#7C99E3] text-center">
+            Beschikbaar na het doornemen van de volledige cursus (100% voltooid).
+          </p>
+        )}
+        {isDisabled && !isAlwaysLocked && !requiresCompletion && (
           <p className="text-xs text-[#7C99E3] text-center">
             Vraag je mentor om een upgrade voor volledige toegang.
           </p>
