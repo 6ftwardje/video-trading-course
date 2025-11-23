@@ -140,7 +140,7 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
 
   if (!lesson) {
     return (
-      <Container className="pt-20 pb-16">
+      <Container className="pt-8 md:pt-12 pb-16">
         <p className="text-[var(--text-dim)]">Laden…</p>
       </Container>
     )

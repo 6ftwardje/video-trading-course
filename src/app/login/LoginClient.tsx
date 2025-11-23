@@ -35,6 +35,7 @@ export default function LoginClient() {
   const [fullName, setFullName] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [rateLimitCooldown, setRateLimitCooldown] = useState<number | null>(null)
 
   useEffect(() => {
     const checkSession = async () => {
@@ -51,9 +52,39 @@ export default function LoginClient() {
     checkSession()
   }, [router, supabase])
 
+  // Cooldown timer for rate limit
+  useEffect(() => {
+    if (rateLimitCooldown === null) return
+
+    const interval = setInterval(() => {
+      setRateLimitCooldown(prev => {
+        if (prev === null) return null
+        const newValue = prev - 1
+        return newValue <= 0 ? null : newValue
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [rateLimitCooldown])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
+
+    // Prevent double submission
+    if (loading) {
+      return
+    }
+
+    // Prevent submission during cooldown
+    if (rateLimitCooldown !== null && rateLimitCooldown > 0) {
+      const minutes = Math.floor(rateLimitCooldown / 60)
+      const seconds = rateLimitCooldown % 60
+      setErrorMessage(
+        `Wacht even... Je kunt over ${minutes}:${seconds.toString().padStart(2, '0')} opnieuw proberen.`
+      )
+      return
+    }
 
     if (!email || !password) {
       setErrorMessage('Vul je e-mailadres en wachtwoord in.')
@@ -62,10 +93,50 @@ export default function LoginClient() {
 
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (error) {
-      setErrorMessage(error.message)
+      if (error) {
+        // Handle rate limit specifically (429 status or related error messages)
+        const errorMsg = error.message?.toLowerCase() || ''
+        const isRateLimit =
+          error.status === 429 ||
+          errorMsg.includes('rate limit') ||
+          errorMsg.includes('too many requests') ||
+          errorMsg.includes('too many') ||
+          errorMsg.includes('rate limit exceeded')
+
+        if (isRateLimit) {
+          // Set 5 minute cooldown (300 seconds)
+          setRateLimitCooldown(300)
+          setErrorMessage(
+            'Te veel pogingen. Wacht even voordat je opnieuw probeert in te loggen. Probeer het over een paar minuten opnieuw.'
+          )
+        } else {
+          setErrorMessage(error.message)
+        }
+        setLoading(false)
+        return
+      }
+    } catch (err: any) {
+      // Handle network errors or other unexpected errors
+      const errorMsg = err?.message?.toLowerCase() || ''
+      const isRateLimit =
+        err?.status === 429 ||
+        errorMsg.includes('rate limit') ||
+        errorMsg.includes('too many requests') ||
+        errorMsg.includes('too many') ||
+        errorMsg.includes('rate limit exceeded')
+
+      if (isRateLimit) {
+        // Set 5 minute cooldown (300 seconds)
+        setRateLimitCooldown(300)
+        setErrorMessage(
+          'Te veel pogingen. Wacht even voordat je opnieuw probeert in te loggen. Probeer het over een paar minuten opnieuw.'
+        )
+      } else {
+        setErrorMessage('Er ging iets mis bij het inloggen. Probeer het later opnieuw.')
+      }
       setLoading(false)
       return
     }
@@ -167,6 +238,21 @@ export default function LoginClient() {
     e.preventDefault()
     setErrorMessage(null)
 
+    // Prevent double submission
+    if (loading) {
+      return
+    }
+
+    // Prevent submission during cooldown
+    if (rateLimitCooldown !== null && rateLimitCooldown > 0) {
+      const minutes = Math.floor(rateLimitCooldown / 60)
+      const seconds = rateLimitCooldown % 60
+      setErrorMessage(
+        `Wacht even... Je kunt over ${minutes}:${seconds.toString().padStart(2, '0')} opnieuw proberen.`
+      )
+      return
+    }
+
     if (!email || !password || !confirmPassword) {
       setErrorMessage('Vul je e-mailadres en wachtwoord in.')
       return
@@ -184,7 +270,8 @@ export default function LoginClient() {
 
     setLoading(true)
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -195,8 +282,45 @@ export default function LoginClient() {
       },
     })
 
-    if (signUpError) {
-      setErrorMessage(signUpError.message)
+      if (signUpError) {
+        // Handle rate limit specifically
+        const errorMsg = signUpError.message?.toLowerCase() || ''
+        const isRateLimit =
+          signUpError.status === 429 ||
+          errorMsg.includes('rate limit') ||
+          errorMsg.includes('too many requests') ||
+          errorMsg.includes('too many') ||
+          errorMsg.includes('rate limit exceeded')
+
+        if (isRateLimit) {
+          setRateLimitCooldown(300)
+          setErrorMessage(
+            'Te veel pogingen. Wacht even voordat je opnieuw probeert te registreren. Probeer het over een paar minuten opnieuw.'
+          )
+        } else {
+          setErrorMessage(signUpError.message)
+        }
+        setLoading(false)
+        return
+      }
+    } catch (err: any) {
+      // Handle network errors or other unexpected errors
+      const errorMsg = err?.message?.toLowerCase() || ''
+      const isRateLimit =
+        err?.status === 429 ||
+        errorMsg.includes('rate limit') ||
+        errorMsg.includes('too many requests') ||
+        errorMsg.includes('too many') ||
+        errorMsg.includes('rate limit exceeded')
+
+      if (isRateLimit) {
+        setRateLimitCooldown(300)
+        setErrorMessage(
+          'Te veel pogingen. Wacht even voordat je opnieuw probeert te registreren. Probeer het over een paar minuten opnieuw.'
+        )
+      } else {
+        setErrorMessage('Er ging iets mis bij het registreren. Probeer het later opnieuw.')
+      }
       setLoading(false)
       return
     }
@@ -373,14 +497,21 @@ export default function LoginClient() {
         </div>
 
         {errorMessage && (
-          <p className="text-sm text-red-400" role="alert">
-            {errorMessage}
-          </p>
+          <div className="space-y-2">
+            <p className="text-sm text-red-400" role="alert">
+              {errorMessage}
+            </p>
+            {rateLimitCooldown !== null && rateLimitCooldown > 0 && (
+              <p className="text-xs text-gray-400">
+                Cooldown: {Math.floor(rateLimitCooldown / 60)}:{String(rateLimitCooldown % 60).padStart(2, '0')}
+              </p>
+            )}
+          </div>
         )}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (rateLimitCooldown !== null && rateLimitCooldown > 0)}
           className="w-full rounded bg-[#7C99E3] py-2 font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading

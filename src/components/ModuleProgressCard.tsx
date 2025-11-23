@@ -11,6 +11,8 @@ type ModuleProgress = {
   pct: number
   examId: number | null
   accessLevel?: number
+  isLockedByExam?: boolean
+  previousModuleId?: number | null
 }
 
 type Props = {
@@ -19,20 +21,27 @@ type Props = {
 
 export default function ModuleProgressCard({ module }: Props) {
   const isLockedByAccess = typeof module.accessLevel === 'number' && module.accessLevel < 2
+  const isLocked = isLockedByAccess || module.isLockedByExam
 
   return (
     <div className="space-y-3">
-      {isLockedByAccess ? (
+      {isLocked ? (
         <div className="block rounded-2xl border border-dashed border-[#7C99E3]/40 bg-[var(--card)]/60 p-6 opacity-70">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-[#7C99E3]">
                 <Lock className="h-4 w-4" />
-                <span className="text-xs uppercase tracking-wide">Alleen voor Full members</span>
+                <span className="text-xs uppercase tracking-wide">
+                  {isLockedByAccess ? 'Alleen voor Full members' : 'Vergrendeld'}
+                </span>
               </div>
               <h3 className="text-xl font-semibold text-white">{module.title}</h3>
               {module.description && <p className="text-sm text-[var(--text-dim)]">{module.description}</p>}
-              <p className="text-sm text-[#7C99E3]">Vraag je mentor om een upgrade voor volledige toegang.</p>
+              {isLockedByAccess ? (
+                <p className="text-sm text-[#7C99E3]">Vraag je mentor om een upgrade voor volledige toegang.</p>
+              ) : module.isLockedByExam && module.previousModuleId ? (
+                <p className="text-sm text-[#7C99E3]">Voltooi eerst het examen van module {module.previousModuleId} om deze module te ontgrendelen.</p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -60,7 +69,7 @@ export default function ModuleProgressCard({ module }: Props) {
         </a>
       )}
 
-      {!isLockedByAccess && module.pct === 100 && module.examId && (
+      {!isLocked && module.pct === 100 && module.examId && (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/80 px-5 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>

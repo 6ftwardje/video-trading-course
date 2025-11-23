@@ -9,8 +9,9 @@ import {
   setStoredStudent,
   setStoredStudentAccessLevel,
 } from '@/lib/student'
-import { getExamByModuleId } from '@/lib/exam'
+import { getExamByModuleId, hasPassedExamForModule } from '@/lib/exam'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
+import { getModulesSimple } from '@/lib/progress'
 import { CheckCircle2, Lock } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -27,7 +28,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   const [loading, setLoading] = useState(true)
   const [examId, setExamId] = useState<number | null>(null)
   const [practicalLessons, setPracticalLessons] = useState<PracticalLesson[]>([])
-  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
+  const [accessLevel, setAccessLevel] = useState<number | null>(null)
+  const [moduleLocked, setModuleLocked] = useState<boolean>(false)
+  const [previousModuleId, setPreviousModuleId] = useState<number | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -91,6 +94,28 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         if (level == null) level = 1
         setAccessLevel(level)
 
+        // Check module locking: Module 1 is always unlocked for access level 2+
+        // Module N is only unlocked if exam of module N-1 is passed
+        if (studentId && (level ?? 1) >= 2) {
+          const allModules = await getModulesSimple()
+          const sortedModules = [...allModules].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+          const currentModuleIndex = sortedModules.findIndex(m => m.id === moduleIdNum)
+          
+          if (currentModuleIndex > 0) {
+            // Not module 1, check if previous module exam is passed
+            const prevModule = sortedModules[currentModuleIndex - 1]
+            setPreviousModuleId(prevModule.id)
+            const prevExamPassed = await hasPassedExamForModule(studentId, prevModule.id)
+            setModuleLocked(!prevExamPassed)
+          } else {
+            // Module 1 is always unlocked for access level 2+
+            setModuleLocked(false)
+          }
+        } else {
+          // Access level < 2 means locked by access
+          setModuleLocked(true)
+        }
+
         if (studentId && sortedLessons && sortedLessons.length > 0) {
           const { data: prs, error: progressError } = await supabase
             .from('progress')
@@ -130,7 +155,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   }, [params])
 
   const unlockedIds = useMemo(() => {
-    if ((accessLevel ?? 1) < 2) return new Set<number>()
+    if ((accessLevel ?? 1) < 2 || moduleLocked) return new Set<number>()
     // Regel: les n is unlocked als alle vorige lessen watched zijn
     const sorted = [...lessons].sort((a, b) => a.order - b.order)
     const ids: number[] = []
@@ -143,7 +168,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
       }
     }
     return new Set(ids)
-  }, [lessons, progress])
+  }, [lessons, progress, accessLevel, moduleLocked])
 
   const watchedCount = Object.values(progress).filter(Boolean).length
   const total = lessons.length
@@ -151,7 +176,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   const isBasic = (accessLevel ?? 1) < 2
 
   return (
-    <Container className="pt-20 pb-16">
+    <Container className="pt-8 md:pt-12 pb-16">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[var(--accent)]">Module {moduleId}</h1>
@@ -171,6 +196,12 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
 
+      {!isBasic && moduleLocked && previousModuleId && (
+        <div className="mb-6 rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
+          🔒 Deze module is vergrendeld. Voltooi eerst het examen van module {previousModuleId} om deze module te ontgrendelen.
+        </div>
+      )}
+
       {loading ? (
         <p className="text-[var(--text-dim)]">Laden…</p>
       ) : (
@@ -179,7 +210,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
             {lessons.map((lesson) => {
               const isWatched = !!progress[lesson.id]
               const isUnlocked = unlockedIds.has(lesson.id)
-              const lessonLocked = isBasic || !isUnlocked
+              const lessonLocked = isBasic || moduleLocked || !isUnlocked
               
               if (!lessonLocked) {
                 return (
@@ -247,6 +278,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
                         {isBasic && (
                           <div className="text-xs text-[#7C99E3]">Upgrade naar Full om deze les te bekijken</div>
                         )}
+                        {!isBasic && moduleLocked && (
+                          <div className="text-xs text-[#7C99E3]">Voltooi eerst het examen van module {previousModuleId}</div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -254,16 +288,22 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
                   <button
                     disabled
                     className="cursor-not-allowed rounded-md border border-[#7C99E3]/40 bg-[#7C99E3]/10 px-4 py-2 text-sm text-[#7C99E3]"
-                    title={isBasic ? 'Upgrade om deze les te bekijken' : 'Deze les wordt ontgrendeld nadat je de vorige volledig bekeek.'}
+                    title={
+                      isBasic 
+                        ? 'Upgrade om deze les te bekijken' 
+                        : moduleLocked 
+                        ? `Voltooi eerst het examen van module ${previousModuleId}`
+                        : 'Deze les wordt ontgrendeld nadat je de vorige volledig bekeek.'
+                    }
                   >
-                    {isBasic ? 'Alleen voor Full members' : 'Vergrendeld'}
+                    {isBasic ? 'Alleen voor Full members' : moduleLocked ? 'Module vergrendeld' : 'Vergrendeld'}
                   </button>
                 </div>
               )
             })}
           </div>
 
-          {practicalLessons.length > 0 && !isBasic && (
+          {practicalLessons.length > 0 && !isBasic && !moduleLocked && (
             <section className="mt-10">
               <h2 className="text-xl font-semibold mb-4 text-[#7C99E3]">Praktijklessen</h2>
               <div className="space-y-3">
@@ -300,7 +340,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
           )}
 
           {/* EXAMEN CTA (zichtbaar als alle lessen watched zijn) */}
-          {lessons.length > 0 && watchedCount === total && examId && !isBasic && (
+          {lessons.length > 0 && watchedCount === total && examId && !isBasic && !moduleLocked && (
             <div className="mt-8 bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 flex items-center justify-between">
               <div>
                 <div className="font-semibold">Examen van deze module is klaar</div>

@@ -10,7 +10,7 @@ import {
   setStoredStudent,
   setStoredStudentAccessLevel,
 } from '@/lib/student'
-import { getExamById, getExamByModuleId, getExamQuestions, getModuleLessons, getWatchedLessonIds, insertExamResult } from '@/lib/exam'
+import { getExamById, getExamByModuleId, getExamQuestions, getModuleLessons, getWatchedLessonIds, insertExamResult, getNextModule } from '@/lib/exam'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 
 type Question = {
@@ -48,7 +48,8 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   const [accessBlocked, setAccessBlocked] = useState(false)
   const [started, setStarted] = useState(false)
   const [confirmSubmit, setConfirmSubmit] = useState(false)
-  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
+  const [accessLevel, setAccessLevel] = useState<number | null>(null)
+  const [nextModuleId, setNextModuleId] = useState<number | null>(null)
 
   // keyboard shortcuts: pijltjes links/rechts
   useEffect(() => {
@@ -197,7 +198,14 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
         }
       }
       setResult({ score, passed })
-      if (passed) confettiLite()
+      if (passed) {
+        confettiLite()
+        // Haal volgende module op als geslaagd
+        const nextMod = await getNextModule(moduleId)
+        if (nextMod) {
+          setNextModuleId(nextMod.id)
+        }
+      }
     } catch (e) {
       setErrorMsg('Er ging iets mis bij het indienen. Probeer opnieuw.')
     } finally {
@@ -228,7 +236,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   if (errorMsg) {
     return (
-      <div className="space-y-4 pt-24 px-4">
+      <div className="space-y-4 pt-8 md:pt-12 px-4">
         <h1 className="text-2xl font-semibold text-[var(--accent)]">Examen</h1>
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6">
           <p className="text-red-400">{errorMsg}</p>
@@ -247,7 +255,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   if (gatedBlocked) {
     return (
-      <div className="space-y-4 pt-24 px-4">
+      <div className="space-y-4 pt-8 md:pt-12 px-4">
         <h1 className="text-2xl font-semibold text-[var(--accent)]">Examen geblokkeerd</h1>
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6">
           <p className="text-gray-300">Je moet eerst alle lessen van deze module volledig bekijken.</p>
@@ -261,7 +269,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   if (accessBlocked) {
     return (
-      <div className="space-y-4 pt-24 px-4">
+      <div className="space-y-4 pt-8 md:pt-12 px-4">
         <h1 className="text-2xl font-semibold text-[#7C99E3]">Alleen voor Full leden</h1>
         <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-6 text-sm text-[#7C99E3]">
           <p>
@@ -283,7 +291,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   // Intro screen before exam starts
   if (!started && !result && !loading && questions.length > 0) {
     return (
-      <div className="max-w-2xl mx-auto pt-24 px-4">
+      <div className="max-w-2xl mx-auto pt-8 md:pt-12 px-4">
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-8 md:p-12 text-center space-y-6">
           <h1 className="text-3xl font-semibold text-[var(--accent)]">Examen: {title}</h1>
           <div className="space-y-4 text-gray-300">
@@ -310,8 +318,21 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   if (result) {
     const pctText = Math.round((result.score / total) * 100)
+    
+    // Bepaal welke vragen juist/fout waren
+    const questionResults = questions.map(q => {
+      const userAnswer = answers[q.id]
+      const isCorrect = userAnswer === q.correct_answer
+      return {
+        question: q,
+        userAnswer,
+        correctAnswer: q.correct_answer,
+        isCorrect
+      }
+    })
+    
     return (
-      <div className="space-y-6 max-w-3xl mx-auto pt-24 px-4">
+      <div className="space-y-6 max-w-3xl mx-auto pt-8 md:pt-12 px-4">
         <h1 className="text-3xl font-semibold text-[var(--accent)] text-center">{title}</h1>
         <div className={`bg-[var(--card)] border rounded-xl p-8 md:p-10 ${result.passed ? 'border-green-500/50 bg-green-900/10' : 'border-red-500/50 bg-red-900/10'}`}>
           <div className="text-center space-y-4">
@@ -331,19 +352,80 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
             )}
           </div>
 
+          {/* Vraag breakdown */}
+          <div className="mt-8 pt-8 border-t border-[var(--border)]">
+            <h3 className="text-lg font-semibold mb-4 text-white">Vraag overzicht</h3>
+            <div className="space-y-4">
+              {questionResults.map((qr, idx) => (
+                <div
+                  key={qr.question.id}
+                  className={`p-4 rounded-lg border ${
+                    qr.isCorrect
+                      ? 'bg-green-900/20 border-green-500/30'
+                      : 'bg-red-900/20 border-red-500/30'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${
+                      qr.isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                    }`}>
+                      {qr.isCorrect ? '✓' : '✗'}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-white mb-2">
+                        Vraag {idx + 1}: {qr.question.question}
+                      </p>
+                      <div className="space-y-1 text-sm">
+                        <p className={qr.isCorrect ? 'text-green-300' : 'text-red-300'}>
+                          Jouw antwoord: <span className="font-medium">{qr.userAnswer || 'Niet beantwoord'}</span>
+                        </p>
+                        {!qr.isCorrect && (
+                          <p className="text-green-300">
+                            Correct antwoord: <span className="font-medium">{qr.correctAnswer}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <button 
-              onClick={retry} 
-              className="px-6 py-3 rounded-lg bg-[var(--muted)] border border-[var(--border)] hover:bg-[var(--border)] transition font-medium"
-            >
-              Opnieuw proberen
-            </button>
-            <Link 
-              href={`/module/${moduleId}`} 
-              className="px-6 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition text-center"
-            >
-              Terug naar module
-            </Link>
+            {result.passed ? (
+              <>
+                {nextModuleId ? (
+                  <Link 
+                    href={`/module/${nextModuleId}`} 
+                    className="px-6 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition text-center"
+                  >
+                    Ga naar volgende module →
+                  </Link>
+                ) : null}
+                <Link 
+                  href={`/module/${moduleId}`} 
+                  className="px-6 py-3 rounded-lg bg-[var(--muted)] border border-[var(--border)] hover:bg-[var(--border)] transition text-center font-medium"
+                >
+                  Terug naar module
+                </Link>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={retry} 
+                  className="px-6 py-3 rounded-lg bg-[var(--muted)] border border-[var(--border)] hover:bg-[var(--border)] transition font-medium"
+                >
+                  Opnieuw proberen
+                </button>
+                <Link 
+                  href={`/module/${moduleId}`} 
+                  className="px-6 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition text-center"
+                >
+                  Terug naar module
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -352,7 +434,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   if (!current || !started) {
     return (
-      <div className="space-y-4 pt-24 px-4">
+      <div className="space-y-4 pt-8 md:pt-12 px-4">
         <h1 className="text-2xl font-semibold text-[var(--accent)]">{title}</h1>
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6">
           <p className="text-gray-400">Geen vragen beschikbaar.</p>
@@ -365,7 +447,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <>
-      <div className="space-y-6 max-w-4xl mx-auto pb-20 pt-24 px-4">
+      <div className="space-y-6 max-w-4xl mx-auto pb-20 pt-8 md:pt-12 px-4">
         {/* Progress bar at top */}
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm text-gray-400">

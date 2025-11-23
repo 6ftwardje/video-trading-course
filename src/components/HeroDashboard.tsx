@@ -51,7 +51,7 @@ export default function HeroDashboard({
   };
 
   return (
-    <section className="relative overflow-hidden pb-12 pt-24">
+    <section className="relative overflow-hidden pb-12 pt-8 md:pt-12">
       <div className="absolute -top-24 -right-24 h-[420px] w-[420px] rounded-full bg-[var(--accent)]/10 blur-3xl" />
       <div className="absolute -bottom-20 -left-20 h-[320px] w-[320px] rounded-full bg-[var(--accent)]/5 blur-3xl" />
       <Container className="relative">

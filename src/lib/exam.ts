@@ -129,6 +129,7 @@ export async function getWatchedLessonIds(studentId: string, lessonIds: number[]
 
 export async function insertExamResult(studentId: string, examId: number, score: number, passed: boolean) {
   try {
+    console.log(`[insertExamResult] Inserting: studentId=${studentId}, examId=${examId}, score=${score}, passed=${passed}`)
     const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('exam_results')
@@ -137,14 +138,212 @@ export async function insertExamResult(studentId: string, examId: number, score:
       .single()
     
     if (error) {
-      console.error('Error inserting exam result:', error)
+      console.error('[insertExamResult] Error inserting exam result:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
       return { data: null, error }
     }
     
+    console.log(`[insertExamResult] Successfully inserted exam result:`, data)
     return { data, error: null }
   } catch (err) {
-    console.error('Exception inserting exam result:', err)
+    console.error('[insertExamResult] Exception:', err instanceof Error ? err.message : String(err))
     return { data: null, error: err }
+  }
+}
+
+type ExamResult = {
+  id: number
+  student_id: string
+  exam_id: number
+  score: number
+  passed: boolean
+  created_at?: string
+}
+
+export async function getExamResultForModule(studentId: string, moduleId: number): Promise<ExamResult | null> {
+  try {
+    if (!studentId) {
+      console.log('[getExamResultForModule] No studentId provided')
+      return null
+    }
+    
+    const supabase = getSupabaseClient()
+    
+    // First get the exam for this module
+    const exam = await getExamByModuleId(moduleId)
+    if (!exam) {
+      console.log(`[getExamResultForModule] No exam found for module ${moduleId}`)
+      return null
+    }
+    
+    console.log(`[getExamResultForModule] Looking for exam result: studentId=${studentId}, examId=${exam.id}, moduleId=${moduleId}`)
+    
+    // Get the exam result for this student and exam
+    const { data, error } = await supabase
+      .from('exam_results')
+      .select('id,student_id,exam_id,score,passed')
+      .eq('student_id', studentId)
+      .eq('exam_id', exam.id)
+      .order('id', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    
+    if (error) {
+      // Only log if it's not a "not found" error (PGRST116)
+      if (error.code !== 'PGRST116') {
+        console.error('[getExamResultForModule] Error fetching exam result:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+      } else {
+        console.log(`[getExamResultForModule] No exam result found (PGRST116) for studentId=${studentId}, examId=${exam.id}`)
+      }
+      return null
+    }
+    
+    if (data) {
+      console.log(`[getExamResultForModule] Found exam result:`, { 
+        id: data.id, 
+        student_id: data.student_id, 
+        exam_id: data.exam_id, 
+        score: data.score, 
+        passed: data.passed 
+      })
+    } else {
+      console.log(`[getExamResultForModule] No exam result data returned`)
+    }
+    
+    return data as ExamResult | null
+  } catch (err) {
+    console.error('[getExamResultForModule] Exception:', err instanceof Error ? err.message : String(err))
+    return null
+  }
+}
+
+export async function hasPassedExamForModule(studentId: string, moduleId: number): Promise<boolean> {
+  if (!studentId) {
+    console.log('[hasPassedExamForModule] No studentId provided')
+    return false
+  }
+  
+  try {
+    const supabase = getSupabaseClient()
+    
+    // Get the exam for this module
+    const exam = await getExamByModuleId(moduleId)
+    if (!exam) {
+      console.log(`[hasPassedExamForModule] No exam found for module ${moduleId}`)
+      return false
+    }
+    
+    // Try the direct query first
+    const result = await getExamResultForModule(studentId, moduleId)
+    if (result?.passed === true) {
+      console.log(`[hasPassedExamForModule] Found passed result via direct query`)
+      return true
+    }
+    
+    // Fallback: query all exam results for this student and exam, check if any passed
+    console.log(`[hasPassedExamForModule] Trying fallback query for studentId=${studentId}, examId=${exam.id}`)
+    const { data: allResults, error } = await supabase
+      .from('exam_results')
+      .select('id,student_id,exam_id,score,passed')
+      .eq('student_id', studentId)
+      .eq('exam_id', exam.id)
+      .eq('passed', true)
+      .limit(1)
+    
+    if (error) {
+      console.error('[hasPassedExamForModule] Error in fallback query:', {
+        message: error.message,
+        details: error.details,
+        code: error.code
+      })
+      return false
+    }
+    
+    const hasPassed = (allResults && allResults.length > 0) || result?.passed === true
+    console.log(`[hasPassedExamForModule] Final result: studentId=${studentId}, moduleId=${moduleId}, hasPassed=${hasPassed}, foundResults=${allResults?.length || 0}`)
+    return hasPassed
+  } catch (err) {
+    console.error('[hasPassedExamForModule] Exception:', err instanceof Error ? err.message : String(err))
+    return false
+  }
+}
+
+type Module = {
+  id: number
+  title: string | null
+  description: string | null
+  order: number | null
+}
+
+// Debug function to get all exam results for a student
+export async function getAllExamResultsForStudent(studentId: string) {
+  try {
+    if (!studentId) return []
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('exam_results')
+      .select('id,student_id,exam_id,score,passed,submitted_at')
+      .eq('student_id', studentId)
+      .order('submitted_at', { ascending: false })
+    
+    if (error) {
+      console.error('[getAllExamResultsForStudent] Error:', error)
+      return []
+    }
+    
+    console.log(`[getAllExamResultsForStudent] Found ${data?.length || 0} exam results for studentId=${studentId}`)
+    return data || []
+  } catch (err) {
+    console.error('[getAllExamResultsForStudent] Exception:', err)
+    return []
+  }
+}
+
+export async function getNextModule(currentModuleId: number): Promise<Module | null> {
+  try {
+    const supabase = getSupabaseClient()
+    
+    // Get current module to find its order
+    const { data: currentModule, error: currentError } = await supabase
+      .from('modules')
+      .select('id,order')
+      .eq('id', currentModuleId)
+      .maybeSingle()
+    
+    if (currentError || !currentModule) {
+      console.error('Error fetching current module:', currentError)
+      return null
+    }
+    
+    const currentOrder = currentModule.order ?? 9999
+    
+    // Get all modules and find the next one
+    const { data: allModules, error: allError } = await supabase
+      .from('modules')
+      .select('id,title,description,order')
+    
+    if (allError) {
+      console.error('Error fetching modules:', allError)
+      return null
+    }
+    
+    // Sort by order and find next module
+    const sorted = (allModules || []).sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+    const nextModule = sorted.find(m => (m.order ?? 9999) > currentOrder)
+    
+    return nextModule as Module | null
+  } catch (err) {
+    console.error('Exception fetching next module:', err)
+    return null
   }
 }
 

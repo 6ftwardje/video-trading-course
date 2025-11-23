@@ -15,6 +15,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Lock } from 'lucide-react'
 import Container from '@/components/ui/Container'
+import { getExamByModuleId, hasPassedExamForModule, getNextModule } from '@/lib/exam'
 
 type Lesson = {
   id: number
@@ -62,7 +63,10 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
   const [nextLesson, setNextLesson] = useState<LessonListItem | null>(null)
   const [prevLesson, setPrevLesson] = useState<LessonListItem | null>(null)
   const [progress, setProgress] = useState<Record<number, boolean>>({})
-  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
+  const [accessLevel, setAccessLevel] = useState<number | null>(null)
+  const [examId, setExamId] = useState<number | null>(null)
+  const [examPassed, setExamPassed] = useState<boolean>(false)
+  const [nextModuleId, setNextModuleId] = useState<number | null>(null)
   const playerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -167,6 +171,31 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
           setNextLesson(sortedAll[idx + 1] || null)
         }
 
+        // Als laatste les: check exam en volgende module
+        if (sortedAll.length > 0) {
+          const idx = sortedAll.findIndex(l => l.id === currentLesson.id)
+          const isLastLesson = idx === sortedAll.length - 1
+          
+          if (isLastLesson && studentId && (level ?? 1) >= 2) {
+            // Check of exam bestaat voor deze module
+            const exam = await getExamByModuleId(currentLesson.module_id)
+            if (exam) {
+              setExamId(exam.id)
+              // Check of exam al geslaagd is
+              const passed = await hasPassedExamForModule(studentId, currentLesson.module_id)
+              setExamPassed(passed)
+              
+              // Als geslaagd, haal volgende module op
+              if (passed) {
+                const nextMod = await getNextModule(currentLesson.module_id)
+                if (nextMod) {
+                  setNextModuleId(nextMod.id)
+                }
+              }
+            }
+          }
+        }
+
         // Player instellen
         if ((level ?? 1) >= 2 && currentLesson.video_url && playerRef.current) {
           const videoId = getVimeoVideoId(currentLesson.video_url)
@@ -206,12 +235,12 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     }
   }, [id])
 
-  if (!lesson) return <Container className="pt-20 pb-16"><p className="text-[var(--text-dim)]">Laden…</p></Container>
+  if (!lesson) return <Container className="pt-8 md:pt-12 pb-16"><p className="text-[var(--text-dim)]">Laden…</p></Container>
 
   const isBasic = (accessLevel ?? 1) < 2
 
   return (
-    <Container className="pt-20 pb-16">
+    <Container className="pt-8 md:pt-12 pb-16">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Video + inhoud */}
         <div className="lg:col-span-8 space-y-6">
@@ -293,12 +322,36 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                 </button>
               )
             ) : (
-              <Link
-                href={`/module/${lesson.module_id}`}
-                className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
-              >
-                Terug naar module
-              </Link>
+              // Laatste les: toon exam link of volgende module link
+              isBasic ? (
+                <Link
+                  href={`/module/${lesson.module_id}`}
+                  className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
+                >
+                  Terug naar module
+                </Link>
+              ) : examId && examPassed && nextModuleId ? (
+                <Link
+                  href={`/module/${nextModuleId}`}
+                  className="px-4 py-2 rounded-md bg-[var(--accent)]/20 border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 text-[var(--accent)] transition"
+                >
+                  Ga naar volgende module →
+                </Link>
+              ) : examId && !examPassed ? (
+                <Link
+                  href={`/exam/${examId}?module=${lesson.module_id}`}
+                  className="px-4 py-2 rounded-md bg-[var(--accent)]/20 border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 text-[var(--accent)] transition"
+                >
+                  Start examen →
+                </Link>
+              ) : (
+                <Link
+                  href={`/module/${lesson.module_id}`}
+                  className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
+                >
+                  Terug naar module
+                </Link>
+              )
             )}
           </div>
         </div>
