@@ -270,17 +270,22 @@ export default function LoginClient() {
 
     setLoading(true)
 
+    let signUpData: any = null
+
     try {
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName || null,
+      const result = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName || null,
+          },
+          emailRedirectTo: `${window.location.origin}/login?mode=login&email=${encodeURIComponent(email)}`,
         },
-        emailRedirectTo: `${window.location.origin}/login?mode=login&email=${encodeURIComponent(email)}`,
-      },
-    })
+      })
+
+      signUpData = result.data
+      const signUpError = result.error
 
       if (signUpError) {
         // Handle rate limit specifically
@@ -321,6 +326,12 @@ export default function LoginClient() {
       } else {
         setErrorMessage('Er ging iets mis bij het registreren. Probeer het later opnieuw.')
       }
+      setLoading(false)
+      return
+    }
+
+    if (!signUpData) {
+      setErrorMessage('Er ging iets mis bij het registreren. Probeer het later opnieuw.')
       setLoading(false)
       return
     }
