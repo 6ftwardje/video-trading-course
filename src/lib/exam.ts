@@ -244,7 +244,7 @@ export async function hasPassedExamForModule(studentId: string, moduleId: number
     
     // Try the direct query first
     const result = await getExamResultForModule(studentId, moduleId)
-    if (result?.passed === true) {
+    if (result && result.passed === true) {
       console.log(`[hasPassedExamForModule] Found passed result via direct query`)
       return true
     }
@@ -268,8 +268,10 @@ export async function hasPassedExamForModule(studentId: string, moduleId: number
       return false
     }
     
-    const hasPassed = (allResults && allResults.length > 0) || result?.passed === true
-    console.log(`[hasPassedExamForModule] Final result: studentId=${studentId}, moduleId=${moduleId}, hasPassed=${hasPassed}, foundResults=${allResults?.length || 0}`)
+    const hasPassedResults = Array.isArray(allResults) && allResults.length > 0
+    const hasPassedFromResult = result ? result.passed === true : false
+    const hasPassed = hasPassedResults || hasPassedFromResult
+    console.log(`[hasPassedExamForModule] Final result: studentId=${studentId}, moduleId=${moduleId}, hasPassed=${hasPassed}, foundResults=${Array.isArray(allResults) ? allResults.length : 0}`)
     return hasPassed
   } catch (err) {
     console.error('[hasPassedExamForModule] Exception:', err instanceof Error ? err.message : String(err))
