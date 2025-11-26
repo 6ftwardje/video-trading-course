@@ -6,7 +6,7 @@ import Image from "next/image";
 import { BRAND } from "@/components/ui/Brand";
 import Container from "@/components/ui/Container";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff } from "lucide-react";
+import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff, Book } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   getStoredStudentAccessLevel,
@@ -14,11 +14,17 @@ import {
   clearStoredStudent,
 } from "@/lib/student";
 
-const links = [
+const baseLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/modules", label: "Modules", icon: BookOpen },
   { href: "/mentorship", label: "Mentorship", icon: Users },
 ];
+
+const courseMaterialLink = {
+  href: "/course-material",
+  label: "Cursus PDF",
+  icon: Book,
+};
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -96,6 +102,11 @@ export default function Navbar() {
   }, [router]);
 
   const levelLabel = accessLevel === 3 ? "Mentor" : accessLevel === 2 ? "Full" : "Basic";
+
+  // Conditionally include course material link for access level >= 2
+  const links = accessLevel != null && accessLevel >= 2
+    ? [...baseLinks, courseMaterialLink]
+    : baseLinks;
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {

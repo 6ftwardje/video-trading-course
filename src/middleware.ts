@@ -39,7 +39,7 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession()
 
   if (!session?.user) {
-    const protectedRoutes = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship']
+    const protectedRoutes = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship', '/course-material']
     if (protectedRoutes.some(route => req.nextUrl.pathname.startsWith(route))) {
       const redirectUrl = new URL('/login', req.url)
       redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname)
@@ -51,6 +51,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/module/:path*', '/lesson/:path*', '/exam/:path*', '/praktijk/:path*', '/mentorship/:path*', '/auth/callback'],
+  matcher: ['/dashboard/:path*', '/module/:path*', '/lesson/:path*', '/exam/:path*', '/praktijk/:path*', '/mentorship/:path*', '/course-material/:path*', '/auth/callback'],
 }
 
