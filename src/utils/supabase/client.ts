@@ -1,6 +1,6 @@
 'use client'
 
-import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type SupabaseBrowserClient = SupabaseClient<any, any, any, any, any>
@@ -17,10 +17,7 @@ export function createClient(): SupabaseBrowserClient {
     throw new Error('Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.')
   }
 
-  client = createBrowserSupabaseClient({
-    supabaseUrl,
-    supabaseKey,
-  }) as SupabaseBrowserClient
+  client = createBrowserClient(supabaseUrl, supabaseKey) as SupabaseBrowserClient
 
   return client
 }

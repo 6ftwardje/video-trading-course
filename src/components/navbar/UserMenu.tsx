@@ -19,12 +19,13 @@ export default function UserMenu() {
     const fetchUserData = async () => {
       try {
         const supabase = getSupabaseClient();
+        // Use getSession() instead of getUser() to avoid unnecessary server requests
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        if (user?.user_metadata?.full_name) {
-          setUserName(user.user_metadata.full_name);
+        if (session?.user?.user_metadata?.full_name) {
+          setUserName(session.user.user_metadata.full_name);
         } else {
           const email = getStoredStudentEmail();
           if (email) {

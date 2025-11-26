@@ -34,11 +34,12 @@ export default function ModulesPage() {
     const run = async () => {
       setLoading(true)
       const supabase = getSupabaseClient()
+      // Use getSession() instead of getUser() - middleware already validates access
       const {
-        data: { user },
-      } = await supabase.auth.getUser()
+        data: { session },
+      } = await supabase.auth.getSession()
 
-      if (!user) {
+      if (!session?.user) {
         setModules([])
         setLoading(false)
         return

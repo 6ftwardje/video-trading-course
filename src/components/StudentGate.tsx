@@ -14,18 +14,20 @@ export default function StudentGate() {
   useEffect(() => {
     const syncStudent = async () => {
       const supabase = getSupabaseClient()
+      // Use getSession() instead of getUser() to avoid unnecessary server requests
+      // Only validate with server if we actually need to sync student data
       const {
-        data: { user },
-      } = await supabase.auth.getUser()
+        data: { session },
+      } = await supabase.auth.getSession()
 
-      if (!user) return
+      if (!session?.user) return
 
       const existingId = getStoredStudentId()
       const existingEmail = getStoredStudentEmail()
 
       if (existingId && existingEmail) return
 
-      const student = await getStudentByAuthUserId(user.id)
+      const student = await getStudentByAuthUserId(session.user.id)
       if (student?.id) {
         setStoredStudent(student.id, student.email)
         setStoredStudentAccessLevel(student.access_level ?? 1)

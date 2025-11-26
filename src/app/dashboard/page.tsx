@@ -35,11 +35,12 @@ export default function DashboardPage() {
     const run = async () => {
       setLoading(true)
       const supabase = getSupabaseClient()
+      // Use getSession() instead of getUser() - middleware already validates access
       const {
-        data: { user },
-      } = await supabase.auth.getUser()
+        data: { session },
+      } = await supabase.auth.getSession()
 
-      if (!user) {
+      if (!session?.user) {
         router.replace('/login')
         return
       }
@@ -54,7 +55,7 @@ export default function DashboardPage() {
       }
 
       if (!studentId || level == null) {
-        const student = await getStudentByAuthUserId(user.id)
+        const student = await getStudentByAuthUserId(session.user.id)
         if (student?.id) {
           setStoredStudent(student.id, student.email)
           setStoredStudentAccessLevel(student.access_level ?? 1)

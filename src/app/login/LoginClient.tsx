@@ -34,15 +34,18 @@ export default function LoginClient() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [infoMessage, setInfoMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [rateLimitCooldown, setRateLimitCooldown] = useState<number | null>(null)
 
   useEffect(() => {
     const checkSession = async () => {
+      // Use getSession() instead of getUser() to avoid unnecessary server requests
+      // getSession() reads from local storage/cookies without validating with server
       const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (session?.user) {
         router.replace('/dashboard')
       } else {
         clearStoredStudent()
@@ -70,6 +73,7 @@ export default function LoginClient() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
+    setInfoMessage(null)
 
     // Prevent double submission
     if (loading) {
@@ -237,6 +241,7 @@ export default function LoginClient() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
+    setInfoMessage(null)
 
     // Prevent double submission
     if (loading) {
@@ -280,7 +285,7 @@ export default function LoginClient() {
           data: {
             full_name: fullName || null,
           },
-          emailRedirectTo: `${window.location.origin}/login?mode=login&email=${encodeURIComponent(email)}`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
 
@@ -340,14 +345,14 @@ export default function LoginClient() {
     const session = signUpData.session
 
     if (!authUser) {
-      setErrorMessage('We konden je account nog niet activeren. Controleer je e-mail voor de bevestigingslink.')
+      setInfoMessage('We konden je account nog niet activeren. Controleer je e-mail voor de bevestigingslink.')
       setLoading(false)
       return
     }
 
     if (!session) {
-      setErrorMessage(
-        'Je account is aangemaakt. Bevestig je e-mailadres via de link in je mailbox en log daarna in met je gegevens.',
+      setInfoMessage(
+        'Je account is aangemaakt! Bevestig je e-mailadres via de link in je mailbox. Na bevestiging word je automatisch ingelogd.',
       )
       setLoading(false)
       return
@@ -427,6 +432,7 @@ export default function LoginClient() {
     if (mode === nextMode) return
     setMode(nextMode)
     setErrorMessage(null)
+    setInfoMessage(null)
     setPassword('')
     setConfirmPassword('')
   }
@@ -517,6 +523,14 @@ export default function LoginClient() {
                 Cooldown: {Math.floor(rateLimitCooldown / 60)}:{String(rateLimitCooldown % 60).padStart(2, '0')}
               </p>
             )}
+          </div>
+        )}
+
+        {infoMessage && (
+          <div className="space-y-2 rounded-lg bg-[#7C99E3]/10 border border-[#7C99E3]/30 p-3">
+            <p className="text-sm text-[#7C99E3]" role="alert">
+              {infoMessage}
+            </p>
           </div>
         )}
 

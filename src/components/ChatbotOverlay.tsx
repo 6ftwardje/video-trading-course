@@ -53,9 +53,11 @@ export default function ChatbotOverlay() {
       }
     };
 
-    supabase.auth.getUser().then(({ data }) => {
+    // Use getSession() instead of getUser() to avoid unnecessary server requests
+    // The onAuthStateChange listener will handle auth state updates
+    supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
-      if (data?.user) {
+      if (data?.session?.user) {
         injectChatbase();
       } else {
         teardownChatbase();

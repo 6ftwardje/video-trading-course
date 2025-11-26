@@ -37,15 +37,16 @@ export default function Navbar() {
     setAccessLevel(getStoredStudentAccessLevel());
     
     // Fetch user name for sidebar
+    // Use getSession() instead of getUser() to avoid unnecessary server requests
     const fetchUserName = async () => {
       try {
         const supabase = getSupabaseClient();
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        if (user?.user_metadata?.full_name) {
-          setUserName(user.user_metadata.full_name);
+        if (session?.user?.user_metadata?.full_name) {
+          setUserName(session.user.user_metadata.full_name);
         } else {
           const email = getStoredStudentEmail();
           if (email) {
