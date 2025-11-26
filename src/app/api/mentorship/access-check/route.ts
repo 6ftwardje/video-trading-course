@@ -4,7 +4,8 @@ import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    // await cookies() so cookieStore is ReadonlyRequestCookies, not a Promise
+    const cookieStore = await cookies()
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

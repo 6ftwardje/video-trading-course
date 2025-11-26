@@ -6,8 +6,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type SupabaseServerClient = SupabaseClient<any, any, any, any, any>
 
-export function createClient(): SupabaseServerClient {
-  const cookieStore = cookies()
+export async function createClient(): Promise<SupabaseServerClient> {
+  // await cookies() so cookieStore is ReadonlyRequestCookies, not a Promise
+  const cookieStore = await cookies()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

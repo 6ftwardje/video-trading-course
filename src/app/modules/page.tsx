@@ -49,7 +49,7 @@ export default function ModulesPage() {
       let level = getStoredStudentAccessLevel()
 
       if (!studentId || level == null) {
-        const student = await getStudentByAuthUserId(user.id)
+        const student = await getStudentByAuthUserId(session.user.id)
         if (student?.id) {
           setStoredStudent(student.id, student.email)
           setStoredStudentAccessLevel(student.access_level ?? 1)
