@@ -117,6 +117,9 @@ export default function Navbar() {
 
   const isExpanded = pinned || isHovered;
 
+  // Fixed icon wrapper dimensions - never change
+  const ICON_WRAPPER_WIDTH = 24; // w-6 = 24px
+
   // Internal component for navigation items with tooltips
   const SidebarNavItem = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) => {
     const active = isActive(href);
@@ -128,26 +131,33 @@ export default function Navbar() {
           href={href}
           onMouseEnter={() => !isExpanded && setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}
-          className={`flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 relative ${
+          className={`flex items-center rounded-lg transition-colors duration-200 relative ${
             active
               ? "border-l-2 border-[var(--accent)] bg-[var(--muted)]/50 text-[var(--accent)] font-medium"
               : "text-[var(--text-dim)] hover:text-white hover:bg-[var(--muted)]/30"
-          }`}
+          } ${isExpanded ? "px-3 py-2.5 gap-3" : "px-2 py-2.5 justify-center gap-0"}`}
         >
-          {/* Fixed-width icon container */}
+          {/* Fixed-width icon container - never changes size, perfectly centered in closed state */}
           <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
             <Icon className="h-5 w-5" />
           </div>
-          {/* Label with fixed positioning - always present but opacity-based */}
-          <span
-            className={`ml-3 text-sm whitespace-nowrap transition-opacity duration-300 ${
+          {/* Label wrapper with overflow-hidden and opacity transition */}
+          <div
+            className={`overflow-hidden ${
               isExpanded
-                ? "opacity-100"
-                : "opacity-0 pointer-events-none"
+                ? "opacity-100 max-w-[200px]"
+                : "opacity-0 max-w-0 pointer-events-none"
             }`}
+            style={{ 
+              transitionProperty: 'opacity, max-width',
+              transitionDuration: '240ms',
+              transitionTimingFunction: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+            }}
           >
-            {label}
-          </span>
+            <span className="text-sm whitespace-nowrap block">
+              {label}
+            </span>
+          </div>
         </Link>
         {/* Tooltip for collapsed state */}
         {!isExpanded && showTooltip && (
@@ -163,82 +173,113 @@ export default function Navbar() {
     <>
       {/* Desktop Sidebar */}
       <div
-        className={`hidden md:flex fixed left-0 top-0 bottom-0 z-50 transition-all duration-300 ease-in-out border-r border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur overflow-hidden ${
+        className={`hidden md:flex fixed left-0 top-0 bottom-0 z-50 border-r border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur overflow-hidden ${
           isExpanded ? "w-64" : "w-16"
         }`}
+        style={{
+          transition: 'width 240ms cubic-bezier(0.25, 0.1, 0.25, 1)',
+          willChange: 'width'
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="flex flex-col h-full w-full">
           {/* Brand Logo + Pin Button - Top */}
-          <div className="flex items-center justify-between gap-3 px-4 h-14 border-b border-[var(--border)] overflow-hidden">
-            <div className="flex items-center gap-3 min-w-0 h-full">
-              {/* Logo - Always visible, no animation */}
-              <Image 
-                src={BRAND.logoUrl} 
-                alt="Platform Logo" 
-                width={36} 
-                height={36} 
-                className="rounded flex-shrink-0" 
-              />
-              {/* Brand name - Only text animates */}
-              <span
-                className={`font-semibold tracking-tight whitespace-nowrap transition-opacity duration-300 ${
+          <div className="flex items-center justify-between h-14 border-b border-[var(--border)] overflow-hidden">
+            <div className={`flex items-center h-full flex-1 min-w-0 ${
+              isExpanded ? "px-4 gap-3" : "px-2 justify-center gap-0"
+            }`}>
+              {/* Logo - Fixed width container, never changes */}
+              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                <Image 
+                  src={BRAND.logoIconUrl} 
+                  alt="Platform Logo" 
+                  width={36} 
+                  height={36} 
+                  className="rounded" 
+                  priority
+                />
+              </div>
+              {/* Brand name wrapper with overflow-hidden */}
+              <div
+                className={`overflow-hidden ${
                   isExpanded
-                    ? "opacity-100"
-                    : "opacity-0 pointer-events-none"
+                    ? "opacity-100 max-w-[180px]"
+                    : "opacity-0 max-w-0 pointer-events-none"
                 }`}
+                style={{ 
+                  transitionProperty: 'opacity, max-width',
+                  transitionDuration: '240ms',
+                  transitionTimingFunction: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+                }}
               >
-                {BRAND.name}
-              </span>
+                <span className="font-semibold tracking-tight whitespace-nowrap block">
+                  {BRAND.name}
+                </span>
+              </div>
             </div>
-            <button
-              onClick={() => setPinned(!pinned)}
-              className={`flex-shrink-0 p-1.5 rounded-md text-[var(--text-dim)] hover:text-white hover:bg-[var(--muted)] transition-opacity duration-200 ${
-                isExpanded
-                  ? "opacity-100"
-                  : "opacity-0 pointer-events-none"
+            {/* Pin button wrapper */}
+            <div
+              className={`flex-shrink-0 ${
+                isExpanded ? "opacity-100 max-w-[40px] px-2" : "opacity-0 max-w-0 pointer-events-none overflow-hidden"
               }`}
-              aria-label={pinned ? "Unpin sidebar" : "Pin sidebar"}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setPinned(!pinned);
-                }
+              style={{ 
+                transitionProperty: 'opacity, max-width',
+                transitionDuration: '240ms',
+                transitionTimingFunction: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
               }}
             >
-              {pinned ? (
-                <PinOff className="h-4 w-4" />
-              ) : (
-                <Pin className="h-4 w-4" />
-              )}
-            </button>
+              <button
+                onClick={() => setPinned(!pinned)}
+                className="p-1.5 rounded-md text-[var(--text-dim)] hover:text-white hover:bg-[var(--muted)]"
+                aria-label={pinned ? "Unpin sidebar" : "Pin sidebar"}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setPinned(!pinned);
+                  }
+                }}
+              >
+                {pinned ? (
+                  <PinOff className="h-4 w-4" />
+                ) : (
+                  <Pin className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-1 flex flex-col gap-1 py-4 px-2">
+          <nav className="flex-1 flex flex-col gap-1 py-4 overflow-hidden">
             {links.map((l) => (
               <SidebarNavItem key={l.href} href={l.href} label={l.label} icon={l.icon} />
             ))}
           </nav>
 
           {/* User Section - Bottom */}
-          <div className="px-3 py-4 border-t border-[var(--border)] relative" ref={userMenuRef}>
+          <div className={`border-t border-[var(--border)] relative ${isExpanded ? "px-3 py-4" : "px-2 py-4"}`} ref={userMenuRef}>
             {studentEmail ? (
               <div className="flex flex-col gap-3">
                 {/* User Info Section - Avatar always visible, text fades */}
-                <div className="flex items-center gap-3 h-12 overflow-hidden">
-                  {/* Avatar - Always visible, never animates */}
+                <div className={`flex items-center overflow-hidden ${
+                  isExpanded ? "h-12 gap-3" : "h-10 justify-center gap-0"
+                }`}>
+                  {/* Avatar - Fixed size container, perfectly centered in closed state */}
                   <div className="h-10 w-10 rounded-full bg-[var(--accent)] flex items-center justify-center flex-shrink-0">
                     <User className="h-5 w-5 text-white" />
                   </div>
-                  {/* User info text - Only this fades in/out */}
+                  {/* User info text wrapper with overflow-hidden */}
                   <div
-                    className={`flex-1 min-w-0 overflow-hidden transition-opacity duration-300 ${
+                    className={`overflow-hidden ${
                       isExpanded
-                        ? "opacity-100"
-                        : "opacity-0 pointer-events-none"
+                        ? "opacity-100 max-w-[200px]"
+                        : "opacity-0 max-w-0 pointer-events-none"
                     }`}
+                    style={{ 
+                      transitionProperty: 'opacity, max-width',
+                      transitionDuration: '240ms',
+                      transitionTimingFunction: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+                    }}
                   >
                     <div className="text-sm font-medium text-white truncate">{userName}</div>
                     <div className="text-xs text-[var(--text-dim)] truncate">{studentEmail}</div>
@@ -252,23 +293,28 @@ export default function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className={`flex items-center w-full rounded-lg border border-[var(--border)] bg-[var(--card)] text-sm font-medium text-white transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--muted)] ${
-                      isExpanded ? "px-3 py-2.5" : "px-2 py-2 justify-center"
+                    className={`flex items-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-sm font-medium text-white transition-colors duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--muted)] ${
+                      isExpanded ? "px-3 py-2.5 w-full" : "px-2 py-2.5 justify-center w-full"
                     }`}
                     aria-label="User menu"
                     aria-expanded={userMenuOpen}
                   >
-                    {/* Icon - Always visible, never animates */}
+                    {/* Icon - Fixed size container, perfectly centered in closed state */}
                     <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                       <User className="h-4 w-4" />
                     </div>
-                    {/* Username and chevron - Only these fade in/out */}
+                    {/* Username and chevron wrapper with overflow-hidden */}
                     <div
-                      className={`ml-2 flex items-center flex-1 min-w-0 transition-opacity duration-300 ${
+                      className={`overflow-hidden flex items-center flex-1 min-w-0 ${
                         isExpanded
-                          ? "opacity-100"
-                          : "opacity-0 pointer-events-none"
+                          ? "opacity-100 max-w-[200px] ml-2"
+                          : "opacity-0 max-w-0 pointer-events-none"
                       }`}
+                      style={{ 
+                        transitionProperty: 'opacity, max-width, margin-left',
+                        transitionDuration: '240ms',
+                        transitionTimingFunction: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+                      }}
                     >
                       <span className="text-sm whitespace-nowrap truncate flex-1 text-left">
                         {userName}
@@ -303,23 +349,31 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className={`flex items-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-xs font-semibold text-white transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--muted)] ${
-                  isExpanded ? "px-3 py-2.5 justify-start" : "px-2 py-2 justify-center"
+                className={`flex items-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-xs font-semibold text-white transition-colors duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--muted)] ${
+                  isExpanded ? "px-3 py-2.5 justify-start" : "px-2 py-2.5 justify-center"
                 }`}
               >
-                {/* Fixed-width icon container */}
+                {/* Fixed-width icon container - perfectly centered in closed state */}
                 <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                   <User className="h-4 w-4" />
                 </div>
-                <span
-                  className={`ml-3 text-sm whitespace-nowrap transition-opacity duration-300 ${
+                {/* Label wrapper with overflow-hidden */}
+                <div
+                  className={`overflow-hidden ${
                     isExpanded
-                      ? "opacity-100"
-                      : "opacity-0 pointer-events-none"
+                      ? "opacity-100 max-w-[200px] ml-3"
+                      : "opacity-0 max-w-0 pointer-events-none"
                   }`}
+                  style={{ 
+                    transitionProperty: 'opacity, max-width, margin-left',
+                    transitionDuration: '240ms',
+                    transitionTimingFunction: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+                  }}
                 >
-                  Inloggen
-                </span>
+                  <span className="text-sm whitespace-nowrap block">
+                    Inloggen
+                  </span>
+                </div>
               </Link>
             )}
           </div>
@@ -331,7 +385,7 @@ export default function Navbar() {
         <Container className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
             <Image 
-              src={BRAND.logoUrl} 
+              src={BRAND.logoIconUrl} 
               alt="Platform Logo" 
               width={36} 
               height={36} 
