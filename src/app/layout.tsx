@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   title: "Cryptoriez Learning Platform",
   description: "Leer traden via video modules van Cryptoriez",
   icons: {
-    icon: BRAND.logoUrl,
-    shortcut: BRAND.logoUrl,
-    apple: BRAND.logoUrl,
+    icon: BRAND.logoIconUrl,
+    shortcut: BRAND.logoIconUrl,
+    apple: BRAND.logoIconUrl,
   },
 };
 

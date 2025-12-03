@@ -24,6 +24,7 @@ type Lesson = {
   video_url: string | null
   order: number
   description?: string | null
+  thumbnail_url?: string | null
 }
 
 type LessonListItem = {
@@ -31,6 +32,7 @@ type LessonListItem = {
   module_id: number
   title: string
   order: number
+  thumbnail_url?: string | null
 }
 
 type LessonProgress = {
@@ -86,7 +88,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
         // Huidige les ophalen
         const { data: current, error: currentError } = await supabase
           .from('lessons')
-          .select('id,module_id,title,video_url,"order",description')
+          .select('id,module_id,title,video_url,"order",description,thumbnail_url')
           .eq('id', lessonIdNum)
           .single()
         
@@ -130,7 +132,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
         // Alle lessen in module
         const { data: all, error: allError } = await supabase
           .from('lessons')
-          .select('id,module_id,title,"order"')
+          .select('id,module_id,title,"order",thumbnail_url')
           .eq('module_id', currentLesson.module_id)
         
         if (allError) {
@@ -393,7 +395,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                     >
                       <div className="relative w-16 h-10 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
                         <Image
-                          src={(l as any).thumbnail_url || 'https://placehold.co/160x90?text=Lesson'}
+                          src={l.thumbnail_url || 'https://placehold.co/160x90?text=Lesson'}
                           alt={l.title}
                           fill
                           className="object-cover"

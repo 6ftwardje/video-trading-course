@@ -8,9 +8,8 @@ export default function Footer(){
     <footer className="mt-16 border-t border-[var(--border)] bg-[var(--bg)]">
       <Container className="py-10 grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm">
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Image src={BRAND.logoUrl} alt="Logo" width={28} height={28} className="rounded"/>
-            <span className="font-semibold">Het Trade Platform</span>
+          <div className="flex items-center">
+            <Image src={BRAND.logoWithTextUrl} alt="Het Trade Platform Logo" width={232} height={40} className="h-10 w-auto"/>
           </div>
           <p className="text-[var(--text-dim)]">Professioneel leerplatform voor traders.</p>
         </div>

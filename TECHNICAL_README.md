@@ -796,3 +796,5 @@ Dit is een functioneel leerplatform met een solide basis, maar de authenticatie 
 **Versie**: 1.0
 **Auteur**: Technische documentatie voor ChatGPT project setup
 
+
+

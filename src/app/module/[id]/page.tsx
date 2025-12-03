@@ -17,7 +17,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Container from '@/components/ui/Container'
 
-type Lesson = { id: number; title: string; order: number; module_id: number }
+type Lesson = { id: number; title: string; order: number; module_id: number; thumbnail_url?: string | null }
 type ProgressRow = { lesson_id: number; watched: boolean }
 type PracticalLesson = PracticalLessonRecord
 
@@ -51,7 +51,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         const supabase = getSupabaseClient()
         const { data: ls, error: lessonsError } = await supabase
           .from('lessons')
-          .select('id,title,"order",module_id')
+          .select('id,title,"order",module_id,thumbnail_url')
           .eq('module_id', moduleIdNum)
         
         // Sort manually to avoid PostgREST query string issues
@@ -222,7 +222,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
                     <div className="flex items-center gap-4">
                       <div className="relative w-24 h-16 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
                         <Image
-                          src={(lesson as any).thumbnail_url || 'https://placehold.co/320x180?text=Thumbnail'}
+                          src={lesson.thumbnail_url || 'https://placehold.co/320x180?text=Thumbnail'}
                           alt={lesson.title}
                           fill
                           className="object-cover"

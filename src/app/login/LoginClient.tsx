@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/utils/supabase/client'
+import { BRAND } from '@/components/ui/Brand'
 import {
   clearStoredStudent,
   setStoredStudent,
@@ -441,6 +443,15 @@ export default function LoginClient() {
     <div className="flex min-h-screen items-center justify-center bg-[#0B0F17] px-4 text-white">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
         <div className="space-y-3">
+          <div className="flex justify-center mb-4">
+            <Image 
+              src={BRAND.logoWithTextUrl} 
+              alt="Het Trade Platform Logo" 
+              width={232} 
+              height={40} 
+              className="h-10 w-auto"
+            />
+          </div>
           <div className="flex gap-2 rounded-lg bg-gray-800 p-1">
             <button
               type="button"
