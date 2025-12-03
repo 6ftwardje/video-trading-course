@@ -12,6 +12,7 @@ import {
 } from '@/lib/student'
 import { getExamById, getExamByModuleId, getExamQuestions, getModuleLessons, getWatchedLessonIds, insertExamResult, getNextModule } from '@/lib/exam'
 import { getSupabaseClient } from '@/lib/supabaseClient'
+import { WaveLoader } from '@/components/ui/wave-loader'
 
 type Question = {
   id: number
@@ -232,7 +233,13 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     await submit()
   }
 
-  if (loading) return <p className="text-gray-400">Laden…</p>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <WaveLoader message="Laden..." />
+      </div>
+    )
+  }
 
   if (errorMsg) {
     return (

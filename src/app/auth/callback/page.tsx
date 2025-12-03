@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
+import { WaveLoader } from '@/components/ui/wave-loader'
 import {
   setStoredStudent,
   setStoredStudentAccessLevel,
@@ -155,12 +156,7 @@ export default function AuthCallbackPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0B0F17] px-4 text-white">
-      <div className="text-center">
-        <div className="mb-4">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#7C99E3] border-r-transparent"></div>
-        </div>
-        <p className="text-gray-400">Je wordt ingelogd...</p>
-      </div>
+      <WaveLoader message="Je wordt ingelogd..." />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { WaveLoader } from "@/components/ui/wave-loader";
 
 type ActiveModule = {
   title: string;
@@ -21,17 +22,10 @@ type Props = {
 function LoadingState({ className }: { className?: string }) {
   return (
     <div
-      className={`rounded-2xl border border-[var(--border)] bg-[var(--card)]/80 p-6 shadow-[var(--shadow-soft)] backdrop-blur ${className ?? ""
+      className={`rounded-2xl border border-[var(--border)] bg-[var(--card)]/80 p-6 shadow-[var(--shadow-soft)] backdrop-blur flex items-center justify-center min-h-[200px] ${className ?? ""
         }`}
     >
-      <div className="space-y-4">
-        <div className="h-6 w-40 animate-pulse rounded bg-white/10" />
-        <div className="h-3 w-full animate-pulse rounded bg-white/10" />
-        <div className="flex gap-3">
-          <div className="h-10 flex-1 animate-pulse rounded bg-white/10" />
-          <div className="h-10 w-28 animate-pulse rounded bg-white/10" />
-        </div>
-      </div>
+      <WaveLoader message="Laden..." />
     </div>
   );
 }

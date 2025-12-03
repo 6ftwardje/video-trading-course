@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Container from '@/components/ui/Container'
 import ModuleProgressCard from '@/components/ModuleProgressCard'
+import { WaveLoader } from '@/components/ui/wave-loader'
 import { getModulesSimple, getLessonsForModules, getWatchedLessonIds } from '@/lib/progress'
 import { getExamByModuleId, hasPassedExamForModule } from '@/lib/exam'
 import {
@@ -138,13 +139,8 @@ export default function ModulesPage() {
         )}
 
         {loading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, idx) => (
-              <div
-                key={idx}
-                className="h-24 w-full animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--card)]/70"
-              />
-            ))}
+          <div className="flex items-center justify-center py-12">
+            <WaveLoader message="Laden..." />
           </div>
         ) : modules.length ? (
           <div className="space-y-6">

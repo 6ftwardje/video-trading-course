@@ -11,6 +11,7 @@ import {
 } from '@/lib/student'
 import Container from '@/components/ui/Container'
 import { Download } from 'lucide-react'
+import { WaveLoader } from '@/components/ui/wave-loader'
 
 export default function CourseMaterialPage() {
   const [accessLevel, setAccessLevel] = useState<number | null>(null)
@@ -190,7 +191,9 @@ export default function CourseMaterialPage() {
   if (loading) {
     return (
       <Container className="pt-8 md:pt-12 pb-16">
-        <p className="text-[var(--text-dim)]">Laden…</p>
+        <div className="flex items-center justify-center py-12">
+          <WaveLoader message="Laden..." />
+        </div>
       </Container>
     )
   }

@@ -16,6 +16,7 @@ import Image from 'next/image'
 import { ArrowLeft, Lock } from 'lucide-react'
 import Container from '@/components/ui/Container'
 import { getExamByModuleId, hasPassedExamForModule, getNextModule } from '@/lib/exam'
+import { WaveLoader } from '@/components/ui/wave-loader'
 
 type Lesson = {
   id: number
@@ -237,7 +238,15 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     }
   }, [id])
 
-  if (!lesson) return <Container className="pt-8 md:pt-12 pb-16"><p className="text-[var(--text-dim)]">Laden…</p></Container>
+  if (!lesson) {
+    return (
+      <Container className="pt-8 md:pt-12 pb-16">
+        <div className="flex items-center justify-center py-12">
+          <WaveLoader message="Laden..." />
+        </div>
+      </Container>
+    )
+  }
 
   const isBasic = (accessLevel ?? 1) < 2
 

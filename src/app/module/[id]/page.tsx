@@ -16,6 +16,7 @@ import { CheckCircle2, Lock } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Container from '@/components/ui/Container'
+import { WaveLoader } from '@/components/ui/wave-loader'
 
 type Lesson = { id: number; title: string; order: number; module_id: number; thumbnail_url?: string | null }
 type ProgressRow = { lesson_id: number; watched: boolean }
@@ -203,7 +204,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
       )}
 
       {loading ? (
-        <p className="text-[var(--text-dim)]">Laden…</p>
+        <div className="flex items-center justify-center py-12">
+          <WaveLoader message="Laden..." />
+        </div>
       ) : (
         <>
           <div className="space-y-3">

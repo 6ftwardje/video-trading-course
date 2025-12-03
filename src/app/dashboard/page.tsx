@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import HeroDashboard from '@/components/HeroDashboard'
 import Container from '@/components/ui/Container'
 import ModuleProgressCard from '@/components/ModuleProgressCard'
+import { WaveLoader } from '@/components/ui/wave-loader'
 import {
   getStoredStudentEmail,
   getStoredStudentId,
@@ -166,9 +167,8 @@ export default function DashboardPage() {
             </div>
 
             {loading ? (
-              <div className="space-y-3">
-                <div className="h-24 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--card)]/70" />
-                <div className="h-16 animate-pulse rounded-xl border border-[var(--border)] bg-[var(--card)]/40" />
+              <div className="flex items-center justify-center py-12">
+                <WaveLoader message="Laden..." />
               </div>
             ) : activeModule ? (
               <ModuleProgressCard module={{ ...activeModule, accessLevel: accessLevel ?? 1 }} />

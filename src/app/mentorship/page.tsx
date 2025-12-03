@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Container from '@/components/ui/Container'
 import MentorCard from '@/components/MentorCard'
 import CalendlyModal from '@/components/CalendlyModal'
+import { WaveLoader } from '@/components/ui/wave-loader'
 import {
   getStoredStudentId,
   getStoredStudentAccessLevel,
@@ -175,13 +176,8 @@ export default function MentorshipPage() {
           </header>
 
           {loading ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 4 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="h-80 w-full animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--card)]/70"
-                />
-              ))}
+            <div className="flex items-center justify-center py-12">
+              <WaveLoader message="Laden..." />
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
