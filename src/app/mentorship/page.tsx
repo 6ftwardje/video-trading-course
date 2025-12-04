@@ -29,28 +29,28 @@ const MENTORS: Mentor[] = [
   {
     name: 'Rousso',
     role: 'Technical Trading Mentor',
-    image: '', // Placeholder - will show initial letter
+    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/rousso.jpg',
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
     requiresCompletion: true,
   },
   {
     name: 'Jason',
     role: 'Technical Trading Mentor',
-    image: '', // Placeholder - will show initial letter
+    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/jason.jpg',
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
     requiresCompletion: true,
   },
   {
     name: 'Arno',
     role: 'Mindset Coach',
-    image: '', // Placeholder - will show initial letter
+    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/arno.jpg',
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
     isAlwaysLocked: true,
   },
   {
     name: 'Chris Henry',
     role: 'Mindset Coach',
-    image: '', // Placeholder - will show initial letter
+    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/chris.jpg',
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
     isAlwaysLocked: true,
   },
