@@ -6,17 +6,20 @@ import Image from "next/image";
 import { BRAND } from "@/components/ui/Brand";
 import Container from "@/components/ui/Container";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff, Book } from "lucide-react";
+import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff, Book, Bell } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   getStoredStudentAccessLevel,
   getStoredStudentEmail,
+  getStoredStudentId,
   clearStoredStudent,
 } from "@/lib/student";
+import { getUnreadCount } from "@/lib/updates";
 
 const baseLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/modules", label: "Modules", icon: BookOpen },
+  { href: "/updates", label: "Updates", icon: Bell },
   { href: "/mentorship", label: "Mentorship", icon: Users },
 ];
 
@@ -36,11 +39,13 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setStudentEmail(getStoredStudentEmail());
-    setAccessLevel(getStoredStudentAccessLevel());
+    const level = getStoredStudentAccessLevel();
+    setAccessLevel(level);
     
     // Fetch user name for sidebar
     // Use getSession() instead of getUser() to avoid unnecessary server requests
@@ -69,7 +74,42 @@ export default function Navbar() {
       }
     };
     fetchUserName();
-  }, []);
+
+    // Fetch unread count for updates
+    const fetchUnreadCount = async () => {
+      const studentId = getStoredStudentId();
+      const accessLevel = getStoredStudentAccessLevel();
+      
+      // Only fetch for access level 2 and 3
+      if (studentId && (accessLevel === 2 || accessLevel === 3)) {
+        try {
+          const count = await getUnreadCount(studentId);
+          setUnreadCount(count);
+        } catch (error) {
+          console.error('Error fetching unread count', error);
+        }
+      } else {
+        setUnreadCount(0);
+      }
+    };
+    fetchUnreadCount();
+
+    // Listen for updates-read event to refresh unread count
+    const handleUpdatesRead = () => {
+      fetchUnreadCount();
+    };
+    window.addEventListener('updates-read', handleUpdatesRead);
+
+    // Refresh unread count periodically and on pathname change
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 10000); // Refresh every 10 seconds
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('updates-read', handleUpdatesRead);
+    };
+  }, [pathname]);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -121,9 +161,10 @@ export default function Navbar() {
   const ICON_WRAPPER_WIDTH = 24; // w-6 = 24px
 
   // Internal component for navigation items with tooltips
-  const SidebarNavItem = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) => {
+  const SidebarNavItem = ({ href, label, icon: Icon, badgeCount }: { href: string; label: string; icon: React.ComponentType<{ className?: string }>; badgeCount?: number }) => {
     const active = isActive(href);
     const [showTooltip, setShowTooltip] = useState(false);
+    const showBadge = badgeCount !== undefined && badgeCount > 0 && (accessLevel === 2 || accessLevel === 3);
 
     return (
       <div className="relative group/item">
@@ -138,12 +179,18 @@ export default function Navbar() {
           } ${isExpanded ? "px-3 py-2.5 gap-3" : "px-2 py-2.5 justify-center gap-0"}`}
         >
           {/* Fixed-width icon container - never changes size, perfectly centered in closed state */}
-          <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+          <div className="w-6 h-6 flex items-center justify-center flex-shrink-0 relative">
             <Icon className="h-5 w-5" />
+            {/* Badge - shown when collapsed or expanded */}
+            {showBadge && (
+              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-[var(--accent)] text-black text-[10px] font-semibold leading-none">
+                {badgeCount > 99 ? '99+' : badgeCount}
+              </span>
+            )}
           </div>
           {/* Label wrapper with overflow-hidden and opacity transition */}
           <div
-            className={`overflow-hidden ${
+            className={`overflow-hidden flex items-center gap-2 ${
               isExpanded
                 ? "opacity-100 max-w-[200px]"
                 : "opacity-0 max-w-0 pointer-events-none"
@@ -157,6 +204,12 @@ export default function Navbar() {
             <span className="text-sm whitespace-nowrap block">
               {label}
             </span>
+            {/* Badge next to label when expanded */}
+            {isExpanded && showBadge && (
+              <span className="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-[var(--accent)] text-black text-xs font-semibold leading-none">
+                {badgeCount > 99 ? '99+' : badgeCount}
+              </span>
+            )}
           </div>
         </Link>
         {/* Tooltip for collapsed state */}
@@ -252,7 +305,13 @@ export default function Navbar() {
           {/* Navigation Links */}
           <nav className="flex-1 flex flex-col gap-1 py-4 overflow-hidden">
             {links.map((l) => (
-              <SidebarNavItem key={l.href} href={l.href} label={l.label} icon={l.icon} />
+              <SidebarNavItem 
+                key={l.href} 
+                href={l.href} 
+                label={l.label} 
+                icon={l.icon}
+                badgeCount={l.href === "/updates" ? unreadCount : undefined}
+              />
             ))}
           </nav>
 
@@ -410,6 +469,7 @@ export default function Navbar() {
               {links.map(l => {
                 const active = isActive(l.href);
                 const Icon = l.icon;
+                const showBadge = l.href === "/updates" && unreadCount > 0 && (accessLevel === 2 || accessLevel === 3);
                 return (
                   <Link
                     key={l.href}
@@ -421,8 +481,20 @@ export default function Navbar() {
                         : "text-white/80 hover:text-white hover:bg-[var(--muted)]/30"
                     }`}
                   >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    <span className="font-medium">{l.label}</span>
+                    <div className="relative">
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      {showBadge && (
+                        <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-[var(--accent)] text-black text-[10px] font-semibold leading-none">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-medium flex-1">{l.label}</span>
+                    {showBadge && (
+                      <span className="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-[var(--accent)] text-black text-xs font-semibold leading-none">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
