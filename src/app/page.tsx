@@ -3,6 +3,15 @@ import Image from "next/image";
 import { BRAND } from "@/components/ui/Brand";
 import { Header } from "@/components/ui/header-2";
 import { Gallery4, type Gallery4Item } from "@/components/ui/gallery4";
+import { BentoCard, BentoGrid } from "@/components/ui/bento-grid";
+import { 
+  Video, 
+  Briefcase, 
+  FileText, 
+  GraduationCap, 
+  Users, 
+  TrendingUp 
+} from "lucide-react";
 
 export default function LandingPage() {
   const modules: Gallery4Item[] = [
@@ -52,28 +61,70 @@ export default function LandingPage() {
 
   const features = [
     {
-      title: "Diepgaande videolessen",
+      Icon: Video,
+      name: "Diepgaande videolessen",
       description: "Geen oppervlakkige tips, maar fundamentele kennis met duidelijke voorbeelden.",
+      background: (
+        <div 
+          className="absolute inset-0 bg-gradient-to-br from-[#4670db]/30 via-[#5a7de8]/20 to-[#0e1b4d]/40"
+        />
+      ),
+      className: "lg:row-start-1 lg:row-end-4 lg:col-start-2 lg:col-end-3",
     },
     {
-      title: "Praktische cases",
+      Icon: Briefcase,
+      name: "Praktische cases",
       description: "Realistische marktsituaties die stap voor stap doorlopen worden.",
+      background: (
+        <div 
+          className="absolute inset-0 bg-gradient-to-tr from-[#0e1b4d]/40 via-[#4670db]/30 to-[#6b8af0]/20"
+        />
+      ),
+      className: "lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3",
     },
     {
-      title: "PDF's & naslagwerk",
+      Icon: FileText,
+      name: "PDF's & naslagwerk",
       description: "Structuur, checklists en schema's om op terug te vallen.",
+      background: (
+        <div 
+          className="absolute inset-0 bg-gradient-to-bl from-[#4670db]/25 to-[#0e1b4d]/35"
+        />
+      ),
+      className: "lg:col-start-1 lg:col-end-2 lg:row-start-3 lg:row-end-4",
     },
     {
-      title: "Examen per module",
+      Icon: GraduationCap,
+      name: "Examen per module",
       description: "Test of je de materie écht begrijpt voordat je verder gaat.",
+      background: (
+        <div 
+          className="absolute inset-0 bg-gradient-to-r from-[#0e1b4d]/35 via-[#4670db]/30 to-[#5a7de8]/25"
+        />
+      ),
+      className: "lg:col-start-3 lg:col-end-3 lg:row-start-1 lg:row-end-2",
     },
     {
-      title: "Mentorship voor premium leden",
+      Icon: Users,
+      name: "Mentorship voor premium leden",
       description: "Toegang tot ervaren traders voor vragen en begeleiding.",
+      background: (
+        <div 
+          className="absolute inset-0 bg-gradient-to-tl from-[#4670db]/30 via-[#0e1b4d]/40 to-[#4670db]/30"
+        />
+      ),
+      className: "lg:col-start-3 lg:col-end-3 lg:row-start-2 lg:row-end-4",
     },
     {
-      title: "Progress tracking",
+      Icon: TrendingUp,
+      name: "Progress tracking",
       description: "Zie exact waar je staat en wat je volgende stap is.",
+      background: (
+        <div 
+          className="absolute inset-0 bg-gradient-to-r from-[#0e1b4d]/40 via-[#4670db]/35 via-[#5a7de8]/30 to-[#0e1b4d]/40"
+        />
+      ),
+      className: "lg:col-span-3 lg:row-start-4 lg:row-end-5",
     },
   ];
 
@@ -163,24 +214,20 @@ export default function LandingPage() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="max-w-5xl mx-auto px-4 py-16 md:py-24">
+        <section id="features" className="max-w-7xl mx-auto px-4 py-16 md:py-24">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               Wat je krijgt in Het Trade Platform
             </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Een compleet leerplatform met alles wat je nodig hebt om succesvol te leren traden
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, idx) => (
-              <div key={idx} className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  {feature.title}
-                </h3>
-                <p className="text-slate-600 text-sm leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
+          <BentoGrid className="lg:grid-rows-5">
+            {features.map((feature) => (
+              <BentoCard key={feature.name} {...feature} />
             ))}
-          </div>
+          </BentoGrid>
         </section>
 
         {/* Mentors Section */}
