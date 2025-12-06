@@ -52,14 +52,14 @@ const Gallery4 = ({
   }, [carouselApi]);
 
   return (
-    <section className="py-16 md:py-32">
+    <section className="py-16 md:py-32 font-sans">
       <div className="container mx-auto px-4">
         <div className="mb-6 flex flex-col gap-4 md:mb-14 md:flex-row md:items-end md:justify-between lg:mb-16">
           <div className="flex flex-col gap-3 md:gap-4">
-            <h2 className="text-2xl font-medium leading-tight md:text-4xl lg:text-5xl">
+            <h2 className="text-2xl font-medium leading-tight md:text-4xl lg:text-5xl font-sans">
               {title}
             </h2>
-            <p className="text-sm text-muted-foreground md:text-base md:max-w-lg">
+            <p className="text-sm text-muted-foreground md:text-base md:max-w-lg font-sans">
               {description}
             </p>
           </div>
@@ -114,14 +114,14 @@ const Gallery4 = ({
                       className="absolute h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 h-full bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-start p-6 text-primary-foreground md:p-8">
-                      <div className="mb-2 pt-4 text-xl font-semibold md:mb-3 md:pt-4 lg:pt-4">
+                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-start p-6 text-primary-foreground md:p-8 font-sans">
+                      <div className="mb-2 pt-4 text-xl font-semibold md:mb-3 md:pt-4 lg:pt-4 font-sans">
                         {item.title}
                       </div>
-                      <div className="mb-8 line-clamp-2 md:mb-12 lg:mb-9">
+                      <div className="mb-8 line-clamp-2 md:mb-12 lg:mb-9 font-sans">
                         {item.description}
                       </div>
-                      <div className="flex items-center text-sm">
+                      <div className="flex items-center text-sm font-sans">
                         Lees meer{" "}
                         <ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" />
                       </div>

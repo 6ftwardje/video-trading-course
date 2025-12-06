@@ -4,13 +4,16 @@ import { BRAND } from "@/components/ui/Brand";
 import { Header } from "@/components/ui/header-2";
 import { Gallery4, type Gallery4Item } from "@/components/ui/gallery4";
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid";
+import { Footer } from "@/components/ui/footer";
 import { 
   Video, 
   Briefcase, 
   FileText, 
   GraduationCap, 
   Users, 
-  TrendingUp 
+  TrendingUp,
+  Youtube,
+  Instagram
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -147,18 +150,18 @@ export default function LandingPage() {
 
   return (
     <div 
-      className="min-h-screen bg-white text-slate-900"
+      className="min-h-screen bg-white text-slate-900 font-sans"
       style={{
         '--background': '255 255 255',
         '--foreground': '15 23 42',
         '--border': '226 232 240',
-        '--primary': '15 23 42',
+        '--primary': '70 112 219',
         '--primary-foreground': '255 255 255',
         '--secondary': '241 245 249',
         '--secondary-foreground': '15 23 42',
         '--accent': '241 245 249',
         '--accent-foreground': '15 23 42',
-        '--ring': '203 213 225',
+        '--ring': '70 112 219',
         '--input': '226 232 240',
       } as React.CSSProperties}
     >
@@ -170,22 +173,22 @@ export default function LandingPage() {
         <section className="max-w-5xl mx-auto px-4 py-16 md:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 font-sans">
                 Leer traden met structuur en echte expertise
               </h1>
-              <p className="text-lg md:text-xl text-slate-600">
+              <p className="text-lg md:text-xl text-slate-600 font-sans">
                 Het complete Nederlandstalige leerplatform voor traders.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-[#4670db] text-white font-semibold hover:bg-[#3a5fc7] transition font-sans"
                 >
                   Maak gratis account
                 </Link>
                 <a
                   href="#modules"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-[#4670db] text-[#4670db] font-medium hover:bg-[#4670db]/10 transition font-sans"
                 >
                   Bekijk modules
                 </a>
@@ -216,10 +219,10 @@ export default function LandingPage() {
         {/* Features Section */}
         <section id="features" className="max-w-7xl mx-auto px-4 py-16 md:py-24">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 font-sans">
               Wat je krijgt in Het Trade Platform
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto font-sans">
               Een compleet leerplatform met alles wat je nodig hebt om succesvol te leren traden
             </p>
           </div>
@@ -233,10 +236,10 @@ export default function LandingPage() {
         {/* Mentors Section */}
         <section className="max-w-5xl mx-auto px-4 py-16 md:py-24 bg-slate-50">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 font-sans">
               Leer van ervaren traders
             </h2>
-            <p className="text-lg text-slate-600">
+            <p className="text-lg text-slate-600 font-sans">
               Persoonlijke begeleiding van professionals met jarenlange marktervaring
             </p>
           </div>
@@ -252,11 +255,11 @@ export default function LandingPage() {
                     {mentor.name[0]}
                   </span>
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-1">
+                <h3 className="text-xl font-semibold text-slate-900 mb-1 font-sans">
                   {mentor.name}
                 </h3>
-                <p className="text-sm text-slate-500 mb-3">{mentor.role}</p>
-                <p className="text-slate-600 text-sm">{mentor.bio}</p>
+                <p className="text-sm text-slate-500 mb-3 font-sans">{mentor.role}</p>
+                <p className="text-slate-600 text-sm font-sans">{mentor.bio}</p>
               </div>
             ))}
           </div>
@@ -266,46 +269,46 @@ export default function LandingPage() {
         <section id="pricing" className="max-w-5xl mx-auto px-4 py-16 md:py-24">
           <div className="max-w-2xl mx-auto text-center space-y-8">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 font-sans">
                 Volledige toegang tot Het Trade Platform
               </h2>
-              <p className="text-lg text-slate-600">
+              <p className="text-lg text-slate-600 font-sans">
                 Een serieuze, volledige opleiding die je van beginner naar zelfverzekerde trader brengt.
               </p>
             </div>
             <div className="bg-slate-50 rounded-xl p-8 border border-slate-200">
               {/* TODO: Replace placeholder text with actual pricing logic when pricing system is implemented */}
-              <div className="text-2xl font-bold text-slate-900 mb-2">
+              <div className="text-2xl font-bold text-slate-900 mb-2 font-sans">
                 Éénmalige investering
               </div>
-              <p className="text-sm text-slate-500 mb-6">
+              <p className="text-sm text-slate-500 mb-6 font-sans">
                 (Prijzen worden na inloggen getoond)
               </p>
-              <ul className="space-y-3 text-left mb-8">
+              <ul className="space-y-3 text-left mb-8 font-sans">
                 <li className="flex items-start gap-3">
-                  <span className="text-slate-900 mt-0.5">✓</span>
-                  <span className="text-slate-700">Alle modules en videolessen</span>
+                  <span className="text-[#4670db] mt-0.5 font-sans">✓</span>
+                  <span className="text-slate-700 font-sans">Alle modules en videolessen</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="text-slate-900 mt-0.5">✓</span>
-                  <span className="text-slate-700">Praktijkcases & updates</span>
+                  <span className="text-[#4670db] mt-0.5 font-sans">✓</span>
+                  <span className="text-slate-700 font-sans">Praktijkcases & updates</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="text-slate-900 mt-0.5">✓</span>
-                  <span className="text-slate-700">Examens per module</span>
+                  <span className="text-[#4670db] mt-0.5 font-sans">✓</span>
+                  <span className="text-slate-700 font-sans">Examens per module</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="text-slate-900 mt-0.5">✓</span>
-                  <span className="text-slate-700">Toegang tot mentorship (voor premium leden)</span>
+                  <span className="text-[#4670db] mt-0.5 font-sans">✓</span>
+                  <span className="text-slate-700 font-sans">Toegang tot mentorship (voor premium leden)</span>
                 </li>
               </ul>
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center w-full px-6 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition"
+                className="inline-flex items-center justify-center w-full px-6 py-3 rounded-lg bg-[#4670db] text-white font-semibold hover:bg-[#3a5fc7] transition font-sans"
               >
                 Log in om te upgraden
               </Link>
-              <p className="text-xs text-slate-500 mt-4">
+              <p className="text-xs text-slate-500 mt-4 font-sans">
                 Na inloggen kun je upgraden naar volledige toegang
               </p>
             </div>
@@ -313,32 +316,43 @@ export default function LandingPage() {
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200 bg-slate-50">
-          <div className="max-w-5xl mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-slate-600">
-                © {BRAND.name} / Cryptoriez – {new Date().getFullYear()}
-              </div>
-              <div className="flex items-center gap-6">
-                <Link
-                  href="/privacy"
-                  className="text-sm text-slate-600 hover:text-slate-900 transition"
-                >
-                  Privacy
-                </Link>
-                <Link
-                  href="/terms"
-                  className="text-sm text-slate-600 hover:text-slate-900 transition"
-                >
-                  Voorwaarden
-                </Link>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500 mt-4 text-center">
-              Dit is geen financieel advies
-            </p>
-          </div>
-        </footer>
+        <Footer
+          logo={
+            <Image
+              src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The%20Trade%20Platform.webp"
+              alt="Het Trade Platform"
+              width={120}
+              height={32}
+              className="h-8 w-auto"
+            />
+          }
+          brandName={BRAND.name}
+          socialLinks={[
+            {
+              icon: <Youtube className="h-5 w-5" />,
+              href: "https://youtube.com",
+              label: "Youtube",
+            },
+            {
+              icon: <Instagram className="h-5 w-5" />,
+              href: "https://instagram.com",
+              label: "Instagram",
+            },
+          ]}
+          mainLinks={[
+            { href: "#modules", label: "Modules" },
+            { href: "#features", label: "Features" },
+            { href: "#pricing", label: "Pricing" },
+          ]}
+          legalLinks={[
+            { href: "/privacy", label: "Privacy" },
+            { href: "/terms", label: "Voorwaarden" },
+          ]}
+          copyright={{
+            text: `© ${new Date().getFullYear()} ${BRAND.name} / Cryptoriez`,
+            license: "Dit is geen financieel advies",
+          }}
+        />
       </main>
     </div>
   );

@@ -92,13 +92,13 @@ const BentoCard = ({
 
       <Icon className="h-12 w-12 origin-left transform-gpu text-white transition-all duration-300 ease-in-out group-hover:scale-90" />
 
-      <h3 className="text-xl font-semibold text-neutral-700 dark:text-neutral-300">
+      <h3 className="text-xl font-semibold text-neutral-700 dark:text-neutral-300 font-sans">
 
         {name}
 
       </h3>
 
-      <p className="max-w-lg text-neutral-400">{description}</p>
+      <p className="max-w-lg text-neutral-400 font-sans">{description}</p>
 
     </div>
 
