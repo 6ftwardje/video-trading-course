@@ -1,31 +1,52 @@
 import Link from "next/link";
+import Image from "next/image";
 import { BRAND } from "@/components/ui/Brand";
+import { Header } from "@/components/ui/header-2";
+import { Gallery4, type Gallery4Item } from "@/components/ui/gallery4";
 
 export default function LandingPage() {
-  const modules = [
+  const modules: Gallery4Item[] = [
     {
+      id: "module-1",
       title: "Module 1 – Basis van technische analyse",
       description: "De fundamenten van prijsactie, candlesticks en structuur.",
+      href: "#modules",
+      image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.0.3&q=80&w=1080",
     },
     {
+      id: "module-2",
       title: "Module 2 – Markstructuur & trends",
       description: "Leer marktfases herkennen en structureren.",
+      href: "#modules",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.0.3&q=80&w=1080",
     },
     {
+      id: "module-3",
       title: "Module 3 – Entries & exits",
       description: "Concreet weten waar je in- en uitstapt.",
+      href: "#modules",
+      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.0.3&q=80&w=1080",
     },
     {
+      id: "module-4",
       title: "Module 4 – Risk & money management",
       description: "Bescherm je kapitaal en denk in probabiliteit.",
+      href: "#modules",
+      image: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.0.3&q=80&w=1080",
     },
     {
+      id: "module-5",
       title: "Module 5 – Praktijkcases",
       description: "Echte marktsituaties stap voor stap ontleed.",
+      href: "#modules",
+      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.0.3&q=80&w=1080",
     },
     {
+      id: "module-6",
       title: "Module 6 – Mentale kant van traden",
       description: "Mindset, discipline en emotionele controle.",
+      href: "#modules",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.0.3&q=80&w=1080",
     },
   ];
 
@@ -74,26 +95,26 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
-      {/* Sticky Topbar */}
-      <header className="fixed top-0 left-0 right-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200">
-        <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-semibold tracking-tight">
-              {BRAND.name}
-            </span>
-          </div>
-          <Link
-            href="/login"
-            className="text-sm font-medium text-slate-700 hover:text-slate-900 transition"
-          >
-            Login / Registreer
-          </Link>
-        </div>
-      </header>
+    <div 
+      className="min-h-screen bg-white text-slate-900"
+      style={{
+        '--background': '255 255 255',
+        '--foreground': '15 23 42',
+        '--border': '226 232 240',
+        '--primary': '15 23 42',
+        '--primary-foreground': '255 255 255',
+        '--secondary': '241 245 249',
+        '--secondary-foreground': '15 23 42',
+        '--accent': '241 245 249',
+        '--accent-foreground': '15 23 42',
+        '--ring': '203 213 225',
+        '--input': '226 232 240',
+      } as React.CSSProperties}
+    >
+      <Header />
 
-      {/* Main Content - with padding to account for fixed header */}
-      <main className="pt-20">
+      {/* Main Content */}
+      <main>
         {/* Hero Section */}
         <section className="max-w-5xl mx-auto px-4 py-16 md:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -119,44 +140,30 @@ export default function LandingPage() {
                 </a>
               </div>
             </div>
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-              {/* TODO: Replace with actual dashboard screenshot from /public/images/dashboard-hero.png */}
-              <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">
-                Dashboard preview
-                <br />
-                <span className="text-xs">(Image placeholder)</span>
-              </div>
+            <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-lg">
+              <Image
+                src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/dashboard_main_new.webp"
+                alt="Het Trade Platform Dashboard"
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
             </div>
           </div>
         </section>
 
         {/* Modules Overview Section */}
-        <section id="modules" className="max-w-5xl mx-auto px-4 py-16 md:py-24 bg-slate-50">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Wat je gaat leren
-            </h2>
-            <p className="text-lg text-slate-600">
-              Een complete opleiding in 6 modules
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {modules.map((module, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-xl p-6 border border-slate-200 hover:border-slate-300 transition shadow-sm"
-              >
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                  {module.title}
-                </h3>
-                <p className="text-slate-600 text-sm">{module.description}</p>
-              </div>
-            ))}
-          </div>
+        <section id="modules" className="bg-slate-50">
+          <Gallery4
+            title="Wat je gaat leren"
+            description="Een complete opleiding in 6 modules"
+            items={modules}
+          />
         </section>
 
         {/* Features Section */}
-        <section className="max-w-5xl mx-auto px-4 py-16 md:py-24">
+        <section id="features" className="max-w-5xl mx-auto px-4 py-16 md:py-24">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               Wat je krijgt in Het Trade Platform
@@ -209,7 +216,7 @@ export default function LandingPage() {
         </section>
 
         {/* Pricing Section */}
-        <section className="max-w-5xl mx-auto px-4 py-16 md:py-24">
+        <section id="pricing" className="max-w-5xl mx-auto px-4 py-16 md:py-24">
           <div className="max-w-2xl mx-auto text-center space-y-8">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">

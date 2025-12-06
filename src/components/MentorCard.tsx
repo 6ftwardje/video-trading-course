@@ -1,7 +1,5 @@
 'use client'
 
-import Image from 'next/image'
-
 type Props = {
   name: string
   role: string
@@ -34,20 +32,19 @@ export default function MentorCard({
       <div className="space-y-4">
         {/* Mentor Image */}
         <div className="relative h-48 w-full overflow-hidden rounded-xl bg-[var(--muted)]">
-          {image ? (
-            <Image
-              src={image}
-              alt={`${name} - ${role}`}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              priority={false}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-4xl text-[var(--text-dim)]">
-              {name.charAt(0)}
-            </div>
-          )}
+          <div
+            className="h-full w-full bg-cover bg-center"
+            style={{
+              backgroundImage: image ? `url(${image})` : undefined,
+              backgroundColor: image ? 'transparent' : 'var(--muted)',
+            }}
+          >
+            {!image && (
+              <div className="flex h-full items-center justify-center text-4xl text-[var(--text-dim)]">
+                {name.charAt(0)}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Mentor Info */}
