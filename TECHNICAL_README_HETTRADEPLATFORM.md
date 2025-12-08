@@ -394,6 +394,57 @@ router.replace('/login')
 **Relationships**:
 - Many-to-one met `modules` (via `module_id`)
 
+#### 9. `updates`
+```sql
+- id: uuid (primary key)
+- author_id: uuid (foreign key naar students)
+- title: text (nullable)
+- content: text - markdown content
+- image_path: text (nullable) - path naar image in storage
+- created_at: timestamp
+- updated_at: timestamp (nullable)
+```
+
+**Relationships**:
+- Many-to-one met `students` (via `author_id`)
+- One-to-many met `update_reads` (via `id`)
+
+**Features**:
+- Markdown rendering (bold, italic, lists, links)
+- Image upload support (max 1 image per update)
+- Access level based visibility
+
+#### 10. `update_reads`
+```sql
+- id: integer (primary key)
+- student_id: uuid (foreign key naar students)
+- update_id: uuid (foreign key naar updates)
+- created_at: timestamp
+```
+
+**Unique Constraint**: `(student_id, update_id)` - één record per student/update combinatie
+
+**Relationships**:
+- Many-to-one met `students` (via `student_id`)
+- Many-to-one met `updates` (via `update_id`)
+
+**Purpose**: Track welke updates een student heeft gelezen (voor unread count)
+
+### Supabase Storage Buckets
+
+#### `update-images`
+- **Purpose**: Storage voor update afbeeldingen
+- **RLS Policy**:
+  - Upload/Delete: Alleen mentors (access_level = 3)
+  - Read: Alle ingelogde users via signed URLs (1 hour expiry)
+- **Path Structure**: `students/{studentId}/{uuid}.{ext}`
+- **Allowed Formats**: PNG, JPG, JPEG, WebP
+- **Max File Size**: 1MB
+
+#### `Cryptoriez`
+- **Purpose**: Logo en andere platform assets
+- **RLS Policy**: Public read
+
 ### Row Level Security (RLS)
 
 **Aannames** (niet volledig gedocumenteerd in code):
@@ -403,6 +454,8 @@ router.replace('/login')
 - `exam_results`: Users kunnen alleen hun eigen results lezen/schrijven
 - `modules`, `lessons`: Public read
 - `practical_lessons`: Public read
+- `updates`: Public read, alleen mentors (access_level = 3) kunnen schrijven
+- `update_reads`: Users kunnen alleen hun eigen reads lezen/schrijven
 
 ---
 
@@ -441,6 +494,9 @@ router.replace('/login')
 │   │   ├── mentorship/
 │   │   │   └── page.tsx              # Mentorship overzicht (Calendly)
 │   │   │
+│   │   ├── updates/
+│   │   │   └── page.tsx              # Updates feed (mentors kunnen posts maken)
+│   │   │
 │   │   ├── confirmed/
 │   │   │   └── page.tsx              # Email confirmation page?
 │   │   │
@@ -468,6 +524,8 @@ router.replace('/login')
 │   │   ├── MentorCard.tsx            # Mentor card component
 │   │   ├── CalendlyModal.tsx         # Calendly booking modal
 │   │   ├── TradingSessionClock.tsx   # Trading session timer?
+│   │   ├── ImageModal.tsx             # Fullscreen image modal voor updates
+│   │   ├── MarkdownRenderer.tsx      # Secure markdown renderer component
 │   │   │
 │   │   └── ui/
 │   │       ├── Brand.tsx             # Brand logo + naam
@@ -479,7 +537,8 @@ router.replace('/login')
 │   │   ├── student.ts                # Student data management (localStorage + Supabase)
 │   │   ├── progress.ts               # Progress tracking functies
 │   │   ├── exam.ts                   # Exam functies (fetch, submit, results)
-│   │   └── practical.ts              # Practical lessons functies
+│   │   ├── practical.ts              # Practical lessons functies
+│   │   └── updates.ts                # Updates CRUD + image upload functies
 │   │
 │   ├── utils/
 │   │   └── supabase/
@@ -582,10 +641,44 @@ router.replace('/login')
 - Middleware: Checkt alleen auth, niet access level
 
 **UI Differences**:
-- Basic: Lock icons, upgrade messages, disabled buttons
-- Full: Alle features unlocked (behalve module gating)
+- Basic: Lock icons, upgrade messages, disabled buttons, blurred update content
+- Full: Alle features unlocked (behalve module gating), volledige update content
+- Mentor: Zelfde als Full + kan updates maken/bewerken/verwijderen
 
-### 5. Mentorship Flow
+### 5. Updates Flow
+
+**Updates Page** (`/updates`):
+- Feed van mentor updates/announcements
+- Alleen mentors (access_level = 3) kunnen updates maken/bewerken/verwijderen
+- Alle ingelogde users kunnen updates lezen
+- Access level based content visibility:
+  - Level 1 (Basic): Blurred placeholder content + images
+  - Level 2/3 (Full/Mentor): Volledige content met markdown rendering + images
+
+**Update Features**:
+- **Markdown Support**: Bold, italic, lists, links (secure rendering)
+- **Image Upload**: Max 1 image per update (PNG, JPG, JPEG, WebP, max 1MB)
+- **Image Storage**: Supabase Storage bucket `update-images`
+- **Image Display**: Fullscreen modal on click
+- **Read Tracking**: Automatisch markeren als gelezen voor level 2/3 users
+- **Unread Count**: Badge in navbar voor ongelezen updates
+
+**Markdown Rendering**:
+- Secure sanitization met DOMPurify
+- Alleen toegestaan: `p`, `strong`, `em`, `ul`, `ol`, `li`, `a`, `br`
+- Code blocks worden geconverteerd naar plain text
+- Links openen altijd in nieuwe tab (`target="_blank"`, `rel="noopener noreferrer"`)
+- Geen inline HTML toegestaan
+
+**Image Upload Flow**:
+1. Mentor selecteert/upload image (drag-and-drop of file picker)
+2. Validatie: file type en size (max 1MB)
+3. Upload naar `update-images` bucket: `students/{studentId}/{uuid}.{ext}`
+4. Preview met signed URL
+5. Bij opslaan: `image_path` wordt opgeslagen in `updates` table
+6. Bij weergave: Signed URL genereren (1 hour expiry)
+
+### 6. Mentorship Flow
 
 **Mentorship Page** (`/mentorship`):
 - Grid van mentor cards
@@ -601,7 +694,7 @@ router.replace('/login')
 - Mentor-specifieke Calendly URLs
 - Direct booking vanuit platform
 
-### 6. Student Data Sync
+### 7. Student Data Sync
 
 **Sync Points**:
 1. Login/Register: Direct sync naar localStorage
@@ -616,6 +709,41 @@ router.replace('/login')
 - Update localStorage
 
 **Probleem**: Te veel sync points, kan inconsistent zijn
+
+### 8. Updates Feature Implementation
+
+**Components**:
+- `src/app/updates/page.tsx`: Main updates feed page
+- `src/components/ImageModal.tsx`: Fullscreen image modal
+- `src/components/MarkdownRenderer.tsx`: Secure markdown renderer
+- `src/lib/updates.ts`: CRUD operations + image handling
+
+**Key Functions** (`src/lib/updates.ts`):
+- `fetchUpdatesWithAuthor()`: Haal alle updates op met author info
+- `createUpdate()`: Maak nieuwe update aan (mentors only)
+- `updateUpdate()`: Bewerk bestaande update (mentors only)
+- `deleteUpdate()`: Verwijder update (mentors only)
+- `uploadUpdateImage()`: Upload image naar storage (mentors only)
+- `deleteUpdateImage()`: Verwijder image uit storage (mentors only)
+- `getSignedImageUrl()`: Genereer signed URL voor image (1 hour expiry)
+- `getUnreadCount()`: Tel ongelezen updates (level 2/3 only)
+- `markAllAsRead()`: Markeer alle updates als gelezen (level 2/3 only)
+
+**MarkdownRenderer Security**:
+- Uses `marked` voor markdown parsing
+- Uses `DOMPurify` voor HTML sanitization
+- Strict allowlist: alleen `p`, `strong`, `em`, `ul`, `ol`, `li`, `a`, `br`
+- Code blocks worden geconverteerd naar plain text
+- Links worden geforceerd naar `target="_blank"` met `rel="noopener noreferrer"`
+- Alleen http/https URLs toegestaan
+- Geen inline HTML, scripts, styles, iframes toegestaan
+
+**Image Upload Security**:
+- File type validation: alleen PNG, JPG, JPEG, WebP
+- File size limit: max 1MB
+- Path structure: `students/{studentId}/{uuid}.{ext}`
+- RLS policies: alleen mentors kunnen uploaden/verwijderen
+- Signed URLs voor read access (1 hour expiry)
 
 ---
 
@@ -632,7 +760,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon-key]
 
 **Project ID**: `trogwrgxxhsvixzglzpn` (zichtbaar in next.config.ts image domain)
 
-**Storage Bucket**: `Cryptoriez` (voor logo en assets)
+**Storage Buckets**:
+- `Cryptoriez`: Logo en andere platform assets (public read)
+- `update-images`: Update afbeeldingen (private, signed URLs voor read, mentors only voor upload)
 
 ---
 
@@ -645,10 +775,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon-key]
   "@radix-ui/react-progress": "^1.1.7",
   "@supabase/auth-helpers-nextjs": "^0.10.0",  // ⚠️ DEPRECATED
   "@supabase/supabase-js": "^2.76.1",
+  "@supabase/ssr": "^0.5.2",
   "@vimeo/player": "^2.30.0",
+  "dompurify": "^3.3.0",
   "framer-motion": "^12.23.24",
   "lucide-react": "^0.548.0",
-  "next": "16.0.0",
+  "marked": "^17.0.1",
+  "next": "16.0.7",
   "react": "19.2.0",
   "react-dom": "19.2.0"
 }
@@ -659,11 +792,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon-key]
 ```json
 {
   "@tailwindcss/postcss": "^4",
+  "@types/dompurify": "^3.0.5",
   "@types/node": "^20",
   "@types/react": "^19",
   "@types/react-dom": "^19",
   "eslint": "^9",
-  "eslint-config-next": "16.0.0",
+  "eslint-config-next": "16.0.7",
   "tailwindcss": "^4",
   "typescript": "^5"
 }
@@ -793,6 +927,16 @@ Dit is een functioneel leerplatform met een solide basis, maar de authenticatie 
 ---
 
 **Laatste update**: 2024
-**Versie**: 1.0
+**Versie**: 1.1
 **Auteur**: Technische documentatie voor ChatGPT project setup
+
+**Changelog v1.1**:
+- Toegevoegd: Updates feature met markdown rendering en image upload
+- Toegevoegd: ImageModal component voor fullscreen image viewing
+- Toegevoegd: MarkdownRenderer component met secure sanitization
+- Toegevoegd: `updates` en `update_reads` database tables
+- Toegevoegd: `update-images` Supabase Storage bucket
+- Toegevoegd: Dependencies: `marked`, `dompurify`, `@types/dompurify`
+- Toegevoegd: `@supabase/ssr` dependency
+- Updated: Next.js naar 16.0.7
 
