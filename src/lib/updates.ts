@@ -6,6 +6,7 @@ export type Update = {
   author_id: string
   title: string | null
   content: string
+  image_path: string | null
   created_at: string
   updated_at: string | null
 }
@@ -26,6 +27,7 @@ export async function fetchUpdatesWithAuthor(): Promise<UpdateWithAuthor[]> {
       author_id,
       title,
       content,
+      image_path,
       created_at,
       updated_at,
       students!author_id (
@@ -48,6 +50,7 @@ export async function fetchUpdatesWithAuthor(): Promise<UpdateWithAuthor[]> {
       author_id: row.author_id,
       title: row.title,
       content: row.content,
+      image_path: row.image_path ?? null,
       created_at: row.created_at,
       updated_at: row.updated_at,
       author_name: author?.email ?? 'Onbekende mentor',
@@ -60,6 +63,7 @@ export async function fetchUpdatesWithAuthor(): Promise<UpdateWithAuthor[]> {
 export async function createUpdate(input: {
   title: string | null
   content: string
+  image_path: string | null
 }): Promise<UpdateWithAuthor> {
   const supabase = getSupabaseClient()
   const studentId = getStoredStudentId()
@@ -74,12 +78,14 @@ export async function createUpdate(input: {
       author_id: studentId,
       title: input.title,
       content: input.content,
+      image_path: input.image_path,
     })
     .select(`
       id,
       author_id,
       title,
       content,
+      image_path,
       created_at,
       updated_at,
       students!author_id (
@@ -100,6 +106,7 @@ export async function createUpdate(input: {
     author_id: data.author_id,
     title: data.title,
     content: data.content,
+    image_path: data.image_path ?? null,
     created_at: data.created_at,
     updated_at: data.updated_at,
     author_name: author?.email ?? 'Onbekende mentor',
@@ -110,7 +117,7 @@ export async function createUpdate(input: {
 
 export async function updateUpdate(
   id: string,
-  input: { title: string | null; content: string }
+  input: { title: string | null; content: string; image_path: string | null }
 ): Promise<UpdateWithAuthor> {
   const supabase = getSupabaseClient()
 
@@ -119,6 +126,7 @@ export async function updateUpdate(
     .update({
       title: input.title,
       content: input.content,
+      image_path: input.image_path,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -127,6 +135,7 @@ export async function updateUpdate(
       author_id,
       title,
       content,
+      image_path,
       created_at,
       updated_at,
       students!author_id (
@@ -147,12 +156,85 @@ export async function updateUpdate(
     author_id: data.author_id,
     title: data.title,
     content: data.content,
+    image_path: data.image_path ?? null,
     created_at: data.created_at,
     updated_at: data.updated_at,
     author_name: author?.email ?? 'Onbekende mentor',
   }
 
   return mapped
+}
+
+export async function uploadUpdateImage(file: File): Promise<string> {
+  const supabase = getSupabaseClient()
+  const studentId = getStoredStudentId()
+
+  if (!studentId) {
+    throw new Error('Geen student-id gevonden. User lijkt niet ingelogd.')
+  }
+
+  // Determine file extension
+  const fileName = file.name.toLowerCase()
+  let ext: string
+  if (fileName.endsWith('.png')) ext = 'png'
+  else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) ext = 'jpg'
+  else if (fileName.endsWith('.webp')) ext = 'webp'
+  else {
+    throw new Error('Alleen PNG, JPG, JPEG en WebP zijn toegestaan')
+  }
+
+  // Enforce max 1MB
+  const maxSize = 1024 * 1024 // 1MB
+  if (file.size > maxSize) {
+    throw new Error('Bestand is te groot. Maximum grootte is 1MB.')
+  }
+
+  // Build path: students/{studentId}/{uuid}.{ext}
+  const uuid = crypto.randomUUID()
+  const path = `students/${studentId}/${uuid}.${ext}`
+
+  // Upload to Supabase Storage
+  const { data, error } = await supabase.storage
+    .from('update-images')
+    .upload(path, file, { upsert: false })
+
+  if (error) {
+    console.error('Error uploading image', error)
+    throw error
+  }
+
+  // Return path (not URL)
+  return data.path
+}
+
+export async function deleteUpdateImage(path: string): Promise<void> {
+  const supabase = getSupabaseClient()
+
+  const { error } = await supabase.storage.from('update-images').remove([path])
+
+  if (error) {
+    console.error('Error deleting image', error)
+    throw error
+  }
+}
+
+export async function getSignedImageUrl(path: string): Promise<string> {
+  const supabase = getSupabaseClient()
+
+  const { data, error } = await supabase.storage
+    .from('update-images')
+    .createSignedUrl(path, 60 * 60) // 1 hour
+
+  if (error) {
+    console.error('Error creating signed URL', error)
+    throw error
+  }
+
+  if (!data?.signedUrl) {
+    throw new Error('Geen signed URL ontvangen')
+  }
+
+  return data.signedUrl
 }
 
 export async function deleteUpdate(id: string): Promise<boolean> {
@@ -259,7 +341,19 @@ export async function markAllAsRead(
   const { error } = await supabase.from('update_reads').insert(newReads)
 
   if (error) {
-    console.error('Error marking updates as read', error)
+    // Log detailed error information
+    try {
+      const errorInfo = {
+        message: error.message || 'Unknown error',
+        details: error.details || null,
+        hint: error.hint || null,
+        code: error.code || null,
+      }
+      console.error('Error marking updates as read:', errorInfo)
+    } catch (logError) {
+      // Fallback if error object can't be serialized
+      console.error('Error marking updates as read:', String(error))
+    }
     throw error
   }
 }
