@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import HeroDashboard from '@/components/HeroDashboard'
 import Container from '@/components/ui/Container'
-import ModuleProgressCard from '@/components/ModuleProgressCard'
-import { WaveLoader } from '@/components/ui/wave-loader'
+import DashboardHeader from '@/components/DashboardHeader'
+import DashboardModulesSection from '@/components/DashboardModulesSection'
+import DashboardProgress from '@/components/DashboardProgress'
+import TradingSessions from '@/components/TradingSessions'
 import {
   getStoredStudentEmail,
   getStoredStudentId,
@@ -126,61 +128,76 @@ export default function DashboardPage() {
     run()
   }, [router])
 
-  return (
-    <>
-      <HeroDashboard
-        userName={email?.split('@')[0] || undefined}
-        nextLessonUrl={nextLessonHref || undefined}
-        progressText={progressText}
-        accessLevel={accessLevel ?? 1}
-        progressPanel={{
-          loading,
-          activeModule: activeModule
-            ? {
-                title: activeModule.title,
-                watchedCount: activeModule.watchedCount,
-                totalLessons: activeModule.totalLessons,
-                pct: activeModule.pct,
-              }
-            : null,
-          totalCompleted: modules.reduce((acc, mod) => acc + mod.watchedCount, 0),
-          totalLessons: modules.reduce((acc, mod) => acc + mod.totalLessons, 0),
-          nextLessonUrl: nextLessonHref || undefined,
-        }}
-      />
-      <Container className="pb-16">
-        <div className="space-y-12">
-          <section className="space-y-4">
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-              <div>
-                <h2 className="text-xl font-semibold">Jouw huidige module</h2>
-                <p className="text-sm text-[var(--text-dim)]">
-                  Werk verder waar je gebleven bent. Je kan steeds terugkeren naar het overzicht.
-                </p>
-              </div>
-              <a
-                href="/modules"
-                className="text-sm font-medium text-[var(--accent)] underline-offset-4 transition hover:underline"
-              >
-                Bekijk alle modules
-              </a>
-            </div>
+  const progressPanel = {
+    loading,
+    activeModule: activeModule
+      ? {
+          title: activeModule.title,
+          watchedCount: activeModule.watchedCount,
+          totalLessons: activeModule.totalLessons,
+          pct: activeModule.pct,
+        }
+      : null,
+    totalCompleted: modules.reduce((acc, mod) => acc + mod.watchedCount, 0),
+    totalLessons: modules.reduce((acc, mod) => acc + mod.totalLessons, 0),
+    nextLessonUrl: nextLessonHref || undefined,
+  }
 
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <WaveLoader message="Laden..." />
-              </div>
-            ) : activeModule ? (
-              <ModuleProgressCard module={{ ...activeModule, accessLevel: accessLevel ?? 1 }} />
-            ) : (
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/70 p-6 text-sm text-[var(--text-dim)]">
-                Nog geen modules beschikbaar. Kom later terug voor nieuwe content.
-              </div>
-            )}
-          </section>
+  return (
+    <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-10 pb-20">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 lg:gap-12">
+        {/* LEFT COLUMN */}
+        <div className="space-y-8">
+          {/* Hero Dashboard - WITH card wrapper */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+            <HeroDashboard
+              userName={email?.split('@')[0] || undefined}
+              nextLessonUrl={nextLessonHref || undefined}
+              progressText={progressText}
+              accessLevel={accessLevel ?? 1}
+              progressPanel={progressPanel}
+            />
+          </div>
+
+          {/* Intro Video - NO card wrapper */}
+          <DashboardHeader thumbnailUrl="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/still%20intro%20vid.webp" />
+
+          {/* Trading Sessions - appears here on mobile, after HeroDashboard */}
+          <div className="lg:hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+            <TradingSessions />
+          </div>
+
+          {/* Progress Section - WITH card wrapper */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+            <DashboardProgress
+              loading={progressPanel.loading}
+              accessLevel={accessLevel ?? 1}
+              activeModule={progressPanel.activeModule}
+              totalCompleted={progressPanel.totalCompleted}
+              totalLessons={progressPanel.totalLessons}
+              nextLessonUrl={progressPanel.nextLessonUrl}
+            />
+          </div>
+
+          {/* Active Module - WITH card wrapper */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+            <DashboardModulesSection
+              loading={loading}
+              activeModule={activeModule}
+              accessLevel={accessLevel ?? 1}
+            />
+          </div>
         </div>
-      </Container>
-    </>
+
+        {/* RIGHT COLUMN */}
+        <div className="space-y-8 lg:sticky lg:top-10 h-fit">
+          {/* Trading Sessions - WITH card wrapper, sticky on desktop */}
+          <div className="hidden lg:block rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+            <TradingSessions />
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
