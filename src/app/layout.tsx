@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { BRAND } from "@/components/ui/Brand";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "Cryptoriez Learning Platform",
@@ -20,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <body className="bg-[var(--bg)] text-white font-sans min-h-screen">
-        {children}
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
