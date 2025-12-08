@@ -4,3 +4,4 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   return <AppShell>{children}</AppShell>;
 }
 
+

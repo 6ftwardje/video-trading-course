@@ -28,3 +28,4 @@ The root routing will be migrated in a later feature step. At that time:
 - This folder does not interfere with existing authentication or routing logic
 - All existing protected routes remain unchanged
 
+
