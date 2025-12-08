@@ -10,43 +10,42 @@ interface MarkdownRendererProps {
 
 // Configure marked once
 marked.setOptions({
-  mangle: false,
-  headerIds: false,
   breaks: true, // Enable line breaks
 })
 
-// Create custom renderer
-const renderer = new marked.Renderer()
-
-// Override code block renderer to return plain text (strip markdown syntax)
-renderer.code = (code: string) => {
-  // Return plain text without code formatting
-  return code || ''
-}
-
-// Ensure links open in new tab
-renderer.link = (href, title, text) => {
-  if (!href) return text || ''
-  // Only allow http/https URLs for security
-  try {
-    // Try to parse as absolute URL first
-    let url: URL
+// Create custom renderer using marked v17 API
+const renderer = {
+  code({ text }: { text: string }) {
+    // Return plain text without code formatting
+    return text || ''
+  },
+  link({ href, title, tokens }: { href: string; title?: string | null; tokens: any[] }) {
+    if (!href) {
+      // Render tokens as plain text if no href
+      return tokens.map((t: any) => t.text || '').join('')
+    }
+    // Only allow http/https URLs for security
     try {
-      url = new URL(href)
+      // Try to parse as absolute URL first
+      let url: URL
+      try {
+        url = new URL(href)
+      } catch {
+        // If relative URL, return plain text for security
+        return tokens.map((t: any) => t.text || '').join('')
+      }
+      // Only allow http and https protocols
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return tokens.map((t: any) => t.text || '').join('')
+      }
+      // Get link text from tokens
+      const linkText = tokens.map((t: any) => t.text || '').join('') || href
+      return `<a href="${url.toString()}" target="_blank" rel="noopener noreferrer">${linkText}</a>`
     } catch {
-      // If relative URL, try with a base (but we'll reject non-http/https anyway)
-      // For security, we'll only accept absolute URLs with http/https
-      return text || href
+      // If invalid URL, return plain text
+      return tokens.map((t: any) => t.text || '').join('')
     }
-    // Only allow http and https protocols
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return text || href
-    }
-    return `<a href="${url.toString()}" target="_blank" rel="noopener noreferrer">${text || href}</a>`
-  } catch {
-    // If invalid URL, return plain text
-    return text || href
-  }
+  },
 }
 
 // Apply renderer to marked
