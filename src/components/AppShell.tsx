@@ -13,7 +13,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   const hideChrome = useMemo(
-    () => HIDDEN_ROUTES.some(route => pathname === route || pathname.startsWith(`${route}/`)),
+    () => {
+      // Hide chrome for root path exactly
+      if (pathname === '/') return true
+      // Hide chrome for other hidden routes
+      return HIDDEN_ROUTES.some(route => pathname === route || pathname.startsWith(`${route}/`))
+    },
     [pathname],
   )
 

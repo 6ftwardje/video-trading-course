@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Container from '@/components/ui/Container'
 import MentorCard from '@/components/MentorCard'
 import CalendlyModal from '@/components/CalendlyModal'
-import { WaveLoader } from '@/components/ui/wave-loader'
 import {
   getStoredStudentId,
   getStoredStudentAccessLevel,
@@ -29,28 +28,28 @@ const MENTORS: Mentor[] = [
   {
     name: 'Rousso',
     role: 'Technical Trading Mentor',
-    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/rousso.jpg',
+    image: '', // Placeholder - will show initial letter
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
     requiresCompletion: true,
   },
   {
     name: 'Jason',
     role: 'Technical Trading Mentor',
-    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/jason.jpg',
+    image: '', // Placeholder - will show initial letter
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
     requiresCompletion: true,
   },
   {
     name: 'Arno',
     role: 'Mindset Coach',
-    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/arno.jpg',
+    image: '', // Placeholder - will show initial letter
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
     isAlwaysLocked: true,
   },
   {
     name: 'Chris Henry',
     role: 'Mindset Coach',
-    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/chris.jpg',
+    image: '', // Placeholder - will show initial letter
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
     isAlwaysLocked: true,
   },
@@ -176,8 +175,13 @@ export default function MentorshipPage() {
           </header>
 
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <WaveLoader message="Laden..." />
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="h-80 w-full animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--card)]/70"
+                />
+              ))}
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
