@@ -117,7 +117,7 @@ export default function MobileNav() {
   };
 
   const transition = {
-    type: "spring",
+    type: "spring" as const,
     damping: 25,
     stiffness: 300,
   };
