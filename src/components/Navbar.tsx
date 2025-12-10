@@ -11,10 +11,12 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   getStoredStudentAccessLevel,
   getStoredStudentEmail,
+  getStoredStudentName,
   getStoredStudentId,
   clearStoredStudent,
 } from "@/lib/student";
 import { getUnreadCount } from "@/lib/updates";
+import MobileNav from "@/components/ui/mobile-nav";
 
 const baseLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -32,7 +34,6 @@ const courseMaterialLink = {
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [studentEmail, setStudentEmail] = useState<string | null>(null);
   const [accessLevel, setAccessLevel] = useState<number | null>(null);
   const [userName, setUserName] = useState<string>("Account");
@@ -43,13 +44,24 @@ export default function Navbar() {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setStudentEmail(getStoredStudentEmail());
+    const email = getStoredStudentEmail();
+    const name = getStoredStudentName();
+    setStudentEmail(email);
     const level = getStoredStudentAccessLevel();
     setAccessLevel(level);
     
-    // Fetch user name for sidebar
+    // Set display name: name ?? email
+    const displayName = name ?? email ?? "Account";
+    setUserName(displayName);
+    
+    // Fetch user name for sidebar if not in localStorage
     // Use getSession() instead of getUser() to avoid unnecessary server requests
     const fetchUserName = async () => {
+      if (name) {
+        // Already have name in localStorage, use it
+        return;
+      }
+      
       try {
         const supabase = getSupabaseClient();
         const {
@@ -58,18 +70,14 @@ export default function Navbar() {
 
         if (session?.user?.user_metadata?.full_name) {
           setUserName(session.user.user_metadata.full_name);
-        } else {
-          const email = getStoredStudentEmail();
-          if (email) {
-            const emailName = email.split("@")[0];
-            setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
-          }
+        } else if (email) {
+          // Fallback to email if no name available
+          setUserName(email);
         }
       } catch (error) {
-        const email = getStoredStudentEmail();
+        // Fallback to email if error
         if (email) {
-          const emailName = email.split("@")[0];
-          setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
+          setUserName(email);
         }
       }
     };
@@ -453,72 +461,8 @@ export default function Navbar() {
             <span className="font-semibold tracking-tight text-sm">{BRAND.name}</span>
           </div>
 
-          <button
-            className="p-2 text-[var(--text-dim)] hover:text-white"
-            onClick={() => setOpen(v => !v)}
-            aria-label="Menu"
-          >
-            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          <MobileNav />
         </Container>
-
-        {/* Mobile Menu */}
-        {open && (
-          <div className="bg-[var(--bg)] border-t border-[var(--border)]">
-            <Container className="flex flex-col gap-1 py-3">
-              {links.map(l => {
-                const active = isActive(l.href);
-                const Icon = l.icon;
-                const showBadge = l.href === "/updates" && unreadCount > 0 && (accessLevel === 2 || accessLevel === 3);
-                return (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    onClick={() => setOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      active
-                        ? "text-[var(--accent)] bg-[var(--muted)]/50 font-medium"
-                        : "text-white/80 hover:text-white hover:bg-[var(--muted)]/30"
-                    }`}
-                  >
-                    <div className="relative">
-                      <Icon className="h-5 w-5 flex-shrink-0" />
-                      {showBadge && (
-                        <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-[var(--accent)] text-black text-[10px] font-semibold leading-none">
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <span className="font-medium flex-1">{l.label}</span>
-                    {showBadge && (
-                      <span className="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-[var(--accent)] text-black text-xs font-semibold leading-none">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-
-              <div className="mt-2 border-t border-[var(--border)] pt-3">
-                <div className="flex flex-col gap-1 text-xs text-[var(--text-dim)]">
-                  {studentEmail && <span className="truncate">{studentEmail}</span>}
-                  <span className="font-semibold uppercase tracking-wide text-[#7C99E3]">Level: {levelLabel}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false)
-                    handleLogout()
-                  }}
-                  className="mt-3 inline-flex items-center justify-center gap-2 rounded-md border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-semibold text-white transition hover:border-[var(--accent)]/50 hover:bg-[var(--muted)]"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Uitloggen
-                </button>
-              </div>
-            </Container>
-          </div>
-        )}
       </div>
     </>
   );

@@ -48,18 +48,33 @@ export default function AuthCallbackPage() {
           return
         }
 
+        // Get full_name from user_metadata
+        const fullName = user.user_metadata?.full_name as string | undefined
+
         // Try to find or create student profile
-        let studentRecord: { id: string; email: string; access_level: number | null } | null = null
+        let studentRecord: { id: string; email: string; access_level: number | null; name: string | null } | null = null
 
         // First, try to find by auth_user_id
         const { data: studentByAuth, error: findByAuthError } = await supabase
           .from('students')
-          .select('id,email,access_level')
+          .select('id,email,access_level,name')
           .eq('auth_user_id', user.id)
           .single()
 
         if (studentByAuth) {
           studentRecord = studentByAuth
+          // Sync name from user_metadata if missing
+          if (!studentRecord.name && fullName) {
+            const { data: updated } = await supabase
+              .from('students')
+              .update({ name: fullName })
+              .eq('id', studentRecord.id)
+              .select('id,email,access_level,name')
+              .single()
+            if (updated) {
+              studentRecord = updated
+            }
+          }
         } else if (findByAuthError && findByAuthError.code !== 'PGRST116') {
           // PGRST116 = no rows returned, which is fine
           console.error('Error fetching student by auth_user_id:', findByAuthError)
@@ -69,7 +84,7 @@ export default function AuthCallbackPage() {
         if (!studentRecord) {
           const { data: existingByEmail, error: findByEmailError } = await supabase
             .from('students')
-            .select('id,email,access_level,auth_user_id')
+            .select('id,email,access_level,auth_user_id,name')
             .eq('email', email)
             .maybeSingle()
 
@@ -79,12 +94,17 @@ export default function AuthCallbackPage() {
 
           if (existingByEmail) {
             if (!existingByEmail.auth_user_id) {
-              // Link existing student to auth user
+              // Link existing student to auth user and update name if needed
+              const updateData: { auth_user_id: string; name?: string } = { auth_user_id: user.id }
+              if (fullName && !existingByEmail.name) {
+                updateData.name = fullName
+              }
+
               const { data: updated, error: updateError } = await supabase
                 .from('students')
-                .update({ auth_user_id: user.id })
+                .update(updateData)
                 .eq('id', existingByEmail.id)
-                .select('id,email,access_level')
+                .select('id,email,access_level,name')
                 .single()
 
               if (updateError || !updated) {
@@ -93,10 +113,31 @@ export default function AuthCallbackPage() {
                 studentRecord = updated
               }
             } else {
-              studentRecord = {
-                id: existingByEmail.id,
-                email: existingByEmail.email,
-                access_level: existingByEmail.access_level ?? 1,
+              // Update name if missing
+              if (fullName && !existingByEmail.name) {
+                const { data: updated } = await supabase
+                  .from('students')
+                  .update({ name: fullName })
+                  .eq('id', existingByEmail.id)
+                  .select('id,email,access_level,name')
+                  .single()
+                if (updated) {
+                  studentRecord = updated
+                } else {
+                  studentRecord = {
+                    id: existingByEmail.id,
+                    email: existingByEmail.email,
+                    access_level: existingByEmail.access_level ?? 1,
+                    name: existingByEmail.name,
+                  }
+                }
+              } else {
+                studentRecord = {
+                  id: existingByEmail.id,
+                  email: existingByEmail.email,
+                  access_level: existingByEmail.access_level ?? 1,
+                  name: existingByEmail.name,
+                }
               }
             }
           }
@@ -110,8 +151,9 @@ export default function AuthCallbackPage() {
               email,
               auth_user_id: user.id,
               access_level: 1,
+              name: fullName || null,
             })
-            .select('id,email,access_level')
+            .select('id,email,access_level,name')
             .single()
 
           if (createError || !created) {
@@ -125,7 +167,7 @@ export default function AuthCallbackPage() {
 
         // Store student data in localStorage
         if (studentRecord) {
-          setStoredStudent(studentRecord.id, studentRecord.email)
+          setStoredStudent(studentRecord.id, studentRecord.email, studentRecord.name ?? null)
           setStoredStudentAccessLevel(studentRecord.access_level ?? 1)
         }
 

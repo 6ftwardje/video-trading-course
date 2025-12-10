@@ -91,7 +91,7 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
       if (user && (!studentId || level == null)) {
         const student = await getStudentByAuthUserId(user.id)
         if (student?.id) {
-          setStoredStudent(student.id, student.email)
+          setStoredStudent(student.id, student.email, student.name ?? null)
           setStoredStudentAccessLevel(student.access_level ?? 1)
           level = student.access_level ?? 1
         }

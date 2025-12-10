@@ -12,7 +12,8 @@ export type Update = {
 }
 
 export type UpdateWithAuthor = Update & {
-  author_name: string // bijv. full_name of email
+  author_name: string // name ?? email
+  author_email: string // email for fallback
 }
 
 export async function fetchUpdatesWithAuthor(): Promise<UpdateWithAuthor[]> {
@@ -32,7 +33,8 @@ export async function fetchUpdatesWithAuthor(): Promise<UpdateWithAuthor[]> {
       updated_at,
       students!author_id (
         id,
-        email
+        email,
+        name
       )
     `)
     .order('created_at', { ascending: false })
@@ -45,6 +47,8 @@ export async function fetchUpdatesWithAuthor(): Promise<UpdateWithAuthor[]> {
   const mapped: UpdateWithAuthor[] = (data ?? []).map((row: any) => {
     // Handle both possible response shapes: students array or students object
     const author = Array.isArray(row.students) ? row.students[0] : row.students
+    const authorEmail = author?.email ?? 'Onbekende mentor'
+    const authorName = author?.name ?? null
     return {
       id: row.id,
       author_id: row.author_id,
@@ -53,7 +57,8 @@ export async function fetchUpdatesWithAuthor(): Promise<UpdateWithAuthor[]> {
       image_path: row.image_path ?? null,
       created_at: row.created_at,
       updated_at: row.updated_at,
-      author_name: author?.email ?? 'Onbekende mentor',
+      author_name: authorName ?? authorEmail,
+      author_email: authorEmail,
     }
   })
 
@@ -90,7 +95,8 @@ export async function createUpdate(input: {
       updated_at,
       students!author_id (
         id,
-        email
+        email,
+        name
       )
     `)
     .single()
@@ -101,6 +107,8 @@ export async function createUpdate(input: {
   }
 
   const author = Array.isArray(data.students) ? data.students[0] : data.students
+  const authorEmail = author?.email ?? 'Onbekende mentor'
+  const authorName = author?.name ?? null
   const mapped: UpdateWithAuthor = {
     id: data.id,
     author_id: data.author_id,
@@ -109,7 +117,8 @@ export async function createUpdate(input: {
     image_path: data.image_path ?? null,
     created_at: data.created_at,
     updated_at: data.updated_at,
-    author_name: author?.email ?? 'Onbekende mentor',
+    author_name: authorName ?? authorEmail,
+    author_email: authorEmail,
   }
 
   return mapped
@@ -140,7 +149,8 @@ export async function updateUpdate(
       updated_at,
       students!author_id (
         id,
-        email
+        email,
+        name
       )
     `)
     .single()
@@ -151,6 +161,8 @@ export async function updateUpdate(
   }
 
   const author = Array.isArray(data.students) ? data.students[0] : data.students
+  const authorEmail = author?.email ?? 'Onbekende mentor'
+  const authorName = author?.name ?? null
   const mapped: UpdateWithAuthor = {
     id: data.id,
     author_id: data.author_id,
@@ -159,7 +171,8 @@ export async function updateUpdate(
     image_path: data.image_path ?? null,
     created_at: data.created_at,
     updated_at: data.updated_at,
-    author_name: author?.email ?? 'Onbekende mentor',
+    author_name: authorName ?? authorEmail,
+    author_email: authorEmail,
   }
 
   return mapped

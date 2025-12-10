@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import {
   getStoredStudentId,
   getStoredStudentEmail,
+  getStoredStudentName,
   setStoredStudent,
   setStoredStudentAccessLevel,
   getStudentByAuthUserId,
@@ -24,12 +25,33 @@ export default function StudentGate() {
 
       const existingId = getStoredStudentId()
       const existingEmail = getStoredStudentEmail()
+      const existingName = getStoredStudentName()
 
-      if (existingId && existingEmail) return
+      if (existingId && existingEmail) {
+        // If we have id and email but no name, try to sync name
+        if (!existingName) {
+          const student = await getStudentByAuthUserId(session.user.id)
+          if (student?.id && student.name) {
+            setStoredStudent(student.id, student.email, student.name)
+          }
+        }
+        return
+      }
 
       const student = await getStudentByAuthUserId(session.user.id)
       if (student?.id) {
-        setStoredStudent(student.id, student.email)
+        // If student has no name but user_metadata has full_name, sync it
+        let nameToStore = student.name
+        if (!nameToStore && session.user.user_metadata?.full_name) {
+          const fullName = session.user.user_metadata.full_name as string
+          // Update the database
+          await supabase
+            .from('students')
+            .update({ name: fullName })
+            .eq('id', student.id)
+          nameToStore = fullName
+        }
+        setStoredStudent(student.id, student.email, nameToStore ?? null)
         setStoredStudentAccessLevel(student.access_level ?? 1)
       }
     }

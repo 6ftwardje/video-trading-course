@@ -28,6 +28,17 @@ import { Edit2, Trash2, X, Save, Plus, Upload, Image as ImageIcon } from 'lucide
 import ImageModal from '@/components/ImageModal'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
+// Helper function to format date in "dd MMM yyyy HH:mm" format
+function formatUpdateDate(date: Date): string {
+  const months = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = months[date.getMonth()]
+  const year = date.getFullYear()
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${day} ${month} ${year} ${hours}:${minutes}`
+}
+
 // Helper component to display update images
 function UpdateImageDisplay({
   imagePath,
@@ -63,7 +74,7 @@ function UpdateImageDisplay({
 
   if (loading || !imageUrl) {
     return (
-      <div className="h-40 w-full bg-muted rounded-lg flex items-center justify-center mt-3">
+      <div className="h-40 w-full bg-[var(--muted)] flex items-center justify-center mt-3">
         <span className="text-xs text-[var(--text-dim)]">Afbeelding laden...</span>
       </div>
     )
@@ -73,7 +84,7 @@ function UpdateImageDisplay({
     <img
       src={imageUrl}
       alt="Update image"
-      className="w-full max-w-full rounded-lg shadow-md cursor-pointer mt-3"
+      className="w-full max-w-full rounded-lg cursor-pointer mt-3"
       onClick={() => onImageClick(imageUrl)}
     />
   )
@@ -137,7 +148,7 @@ export default function UpdatesPage() {
       if (!studentId || storedAccessLevel == null) {
         const student = await getStudentByAuthUserId(session.user.id)
         if (student?.id) {
-          setStoredStudent(student.id, student.email)
+          setStoredStudent(student.id, student.email, student.name ?? null)
           setStoredStudentAccessLevel(student.access_level ?? 1)
           studentId = student.id
           storedAccessLevel = student.access_level ?? 1
@@ -435,60 +446,61 @@ export default function UpdatesPage() {
 
   return (
     <Container className="pb-20 pt-8 md:pt-12">
-      <div className="space-y-6">
-        <header className="space-y-3">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <span className="text-xs font-medium uppercase tracking-widest text-[var(--text-dim)]">
-                Updates
-              </span>
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl mt-1">
-                Updates
-              </h1>
-              <p className="max-w-2xl text-sm text-[var(--text-dim)] mt-2">
-                Blijf op de hoogte van nieuwe inzichten en aankondigingen van de mentors.
-              </p>
+      <div className="max-w-2xl mx-auto w-full px-4 py-8">
+        <div className="space-y-6">
+          <header className="space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <span className="text-xs font-medium uppercase tracking-widest text-[var(--text-dim)]">
+                  Updates
+                </span>
+                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl mt-1">
+                  Updates
+                </h1>
+                <p className="max-w-2xl text-sm text-[var(--text-dim)] mt-2">
+                  Blijf op de hoogte van nieuwe inzichten en aankondigingen van de mentors.
+                </p>
+              </div>
+              {isMentor && (
+                <button
+                  onClick={() => {
+                    setIsCreating(!isCreating)
+                    setError(null)
+                    if (isCreating) {
+                      setNewTitle('')
+                      setNewContent('')
+                      setNewImagePath(null)
+                      setNewImagePreview(null)
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+                >
+                  {isCreating ? (
+                    <>
+                      <X className="h-4 w-4" />
+                      Annuleren
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      Nieuwe update
+                    </>
+                  )}
+                </button>
+              )}
             </div>
-            {isMentor && (
-              <button
-                onClick={() => {
-                  setIsCreating(!isCreating)
-                  setError(null)
-                  if (isCreating) {
-                    setNewTitle('')
-                    setNewContent('')
-                    setNewImagePath(null)
-                    setNewImagePreview(null)
-                  }
-                }}
-                className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
-              >
-                {isCreating ? (
-                  <>
-                    <X className="h-4 w-4" />
-                    Annuleren
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    Nieuwe update
-                  </>
-                )}
-              </button>
+            {isBasic && (
+              <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-500">
+                Je hebt momenteel geen volledige toegang tot de inhoud van deze updates. Upgrade je
+                toegang om alles te zien.
+              </div>
             )}
-          </div>
-          {isBasic && (
-            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-500">
-              Je hebt momenteel geen volledige toegang tot de inhoud van deze updates. Upgrade je
-              toegang om alles te zien.
-            </div>
-          )}
-          {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500">
-              {error}
-            </div>
-          )}
-        </header>
+            {error && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500">
+                {error}
+              </div>
+            )}
+          </header>
 
         {/* Create form */}
         {isMentor && isCreating && (
@@ -598,194 +610,192 @@ export default function UpdatesPage() {
 
         {/* Updates list */}
         {!updates || updates.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/70 p-6 text-sm text-[var(--text-dim)]">
+          <div className="text-sm text-[var(--text-dim)]">
             {isMentor
               ? 'Er zijn nog geen updates geplaatst. Maak je eerste update aan!'
               : 'Er zijn nog geen updates geplaatst.'}
           </div>
         ) : (
-          <div className="space-y-4">
-            {updates.map((update) => {
+          <div>
+            {updates.map((update, i) => {
               const isAuthor = isMentor && update.author_id === currentStudentId
               const isEditing = editingId === update.id
               const isDeleting = deleting === update.id
 
               return (
-                <article
-                  key={update.id}
-                  className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/70 p-6 shadow-sm space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex flex-col gap-1 flex-1">
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          placeholder="Titel (optioneel)"
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm font-semibold text-white placeholder:text-[var(--text-dim)] focus:border-[var(--accent)] focus:outline-none"
-                        />
-                      ) : (
-                        <h2 className="text-lg font-semibold text-white">
-                          {update.title ?? 'Update'}
-                        </h2>
-                      )}
-                      <div className="flex items-center gap-2 text-xs text-[var(--text-dim)]">
-                        <span>Door {update.author_name}</span>
-                        <span>•</span>
-                        <span>
-                          {new Date(update.created_at).toLocaleString('nl-BE', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                          })}
-                        </span>
-                        {update.updated_at && update.updated_at !== update.created_at && (
-                          <>
-                            <span>•</span>
-                            <span className="italic">bewerkt</span>
-                          </>
+                <div key={update.id}>
+                  <article className="space-y-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col gap-1 flex-1">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="Titel (optioneel)"
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm font-semibold text-white placeholder:text-[var(--text-dim)] focus:border-[var(--accent)] focus:outline-none"
+                          />
+                        ) : (
+                          <h2 className="text-lg font-semibold text-white">
+                            {update.title ?? 'Update'}
+                          </h2>
                         )}
-                      </div>
-                    </div>
-                    {isAuthor && !isEditing && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleStartEdit(update)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[var(--muted)]"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                          Bewerken
-                        </button>
-                        <button
-                          onClick={() => handleDelete(update.id)}
-                          disabled={isDeleting}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          {isDeleting ? 'Verwijderen...' : 'Verwijderen'}
-                        </button>
-                      </div>
-                    )}
-                    {isAuthor && isEditing && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleSaveEdit(update.id)}
-                          disabled={updating || !editContent.trim()}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-black transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Save className="h-3.5 w-3.5" />
-                          {updating ? 'Opslaan...' : 'Opslaan'}
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={updating}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[var(--muted)] disabled:opacity-50"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                          Annuleren
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-3 text-sm leading-relaxed">
-                    {isEditing ? (
-                      <>
-                        <textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          placeholder="Inhoud"
-                          rows={8}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white placeholder:text-[var(--text-dim)] focus:border-[var(--accent)] focus:outline-none resize-y"
-                        />
-                        <div className="mt-4">
-                          <label className="block text-sm font-medium text-white mb-1.5">
-                            Afbeelding (optioneel)
-                          </label>
-                          {editImagePreview ? (
-                            <div className="relative">
-                              <img
-                                src={editImagePreview}
-                                alt="Preview"
-                                className="w-full max-w-md rounded-lg shadow-md"
-                              />
-                              <button
-                                onClick={() => handleDeleteImage(true)}
-                                disabled={uploadingImage}
-                                className="absolute top-2 right-2 rounded-full bg-red-500/80 hover:bg-red-500 p-2 transition-colors"
-                                aria-label="Verwijder afbeelding"
-                              >
-                                <Trash2 className="h-4 w-4 text-white" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div
-                              onDrop={(e) => handleDrop(e, true)}
-                              onDragOver={handleDragOver}
-                              className="border-2 border-dashed border-[var(--border)] rounded-lg p-6 text-center hover:border-[var(--accent)] transition-colors"
-                            >
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleFileInputChange(e, true)}
-                                disabled={uploadingImage}
-                                className="hidden"
-                                id={`edit-image-upload-${update.id}`}
-                              />
-                              <label
-                                htmlFor={`edit-image-upload-${update.id}`}
-                                className="cursor-pointer flex flex-col items-center gap-2"
-                              >
-                                <Upload className="h-6 w-6 text-[var(--text-dim)]" />
-                                <span className="text-sm text-[var(--text-dim)]">
-                                  {uploadingImage
-                                    ? 'Uploaden...'
-                                    : 'Sleep een afbeelding hierheen of klik om te uploaden'}
-                                </span>
-                                <span className="text-xs text-[var(--text-dim)]">
-                                  PNG, JPG, JPEG, WebP (max 1MB)
-                                </span>
-                              </label>
-                            </div>
+                        <div className="flex items-center gap-2 text-xs text-[var(--text-dim)]">
+                          <span>Door {update.author_name}</span>
+                          {update.updated_at && update.updated_at !== update.created_at && (
+                            <>
+                              <span>•</span>
+                              <span className="italic">bewerkt</span>
+                            </>
                           )}
                         </div>
-                      </>
-                    ) : canSeeFullContent ? (
-                      <>
-                        <div className="mt-3">
-                          <MarkdownRenderer content={update.content} />
-                        </div>
-                        {update.image_path && (
-                          <UpdateImageDisplay
-                            imagePath={update.image_path}
-                            onImageClick={(url) => setModalImage(url)}
-                            loadImageUrl={loadImageUrl}
-                          />
-                        )}
-                      </>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="relative h-24 w-full rounded-md overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-r from-[var(--muted)] to-[var(--muted)]/50 blur-sm" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-xs text-[var(--text-dim)]">Inhoud verborgen</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-[var(--text-dim)] leading-relaxed">
-                          Deze update is enkel volledig zichtbaar voor leden met volledige toegang.
-                          Upgrade je account om de volledige inhoud te lezen.
-                        </p>
-                        {update.image_path && (
-                          <div className="h-40 w-full bg-[var(--muted)] rounded-lg blur-sm" />
-                        )}
                       </div>
+                      {isAuthor && !isEditing && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleStartEdit(update)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[var(--muted)]"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            Bewerken
+                          </button>
+                          <button
+                            onClick={() => handleDelete(update.id)}
+                            disabled={isDeleting}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            {isDeleting ? 'Verwijderen...' : 'Verwijderen'}
+                          </button>
+                        </div>
+                      )}
+                      {isAuthor && isEditing && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleSaveEdit(update.id)}
+                            disabled={updating || !editContent.trim()}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-black transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Save className="h-3.5 w-3.5" />
+                            {updating ? 'Opslaan...' : 'Opslaan'}
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            disabled={updating}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[var(--muted)] disabled:opacity-50"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            Annuleren
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-sm leading-relaxed">
+                      {isEditing ? (
+                        <>
+                          <textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            placeholder="Inhoud"
+                            rows={8}
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white placeholder:text-[var(--text-dim)] focus:border-[var(--accent)] focus:outline-none resize-y"
+                          />
+                          <div className="mt-4">
+                            <label className="block text-sm font-medium text-white mb-1.5">
+                              Afbeelding (optioneel)
+                            </label>
+                            {editImagePreview ? (
+                              <div className="relative">
+                                <img
+                                  src={editImagePreview}
+                                  alt="Preview"
+                                  className="w-full max-w-md rounded-lg shadow-md"
+                                />
+                                <button
+                                  onClick={() => handleDeleteImage(true)}
+                                  disabled={uploadingImage}
+                                  className="absolute top-2 right-2 rounded-full bg-red-500/80 hover:bg-red-500 p-2 transition-colors"
+                                  aria-label="Verwijder afbeelding"
+                                >
+                                  <Trash2 className="h-4 w-4 text-white" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div
+                                onDrop={(e) => handleDrop(e, true)}
+                                onDragOver={handleDragOver}
+                                className="border-2 border-dashed border-[var(--border)] rounded-lg p-6 text-center hover:border-[var(--accent)] transition-colors"
+                              >
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleFileInputChange(e, true)}
+                                  disabled={uploadingImage}
+                                  className="hidden"
+                                  id={`edit-image-upload-${update.id}`}
+                                />
+                                <label
+                                  htmlFor={`edit-image-upload-${update.id}`}
+                                  className="cursor-pointer flex flex-col items-center gap-2"
+                                >
+                                  <Upload className="h-6 w-6 text-[var(--text-dim)]" />
+                                  <span className="text-sm text-[var(--text-dim)]">
+                                    {uploadingImage
+                                      ? 'Uploaden...'
+                                      : 'Sleep een afbeelding hierheen of klik om te uploaden'}
+                                  </span>
+                                  <span className="text-xs text-[var(--text-dim)]">
+                                    PNG, JPG, JPEG, WebP (max 1MB)
+                                  </span>
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : canSeeFullContent ? (
+                        <>
+                          <MarkdownRenderer content={update.content} />
+                          {update.image_path && (
+                            <UpdateImageDisplay
+                              imagePath={update.image_path}
+                              onImageClick={(url) => setModalImage(url)}
+                              loadImageUrl={loadImageUrl}
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="relative h-24 w-full rounded-md overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-[var(--muted)] to-[var(--muted)]/50 blur-sm" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-xs text-[var(--text-dim)]">Inhoud verborgen</span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-[var(--text-dim)] leading-relaxed">
+                            Deze update is enkel volledig zichtbaar voor leden met volledige toegang.
+                            Upgrade je account om de volledige inhoud te lezen.
+                          </p>
+                          {update.image_path && (
+                            <div className="h-40 w-full bg-[var(--muted)] rounded-lg blur-sm" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {!isEditing && (
+                      <p className="text-xs text-white/40 mt-2">
+                        Gepost op {formatUpdateDate(new Date(update.created_at))}
+                      </p>
                     )}
-                  </div>
-                </article>
+                  </article>
+                  {i < updates.length - 1 && <hr className="border-t border-white/10 my-6" />}
+                </div>
               )
             })}
           </div>
         )}
+        </div>
       </div>
       {modalImage && (
         <ImageModal src={modalImage} onClose={() => setModalImage(null)} />

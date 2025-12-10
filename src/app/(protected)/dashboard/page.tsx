@@ -10,6 +10,7 @@ import DashboardProgress from '@/components/DashboardProgress'
 import TradingSessions from '@/components/TradingSessions'
 import {
   getStoredStudentEmail,
+  getStoredStudentName,
   getStoredStudentId,
   getStoredStudentAccessLevel,
   setStoredStudent,
@@ -49,10 +50,12 @@ export default function DashboardPage() {
       }
 
       const storedEmail = getStoredStudentEmail()
+      const storedName = getStoredStudentName()
       setEmail(storedEmail)
 
       let studentId = getStoredStudentId()
       let level = getStoredStudentAccessLevel()
+      let studentName = storedName
       if (level != null) {
         setAccessLevel(level)
       }
@@ -60,10 +63,11 @@ export default function DashboardPage() {
       if (!studentId || level == null) {
         const student = await getStudentByAuthUserId(session.user.id)
         if (student?.id) {
-          setStoredStudent(student.id, student.email)
+          setStoredStudent(student.id, student.email, student.name ?? null)
           setStoredStudentAccessLevel(student.access_level ?? 1)
           studentId = student.id
           level = student.access_level ?? 1
+          studentName = student.name
           setEmail(student.email)
         }
       }
@@ -151,7 +155,7 @@ export default function DashboardPage() {
           {/* Hero Dashboard - WITH card wrapper */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
             <HeroDashboard
-              userName={email?.split('@')[0] || undefined}
+              userName={(getStoredStudentName() ?? email) || undefined}
               nextLessonUrl={nextLessonHref || undefined}
               progressText={progressText}
               accessLevel={accessLevel ?? 1}

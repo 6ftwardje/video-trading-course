@@ -107,7 +107,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
       if (user && (!studentId || level == null)) {
         const student = await getStudentByAuthUserId(user.id)
         if (student?.id) {
-          setStoredStudent(student.id, student.email)
+          setStoredStudent(student.id, student.email, student.name ?? null)
           setStoredStudentAccessLevel(student.access_level ?? 1)
           studentId = student.id
           level = student.access_level ?? 1

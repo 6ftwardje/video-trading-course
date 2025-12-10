@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, User, Settings } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import { getStoredStudentEmail, clearStoredStudent } from "@/lib/student";
+import { getStoredStudentEmail, getStoredStudentName, clearStoredStudent } from "@/lib/student";
 import UserDropdownItem from "./UserDropdownItem";
 
 export default function UserMenu() {
@@ -16,37 +16,40 @@ export default function UserMenu() {
 
   // Fetch user data and determine display name
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const supabase = getSupabaseClient();
-        // Use getSession() instead of getUser() to avoid unnecessary server requests
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+    const name = getStoredStudentName();
+    const email = getStoredStudentEmail();
+    
+    // Use name ?? email pattern
+    const displayName = name ?? email ?? "Account";
+    setUserName(displayName);
+    
+    // If no name in localStorage, try to fetch from session
+    if (!name) {
+      const fetchUserData = async () => {
+        try {
+          const supabase = getSupabaseClient();
+          // Use getSession() instead of getUser() to avoid unnecessary server requests
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
 
-        if (session?.user?.user_metadata?.full_name) {
-          setUserName(session.user.user_metadata.full_name);
-        } else {
-          const email = getStoredStudentEmail();
+          if (session?.user?.user_metadata?.full_name) {
+            setUserName(session.user.user_metadata.full_name);
+          } else if (email) {
+            // Fallback to email if no name available
+            setUserName(email);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          // Fallback to email if error
           if (email) {
-            // Extract name from email (before @) or use email
-            const emailName = email.split("@")[0];
-            setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
-          } else {
-            setUserName("Account");
+            setUserName(email);
           }
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        const email = getStoredStudentEmail();
-        if (email) {
-          const emailName = email.split("@")[0];
-          setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
-        }
-      }
-    };
+      };
 
-    fetchUserData();
+      fetchUserData();
+    }
   }, []);
 
   // Close dropdown function

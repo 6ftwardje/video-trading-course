@@ -3,12 +3,21 @@ import { getSupabaseClient } from './supabaseClient'
 const LS_KEY = 'cryptoriez_student_id'
 const LS_EMAIL = 'cryptoriez_student_email'
 const LS_ACCESS = 'cryptoriez_student_access_level'
+const LS_NAME = 'cryptoriez_student_name'
 
 type Student = {
   id: string
   email: string
   access_level: number | null
   auth_user_id: string | null
+  name: string | null
+}
+
+export type StoredStudent = {
+  id: string
+  email: string
+  access_level: number
+  name: string | null
 }
 
 export function getStoredStudentId(): string | null {
@@ -29,10 +38,22 @@ export function getStoredStudentAccessLevel(): number | null {
   return Number.isFinite(level) ? level : null
 }
 
-export function setStoredStudent(id: string, email: string) {
+export function getStoredStudentName(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(LS_NAME)
+}
+
+export function setStoredStudent(id: string, email: string, name?: string | null) {
   if (typeof window === 'undefined') return
   localStorage.setItem(LS_KEY, id)
   localStorage.setItem(LS_EMAIL, email)
+  if (name !== undefined) {
+    if (name === null) {
+      localStorage.removeItem(LS_NAME)
+    } else {
+      localStorage.setItem(LS_NAME, name)
+    }
+  }
 }
 
 export function setStoredStudentAccessLevel(level: number) {
@@ -45,6 +66,7 @@ export function clearStoredStudent() {
   localStorage.removeItem(LS_KEY)
   localStorage.removeItem(LS_EMAIL)
   localStorage.removeItem(LS_ACCESS)
+  localStorage.removeItem(LS_NAME)
 }
 
 export async function ensureStudentByEmail(email: string): Promise<{ id: string; email: string }> {
@@ -75,7 +97,7 @@ export async function getStudentByAuthUserId(authUserId: string): Promise<Studen
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('students')
-    .select('id,email,access_level,auth_user_id')
+    .select('id,email,access_level,auth_user_id,name')
     .eq('auth_user_id', authUserId)
     .maybeSingle()
 

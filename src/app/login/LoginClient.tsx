@@ -157,9 +157,12 @@ export default function LoginClient() {
       return
     }
 
+    // Get full_name from user_metadata
+    const fullName = user.user_metadata?.full_name as string | undefined
+
     const { data: student, error: studentError } = await supabase
       .from('students')
-      .select('id,email,access_level')
+      .select('id,email,access_level,name')
       .eq('auth_user_id', user.id)
       .single()
 
@@ -172,7 +175,7 @@ export default function LoginClient() {
     if (!studentRecord) {
       const { data: existingByEmail, error: findByEmailError } = await supabase
         .from('students')
-        .select('id,email,access_level,auth_user_id')
+        .select('id,email,access_level,auth_user_id,name')
         .eq('email', email)
         .maybeSingle()
 
@@ -182,11 +185,17 @@ export default function LoginClient() {
 
       if (existingByEmail) {
         if (!existingByEmail.auth_user_id) {
+          // Update auth_user_id and potentially name
+          const updateData: { auth_user_id: string; name?: string } = { auth_user_id: user.id }
+          if (fullName && !existingByEmail.name) {
+            updateData.name = fullName
+          }
+
           const { data: updated, error: updateError } = await supabase
             .from('students')
-            .update({ auth_user_id: user.id })
+            .update(updateData)
             .eq('id', existingByEmail.id)
-            .select('id,email,access_level')
+            .select('id,email,access_level,name')
             .single()
 
           if (updateError || !updated) {
@@ -201,10 +210,32 @@ export default function LoginClient() {
 
           studentRecord = updated
         } else {
-          studentRecord = {
-            id: existingByEmail.id,
-            email: existingByEmail.email,
-            access_level: existingByEmail.access_level ?? 1,
+          // Update name if missing and fullName exists
+          if (fullName && !existingByEmail.name) {
+            const { data: updated, error: updateError } = await supabase
+              .from('students')
+              .update({ name: fullName })
+              .eq('id', existingByEmail.id)
+              .select('id,email,access_level,name')
+              .single()
+
+            if (!updateError && updated) {
+              studentRecord = updated
+            } else {
+              studentRecord = {
+                id: existingByEmail.id,
+                email: existingByEmail.email,
+                access_level: existingByEmail.access_level ?? 1,
+                name: existingByEmail.name,
+              }
+            }
+          } else {
+            studentRecord = {
+              id: existingByEmail.id,
+              email: existingByEmail.email,
+              access_level: existingByEmail.access_level ?? 1,
+              name: existingByEmail.name,
+            }
           }
         }
       }
@@ -217,8 +248,9 @@ export default function LoginClient() {
           email,
           auth_user_id: user.id,
           access_level: 1,
+          name: fullName || null,
         })
-        .select('id,email,access_level')
+        .select('id,email,access_level,name')
         .single()
 
       if (createError || !created) {
@@ -232,9 +264,23 @@ export default function LoginClient() {
       }
 
       studentRecord = created
+    } else {
+      // Sync name from user_metadata if student.name is null
+      if (!studentRecord.name && fullName) {
+        const { data: updated, error: updateError } = await supabase
+          .from('students')
+          .update({ name: fullName })
+          .eq('id', studentRecord.id)
+          .select('id,email,access_level,name')
+          .single()
+
+        if (!updateError && updated) {
+          studentRecord = updated
+        }
+      }
     }
 
-    setStoredStudent(studentRecord.id, studentRecord.email)
+    setStoredStudent(studentRecord.id, studentRecord.email, studentRecord.name ?? null)
     setStoredStudentAccessLevel(studentRecord.access_level ?? 1)
 
     router.push('/dashboard')
@@ -360,11 +406,11 @@ export default function LoginClient() {
       return
     }
 
-    let studentRecord: { id: string; email: string; access_level: number | null } | null = null
+    let studentRecord: { id: string; email: string; access_level: number | null; name: string | null } | null = null
 
     const { data: existingByEmail, error: findByEmailError } = await supabase
       .from('students')
-      .select('id,email,access_level,auth_user_id')
+      .select('id,email,access_level,auth_user_id,name')
       .eq('email', email)
       .maybeSingle()
 
@@ -374,11 +420,17 @@ export default function LoginClient() {
 
     if (existingByEmail) {
       if (!existingByEmail.auth_user_id) {
+        // Update auth_user_id and name
+        const updateData: { auth_user_id: string; name?: string } = { auth_user_id: authUser.id }
+        if (fullName) {
+          updateData.name = fullName
+        }
+
         const { data: updated, error: updateError } = await supabase
           .from('students')
-          .update({ auth_user_id: authUser.id })
+          .update(updateData)
           .eq('id', existingByEmail.id)
-          .select('id,email,access_level')
+          .select('id,email,access_level,name')
           .single()
 
         if (updateError || !updated) {
@@ -392,10 +444,32 @@ export default function LoginClient() {
 
         studentRecord = updated
       } else {
-        studentRecord = {
-          id: existingByEmail.id,
-          email: existingByEmail.email,
-          access_level: existingByEmail.access_level ?? 1,
+        // Update name if provided
+        if (fullName && !existingByEmail.name) {
+          const { data: updated, error: updateError } = await supabase
+            .from('students')
+            .update({ name: fullName })
+            .eq('id', existingByEmail.id)
+            .select('id,email,access_level,name')
+            .single()
+
+          if (!updateError && updated) {
+            studentRecord = updated
+          } else {
+            studentRecord = {
+              id: existingByEmail.id,
+              email: existingByEmail.email,
+              access_level: existingByEmail.access_level ?? 1,
+              name: existingByEmail.name,
+            }
+          }
+        } else {
+          studentRecord = {
+            id: existingByEmail.id,
+            email: existingByEmail.email,
+            access_level: existingByEmail.access_level ?? 1,
+            name: existingByEmail.name,
+          }
         }
       }
     }
@@ -407,8 +481,9 @@ export default function LoginClient() {
           email,
           auth_user_id: authUser.id,
           access_level: 1,
+          name: fullName || null,
         })
-        .select('id,email,access_level')
+        .select('id,email,access_level,name')
         .single()
 
       if (createError || !created) {
@@ -422,7 +497,7 @@ export default function LoginClient() {
       studentRecord = created
     }
 
-    setStoredStudent(studentRecord.id, studentRecord.email)
+    setStoredStudent(studentRecord.id, studentRecord.email, studentRecord.name ?? null)
     setStoredStudentAccessLevel(studentRecord.access_level ?? 1)
 
     router.push('/dashboard')
