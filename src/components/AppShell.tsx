@@ -27,7 +27,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div className={hideChrome ? '' : 'md:pl-16'}>
         {!hideChrome && <Navbar />}
         {!hideChrome && <ChatbotOverlay />}
-        <main className="min-h-screen">{children}</main>
+        <main className={`min-h-screen ${hideChrome ? '' : 'pt-16 md:pt-0'}`}>{children}</main>
         {!hideChrome && <Footer />}
       </div>
     </StudentProvider>

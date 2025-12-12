@@ -1,100 +1,79 @@
+import Container from '@/components/ui/Container'
+
 export const metadata = {
-  title: "Privacybeleid | Het Trade Platform",
-};
+  title: 'Privacy Policy | Het Trade Platform',
+  description: 'Privacy Policy voor Het Trade Platform',
+}
 
 export default function PrivacyPage() {
   return (
-    <main className="max-w-3xl mx-auto px-4 py-12 text-sm text-[var(--text)]">
-      <h1 className="text-2xl font-semibold mb-6">Privacybeleid</h1>
-      <p className="text-[var(--text-dim)] mb-6">
-        In dit privacybeleid leggen we uit hoe Cryptoriez omgaat met jouw persoonsgegevens
-        wanneer je gebruikmaakt van Het Trade Platform.
-      </p>
+    <Container className="pb-20 pt-8 md:pt-12">
+      <div className="mx-auto max-w-3xl space-y-8">
+        <header className="space-y-3">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Privacy Policy</h1>
+          <p className="text-sm text-[var(--text-dim)]">Laatst bijgewerkt: {new Date().toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </header>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">1. Verantwoordelijke</h2>
-        <p>
-          Cryptoriez is verantwoordelijk voor de verwerking van persoonsgegevens in de zin
-          van de toepasselijke privacywetgeving.
-        </p>
-      </section>
+        <div className="prose prose-invert max-w-none space-y-6 text-sm leading-relaxed text-[var(--text-dim)]">
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">1. Inleiding</h2>
+            <p>
+              Deze Privacy Policy beschrijft hoe Het Trade Platform ("wij", "ons", "onze") persoonlijke gegevens
+              verzamelt, gebruikt en beschermt wanneer je gebruik maakt van ons platform.
+            </p>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">2. Welke gegevens we verwerken</h2>
-        <p>
-          Wij kunnen onder meer de volgende gegevens verwerken: naam, e-mailadres,
-          accountgegevens, voortgang binnen het platform, en technische gegevens zoals
-          IP-adres en apparaat-informatie.
-        </p>
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">2. Gegevens die we verzamelen</h2>
+            <p>We verzamelen de volgende soorten gegevens:</p>
+            <ul className="ml-6 list-disc space-y-2">
+              <li>Accountgegevens (naam, e-mailadres)</li>
+              <li>Gebruiksgegevens (voortgang, bekeken lessen)</li>
+              <li>Technische gegevens (IP-adres, browser type)</li>
+            </ul>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">3. Doeleinden van de verwerking</h2>
-        <p>
-          Wij gebruiken jouw gegevens om toegang tot het platform te bieden, jouw
-          leerervaring te personaliseren, de voortgang bij te houden, ondersteuning te
-          bieden en het platform te beveiligen en te verbeteren.
-        </p>
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">3. Hoe we je gegevens gebruiken</h2>
+            <p>We gebruiken je gegevens om:</p>
+            <ul className="ml-6 list-disc space-y-2">
+              <li>Je account te beheren en je toegang te verlenen</li>
+              <li>Je voortgang bij te houden</li>
+              <li>Je te informeren over belangrijke updates</li>
+              <li>Onze diensten te verbeteren</li>
+            </ul>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">4. Rechtsgrond</h2>
-        <p>
-          De verwerking van jouw gegevens vindt plaats op basis van de uitvoering van de
-          overeenkomst (het leveren van toegang tot Het Trade Platform), gerechtvaardigd
-          belang (bijvoorbeeld beveiliging en verbetering) en, waar nodig, jouw
-          toestemming.
-        </p>
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">4. Gegevensbescherming</h2>
+            <p>
+              We nemen passende technische en organisatorische maatregelen om je gegevens te beschermen tegen
+              ongeautoriseerde toegang, verlies of vernietiging.
+            </p>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">5. Bewaartermijnen</h2>
-        <p>
-          Wij bewaren gegevens niet langer dan noodzakelijk voor de doeleinden waarvoor ze
-          zijn verzameld, tenzij we wettelijk verplicht zijn gegevens langer te bewaren.
-        </p>
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">5. Je rechten</h2>
+            <p>Je hebt het recht om:</p>
+            <ul className="ml-6 list-disc space-y-2">
+              <li>Toegang te krijgen tot je persoonlijke gegevens</li>
+              <li>Je gegevens te corrigeren</li>
+              <li>Verwijdering van je gegevens te verzoeken</li>
+              <li>Bezwaar te maken tegen verwerking</li>
+            </ul>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">6. Delen van gegevens</h2>
-        <p>
-          Wij delen jouw gegevens alleen met derden wanneer dat nodig is voor het
-          functioneren van het platform (zoals hosting- of analysetools) of wanneer wij
-          daartoe wettelijk verplicht zijn. Waar mogelijk worden gegevens geanonimiseerd
-          of gepseudonimiseerd.
-        </p>
-      </section>
-
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">7. Cookies en tracking</h2>
-        <p>
-          Het platform kan gebruikmaken van cookies en vergelijkbare technieken om het
-          gebruik van het platform te analyseren en de gebruikservaring te verbeteren. Je
-          kunt je browser zo instellen dat cookies worden geweigerd, maar dit kan invloed
-          hebben op de werking van het platform.
-        </p>
-      </section>
-
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">8. Jouw rechten</h2>
-        <p>
-          Je hebt het recht om jouw gegevens in te zien, te laten corrigeren of te laten
-          verwijderen, en in sommige gevallen verwerking te beperken of bezwaar te maken
-          tegen verwerking. Ook kun je, waar van toepassing, vragen om overdraagbaarheid
-          van jouw gegevens.
-        </p>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">9. Contact</h2>
-        <p>
-          Voor vragen over dit privacybeleid of het uitoefenen van jouw rechten kun je
-          contact opnemen met Cryptoriez via het contactkanaal dat in het platform of op
-          de website wordt vermeld.
-        </p>
-      </section>
-    </main>
-  );
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">6. Contact</h2>
+            <p>
+              Voor vragen over deze Privacy Policy, neem contact op met ons via:{' '}
+              <a href="mailto:info@hettradeplatform.be" className="text-[var(--accent)] hover:underline">
+                info@hettradeplatform.be
+              </a>
+            </p>
+          </section>
+        </div>
+      </div>
+    </Container>
+  )
 }
-
-

@@ -16,6 +16,7 @@ export async function middleware(req: NextRequest) {
     "/praktijk",
     "/mentorship",
     "/course-material",
+    "/account",
   ];
 
   const isProtected = protectedPaths.some((p) =>
@@ -92,6 +93,7 @@ export const config = {
     "/praktijk/:path*",
     "/mentorship/:path*",
     "/course-material/:path*",
+    "/account/:path*",
     "/auth/callback",
   ],
 };

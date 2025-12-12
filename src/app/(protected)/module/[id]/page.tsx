@@ -19,6 +19,7 @@ type PracticalLesson = PracticalLessonRecord
 export default function ModulePage({ params }: { params: Promise<{ id: string }> }) {
   const { student, status } = useStudent()
   const [moduleId, setModuleId] = useState<string>('')
+  const [moduleTitle, setModuleTitle] = useState<string>('')
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [progress, setProgress] = useState<Record<number, boolean>>({})
   const [loading, setLoading] = useState(true)
@@ -47,6 +48,20 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         
         setLoading(true)
         const supabase = getSupabaseClient()
+        
+        // Fetch module information
+        const { data: moduleData, error: moduleError } = await supabase
+          .from('modules')
+          .select('title')
+          .eq('id', moduleIdNum)
+          .single()
+        
+        if (moduleError) {
+          console.error('Error fetching module:', moduleError)
+        } else if (moduleData) {
+          setModuleTitle(moduleData.title || '')
+        }
+        
         const { data: ls, error: lessonsError } = await supabase
           .from('lessons')
           .select('id,title,"order",module_id,thumbnail_url')
@@ -162,7 +177,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
     <Container className="pt-8 md:pt-12 pb-16">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--accent)]">Module {moduleId}</h1>
+          <h1 className="text-3xl font-bold text-[var(--accent)]">
+            {moduleTitle || `Module ${moduleId}`}
+          </h1>
           <p className="text-[var(--text-dim)] text-sm">
             Voortgang: {watchedCount}/{total} • {pct}%
           </p>

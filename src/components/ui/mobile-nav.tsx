@@ -197,12 +197,12 @@ export default function MobileNav() {
                       {studentEmail ? (
                         <>
                           <Link
-                            href="/dashboard"
+                            href="/account"
                             onClick={() => setIsOpen(false)}
                             className="flex items-center justify-center gap-3 px-6 py-4 rounded-lg transition-colors text-white hover:text-[var(--accent)] hover:bg-[var(--muted)]/30"
                           >
                             <User className="h-6 w-6" />
-                            <span>Account</span>
+                            <span>Mijn Account</span>
                           </Link>
                           <button
                             onClick={() => {

@@ -154,27 +154,16 @@ export default function UserMenu() {
       {isOpen && (
         <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-white/10 bg-black/40 backdrop-blur-md shadow-lg">
           <div className="p-2">
-            {/* TODO: Add 'Mijn Account' navigation */}
             <UserDropdownItem
               icon={User}
               label="Mijn Account"
               onClick={() => {
-                // TODO: Navigate to account page
+                router.push("/account");
                 closeDropdown();
               }}
-              hidden={true}
             />
 
-            {/* TODO: Add settings page navigation (theme switcher, dark/light mode) */}
-            <UserDropdownItem
-              icon={Settings}
-              label="Settings"
-              onClick={() => {
-                // TODO: Navigate to settings page
-                closeDropdown();
-              }}
-              hidden={true}
-            />
+            <div className="my-1 h-px bg-white/10" />
 
             <UserDropdownItem
               icon={LogOut}

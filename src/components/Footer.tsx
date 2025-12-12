@@ -39,6 +39,7 @@ export default function Footer(){
           <ul className="space-y-2 text-white/80">
             <li><Link href="/terms" className="hover:text-[var(--accent)]">Terms</Link></li>
             <li><Link href="/privacy" className="hover:text-[var(--accent)]">Privacy</Link></li>
+            <li><Link href="/cookies" className="hover:text-[var(--accent)]">Cookies</Link></li>
           </ul>
         </div>
       </Container>

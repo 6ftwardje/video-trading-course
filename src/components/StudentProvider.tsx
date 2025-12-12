@@ -50,7 +50,7 @@ export function StudentProvider({ children }: StudentProviderProps) {
   // Redirect to login if unauthenticated on protected routes
   useEffect(() => {
     if (status === 'unauthenticated') {
-      const protectedPaths = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship', '/course-material']
+      const protectedPaths = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship', '/course-material', '/account']
       const isProtected = protectedPaths.some(path => pathname?.startsWith(path))
       
       if (isProtected) {
@@ -140,6 +140,10 @@ export function StudentProvider({ children }: StudentProviderProps) {
           loadingTimeout = null
         }
 
+        // Store current student data for use in callback
+        const currentStudentData = studentData
+        const currentAuthUserId = session.user.id
+
         // Subscribe to realtime updates for this student
         subscription = supabase
           .channel(`student:${studentData.id}`)
@@ -151,18 +155,63 @@ export function StudentProvider({ children }: StudentProviderProps) {
               table: 'students',
               filter: `id=eq.${studentData.id}`,
             },
-            (payload) => {
-              if (isMounted) {
+            async (payload) => {
+              console.log('[StudentProvider] Realtime UPDATE received:', payload)
+              
+              if (!isMounted) {
+                console.log('[StudentProvider] Component unmounted, ignoring update')
+                return
+              }
+
+              try {
                 const updatedStudent = payload.new as Student
+                
+                // Validate that we have all required fields
+                if (!updatedStudent || !updatedStudent.id) {
+                  console.error('[StudentProvider] Invalid payload received:', payload)
+                  // Fallback: reload student data
+                  const reloadedStudent = await getStudentByAuthUserId(currentAuthUserId)
+                  if (reloadedStudent && isMounted) {
+                    console.log('[StudentProvider] Reloaded student after invalid payload:', reloadedStudent)
+                    setStudent(reloadedStudent)
+                  }
+                  return
+                }
+
+                console.log('[StudentProvider] Updating student from realtime:', {
+                  oldAccessLevel: currentStudentData?.access_level,
+                  newAccessLevel: updatedStudent.access_level,
+                  studentId: updatedStudent.id
+                })
+
                 setStudent(updatedStudent)
+                console.log('[StudentProvider] ✅ Student state updated successfully via Realtime')
+              } catch (error) {
+                console.error('[StudentProvider] Error processing realtime update:', error)
+                // Fallback: reload student data
+                try {
+                  const reloadedStudent = await getStudentByAuthUserId(currentAuthUserId)
+                  if (reloadedStudent && isMounted) {
+                    console.log('[StudentProvider] Reloaded student after error:', reloadedStudent)
+                    setStudent(reloadedStudent)
+                  }
+                } catch (reloadError) {
+                  console.error('[StudentProvider] Error reloading student:', reloadError)
+                }
               }
             }
           )
           .subscribe((status) => {
+            console.log('[StudentProvider] Subscription status changed:', status)
+            
             if (status === 'SUBSCRIBED') {
-              console.log('[StudentProvider] Realtime subscription active')
+              console.log('[StudentProvider] ✅ Realtime subscription active for student:', studentData.id)
+            } else if (status === 'TIMED_OUT') {
+              console.warn('[StudentProvider] ⚠️ Realtime subscription timed out')
             } else if (status === 'CHANNEL_ERROR') {
-              console.error('[StudentProvider] Realtime subscription error')
+              console.error('[StudentProvider] ❌ Realtime subscription error')
+            } else if (status === 'CLOSED') {
+              console.warn('[StudentProvider] ⚠️ Realtime subscription closed')
             }
           })
         

@@ -391,6 +391,17 @@ export default function Navbar() {
                   {userMenuOpen && (
                     <div className="absolute left-0 bottom-full mb-2 w-full rounded-lg border border-[var(--border)] bg-[var(--card)] backdrop-blur-md shadow-lg z-50">
                       <div className="p-2">
+                        <Link
+                          href="/account"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-white transition-colors hover:bg-[var(--muted)] hover:text-[var(--accent)]"
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Mijn Account</span>
+                        </Link>
+
+                        <div className="my-1 h-px bg-white/10" />
+
                         <button
                           onClick={() => {
                             setUserMenuOpen(false);

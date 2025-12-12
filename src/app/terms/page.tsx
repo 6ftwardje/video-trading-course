@@ -1,101 +1,83 @@
+import Container from '@/components/ui/Container'
+
 export const metadata = {
-  title: "Algemene Voorwaarden | Het Trade Platform",
-};
+  title: 'Terms of Service | Het Trade Platform',
+  description: 'Terms of Service voor Het Trade Platform',
+}
 
 export default function TermsPage() {
   return (
-    <main className="max-w-3xl mx-auto px-4 py-12 text-sm text-[var(--text)]">
-      <h1 className="text-2xl font-semibold mb-6">Algemene voorwaarden</h1>
-      <p className="text-[var(--text-dim)] mb-6">
-        Deze algemene voorwaarden zijn van toepassing op het gebruik van Het Trade
-        Platform en alle diensten die via dit platform worden aangeboden door Cryptoriez.
-        Door gebruik te maken van het platform ga je akkoord met deze voorwaarden.
-      </p>
+    <Container className="pb-20 pt-8 md:pt-12">
+      <div className="mx-auto max-w-3xl space-y-8">
+        <header className="space-y-3">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Terms of Service</h1>
+          <p className="text-sm text-[var(--text-dim)]">Laatst bijgewerkt: {new Date().toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </header>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">1. Definities</h2>
-        <p>
-          In deze voorwaarden wordt verstaan onder &quot;platform&quot;: Het Trade Platform,
-          inclusief alle modules, lessen, examens en aanvullende functionaliteiten,
-          aangeboden door Cryptoriez.
-        </p>
-      </section>
+        <div className="prose prose-invert max-w-none space-y-6 text-sm leading-relaxed text-[var(--text-dim)]">
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">1. Acceptatie van de voorwaarden</h2>
+            <p>
+              Door gebruik te maken van Het Trade Platform, ga je akkoord met deze Terms of Service. Als je niet
+              akkoord gaat met deze voorwaarden, gebruik dan ons platform niet.
+            </p>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">2. Geen beleggingsadvies</h2>
-        <p>
-          Alle informatie op Het Trade Platform is uitsluitend bedoeld voor educatieve
-          doeleinden en vormt geen persoonlijk beleggingsadvies, financiële dienst,
-          aanbeveling of uitnodiging tot het kopen of verkopen van financiële
-          instrumenten.
-        </p>
-        <p>
-          Je blijft altijd zelf verantwoordelijk voor je eigen beslissingen op de
-          financiële markten. Resultaten uit het verleden bieden geen garantie voor de
-          toekomst.
-        </p>
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">2. Gebruik van het platform</h2>
+            <p>Je stemt ermee in om:</p>
+            <ul className="ml-6 list-disc space-y-2">
+              <li>Accurate en complete informatie te verstrekken bij registratie</li>
+              <li>Je accountgegevens vertrouwelijk te houden</li>
+              <li>Het platform alleen te gebruiken voor legale doeleinden</li>
+              <li>Geen content te kopiëren of te verspreiden zonder toestemming</li>
+            </ul>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">3. Gebruik van het platform</h2>
-        <p>
-          Je mag het platform uitsluitend gebruiken voor persoonlijk en niet-commercieel
-          gebruik. Het is niet toegestaan om inloggegevens te delen, content te kopiëren
-          of te verspreiden zonder voorafgaande schriftelijke toestemming van Cryptoriez.
-        </p>
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">3. Intellectueel eigendom</h2>
+            <p>
+              Alle content op Het Trade Platform, inclusief maar niet beperkt tot video's, tekst, afbeeldingen en
+              software, is eigendom van Cryptoriez en is beschermd door auteursrechten en andere intellectuele
+              eigendomsrechten.
+            </p>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">4. Intellectueel eigendom</h2>
-        <p>
-          Alle content op Het Trade Platform, waaronder maar niet beperkt tot video&apos;s,
-          teksten, afbeeldingen en lesmateriaal, is beschermd door auteursrecht en andere
-          intellectuele eigendomsrechten en blijft eigendom van Cryptoriez of haar
-          licentiegevers.
-        </p>
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">4. Toegangsniveaus</h2>
+            <p>
+              Je toegangsniveau wordt bepaald door je mentor. Basis toegang geeft beperkte toegang tot content. Full
+              toegang geeft toegang tot alle video's en examens.
+            </p>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">5. Aansprakelijkheid</h2>
-        <p>
-          Cryptoriez spant zich in om correcte en actuele informatie aan te bieden, maar
-          geeft geen garanties voor de volledigheid, juistheid of geschiktheid van de
-          informatie voor jouw persoonlijke situatie.
-        </p>
-        <p>
-          Voor zover wettelijk toegestaan, is Cryptoriez niet aansprakelijk voor directe
-          of indirecte schade die voortvloeit uit het gebruik van het platform of het niet
-          beschikbaar zijn daarvan.
-        </p>
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">5. Aansprakelijkheid</h2>
+            <p>
+              Het Trade Platform wordt aangeboden "zoals het is". We zijn niet aansprakelijk voor eventuele schade
+              voortvloeiend uit het gebruik of het onvermogen om het platform te gebruiken.
+            </p>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">6. Wijzigingen</h2>
-        <p>
-          Cryptoriez behoudt zich het recht voor om deze voorwaarden en de inhoud van Het
-          Trade Platform op ieder moment te wijzigen. Belangrijke wijzigingen zullen waar
-          mogelijk tijdig worden gecommuniceerd via het platform.
-        </p>
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">6. Wijzigingen</h2>
+            <p>
+              We behouden ons het recht voor om deze Terms of Service op elk moment te wijzigen. Wijzigingen worden
+              effectief zodra ze op deze pagina worden gepubliceerd.
+            </p>
+          </section>
 
-      <section className="space-y-4 mb-8">
-        <h2 className="text-lg font-semibold">7. Toepasselijk recht</h2>
-        <p>
-          Op deze voorwaarden is uitsluitend Nederlands recht van toepassing. Geschillen
-          die voortvloeien uit het gebruik van het platform zullen bij uitsluiting worden
-          voorgelegd aan de bevoegde rechter in Nederland.
-        </p>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">8. Contact</h2>
-        <p>
-          Voor vragen over deze voorwaarden kun je contact opnemen met Cryptoriez via het
-          contactkanaal dat in het platform of op de website wordt vermeld.
-        </p>
-      </section>
-    </main>
-  );
+          <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">7. Contact</h2>
+            <p>
+              Voor vragen over deze Terms of Service, neem contact op met ons via:{' '}
+              <a href="mailto:info@hettradeplatform.be" className="text-[var(--accent)] hover:underline">
+                info@hettradeplatform.be
+              </a>
+            </p>
+          </section>
+        </div>
+      </div>
+    </Container>
+  )
 }
-
-
