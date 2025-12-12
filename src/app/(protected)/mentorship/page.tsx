@@ -5,14 +5,7 @@ import { useRouter } from 'next/navigation'
 import Container from '@/components/ui/Container'
 import MentorCard from '@/components/MentorCard'
 import CalendlyModal from '@/components/CalendlyModal'
-import {
-  getStoredStudentId,
-  getStoredStudentAccessLevel,
-  getStudentByAuthUserId,
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-} from '@/lib/student'
-import { getSupabaseClient } from '@/lib/supabaseClient'
+import { useStudent } from '@/components/StudentProvider'
 import { getModulesSimple, getLessonsForModules, getWatchedLessonIds } from '@/lib/progress'
 
 type Mentor = {
@@ -57,43 +50,28 @@ const MENTORS: Mentor[] = [
 
 export default function MentorshipPage() {
   const router = useRouter()
+  const { student, status } = useStudent()
   const [loading, setLoading] = useState(true)
-  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
   const [overallProgress, setOverallProgress] = useState<number>(0)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null)
 
+  const accessLevel = student?.access_level ?? 1
+  const studentId = student?.id ?? null
+
   useEffect(() => {
     const run = async () => {
-      setLoading(true)
-      const supabase = getSupabaseClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.replace('/login')
+      if (status !== 'ready' || !student) {
+        if (status === 'unauthenticated') {
+          router.replace('/login')
+        }
         return
       }
 
-      let studentId = getStoredStudentId()
-      let level = getStoredStudentAccessLevel()
-
-      if (!studentId || level == null) {
-        const student = await getStudentByAuthUserId(user.id)
-        if (student?.id) {
-          setStoredStudent(student.id, student.email, student.name ?? null)
-          setStoredStudentAccessLevel(student.access_level ?? 1)
-          studentId = student.id
-          level = student.access_level ?? 1
-        }
-      }
-
-      if (level == null) level = 1
-      setAccessLevel(level)
+      setLoading(true)
 
       // Calculate overall progress
-      if (studentId && level >= 2) {
+      if (studentId && accessLevel >= 2) {
         try {
           const mods = await getModulesSimple()
           const moduleIds = mods.map(m => m.id)
@@ -116,7 +94,7 @@ export default function MentorshipPage() {
     }
 
     run()
-  }, [router])
+  }, [router, status, student])
 
   const handleBookSession = (mentor: Mentor) => {
     if ((accessLevel ?? 1) < 2) {

@@ -2,60 +2,37 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import {
-  getStoredStudentAccessLevel,
-  getStoredStudentId,
-  getStudentByAuthUserId,
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-} from '@/lib/student'
+import { useStudent } from '@/components/StudentProvider'
 import Container from '@/components/ui/Container'
 import { Download } from 'lucide-react'
 import { WaveLoader } from '@/components/ui/wave-loader'
 
 export default function CourseMaterialPage() {
-  const [accessLevel, setAccessLevel] = useState<number | null>(null)
+  const { student, status } = useStudent()
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const accessLevel = student?.access_level ?? 1
+  const studentId = student?.id ?? null
+
   useEffect(() => {
     const load = async () => {
       try {
-        // Verify user is authenticated first
-        const supabase = createClient()
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-
-        if (!session?.user) {
-          setError('Je moet ingelogd zijn om het cursusmateriaal te bekijken.')
+        if (status !== 'ready' || !student) {
+          if (status === 'unauthenticated') {
+            setError('Je moet ingelogd zijn om het cursusmateriaal te bekijken.')
+          }
           setLoading(false)
           return
         }
 
-        // Sync student data from database (like other pages do)
-        let studentId = getStoredStudentId()
-        let level = getStoredStudentAccessLevel()
+        // Verify user is authenticated first
+        const supabase = createClient()
 
-        if (!studentId || level == null) {
-          const student = await getStudentByAuthUserId(session.user.id)
-          if (student?.id) {
-            setStoredStudent(student.id, student.email, student.name ?? null)
-            setStoredStudentAccessLevel(student.access_level ?? 1)
-            studentId = student.id
-            level = student.access_level ?? 1
-          } else {
-            console.warn('[CourseMaterial] No student record found for auth user:', session.user.id)
-          }
-        }
+        console.log('[CourseMaterial] Access level:', accessLevel, 'Student ID:', studentId, 'User ID:', student.auth_user_id)
 
-        if (level == null) level = 1
-        setAccessLevel(level)
-
-        console.log('[CourseMaterial] Access level:', level, 'Student ID:', studentId, 'User ID:', session.user.id)
-
-        if (level < 2) {
+        if (accessLevel < 2) {
           console.log('[CourseMaterial] Access denied: access_level < 2')
           setLoading(false)
           return
@@ -85,8 +62,8 @@ export default function CourseMaterialPage() {
             hint: errorObj.hint,
             toString: String(storageError),
             studentId,
-            accessLevel: level,
-            authUserId: session.user.id,
+            accessLevel,
+            authUserId: student.auth_user_id,
           }
           
           // Try to stringify the error object
@@ -151,7 +128,7 @@ export default function CourseMaterialPage() {
             errorMessage.includes('policy violation')
           ) {
             setError('Je hebt geen toegang tot dit cursusmateriaal. Controleer of je account het juiste toegangsniveau heeft (Full of Mentor).')
-          } else if (isRLSPolicyIssue || (isNotFoundError && level >= 2)) {
+          } else if (isRLSPolicyIssue || (isNotFoundError && accessLevel >= 2)) {
             // "Object not found" with access_level >= 2 or HTTP 400 means RLS policy issue
             setError('Het bestand is niet toegankelijk vanwege beveiligingsinstellingen. Je account heeft wel het juiste toegangsniveau, maar de beveiligingspolicy blokkeert de toegang. Neem contact op met je mentor om de Storage RLS policies te controleren.')
           } else if (isNotFoundError) {
@@ -184,9 +161,9 @@ export default function CourseMaterialPage() {
     }
 
     load()
-  }, [])
+  }, [status, student, accessLevel, studentId])
 
-  const isBasic = (accessLevel ?? 1) < 2
+  const isBasic = accessLevel < 2
 
   if (loading) {
     return (

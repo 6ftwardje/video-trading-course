@@ -4,10 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { WaveLoader } from '@/components/ui/wave-loader'
-import {
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-} from '@/lib/student'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
@@ -143,35 +139,9 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // If still no student record, create one
-        if (!studentRecord) {
-          const { data: created, error: createError } = await supabase
-            .from('students')
-            .insert({
-              email,
-              auth_user_id: user.id,
-              access_level: 1,
-              name: fullName || null,
-            })
-            .select('id,email,access_level,name')
-            .single()
-
-          if (createError || !created) {
-            console.error('Error creating fallback student profile:', createError)
-            // Still redirect to dashboard even if student creation fails
-            // The student sync will be retried on next login
-          } else {
-            studentRecord = created
-          }
-        }
-
-        // Store student data in localStorage
-        if (studentRecord) {
-          setStoredStudent(studentRecord.id, studentRecord.email, studentRecord.name ?? null)
-          setStoredStudentAccessLevel(studentRecord.access_level ?? 1)
-        }
-
         // Redirect to dashboard
+        // Student record will be loaded by StudentProvider
+        // DB trigger should handle student creation if needed
         router.replace('/dashboard')
       } catch (error) {
         console.error('Unexpected error in auth callback:', error)

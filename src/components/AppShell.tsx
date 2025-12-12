@@ -4,8 +4,8 @@ import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
 import Footer from '@/components/Footer'
 import Navbar from '@/components/Navbar'
-import StudentGate from '@/components/StudentGate'
 import ChatbotOverlay from '@/components/ChatbotOverlay'
+import { StudentProvider } from '@/components/StudentProvider'
 
 const HIDDEN_ROUTES = ['/login', '/confirmed']
 
@@ -23,13 +23,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <div className={hideChrome ? '' : 'md:pl-16'}>
-      {!hideChrome && <StudentGate />}
-      {!hideChrome && <Navbar />}
-      {!hideChrome && <ChatbotOverlay />}
-      <main className="min-h-screen">{children}</main>
-      {!hideChrome && <Footer />}
-    </div>
+    <StudentProvider>
+      <div className={hideChrome ? '' : 'md:pl-16'}>
+        {!hideChrome && <Navbar />}
+        {!hideChrome && <ChatbotOverlay />}
+        <main className="min-h-screen">{children}</main>
+        {!hideChrome && <Footer />}
+      </div>
+    </StudentProvider>
   )
 }
 

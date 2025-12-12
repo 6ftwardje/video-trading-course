@@ -3,13 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import {
-  getStoredStudentAccessLevel,
-  getStoredStudentId,
-  getStudentByAuthUserId,
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-} from '@/lib/student'
+import { useStudent } from '@/components/StudentProvider'
 import { getExamById, getExamByModuleId, getExamQuestions, getModuleLessons, getWatchedLessonIds, insertExamResult, getNextModule } from '@/lib/exam'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { WaveLoader } from '@/components/ui/wave-loader'
@@ -34,6 +28,7 @@ function confettiLite() {
 export default function ExamPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const search = useSearchParams()
+  const { student, status } = useStudent()
   const [examId, setExamId] = useState<number>(0)
   const [moduleId, setModuleId] = useState<number>(1)
 
@@ -49,8 +44,10 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   const [accessBlocked, setAccessBlocked] = useState(false)
   const [started, setStarted] = useState(false)
   const [confirmSubmit, setConfirmSubmit] = useState(false)
-  const [accessLevel, setAccessLevel] = useState<number | null>(null)
   const [nextModuleId, setNextModuleId] = useState<number | null>(null)
+
+  const accessLevel = student?.access_level ?? 1
+  const studentId = student?.id ?? null
 
   // keyboard shortcuts: pijltjes links/rechts
   useEffect(() => {
@@ -95,29 +92,17 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
       setGatedBlocked(false)
       setAccessBlocked(false)
 
-      // 0) Student check
-      const supabase = getSupabaseClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      let studentId = getStoredStudentId()
-      let level = getStoredStudentAccessLevel()
-
-      if (user && (!studentId || level == null)) {
-        const student = await getStudentByAuthUserId(user.id)
-        if (student?.id) {
-          setStoredStudent(student.id, student.email, student.name ?? null)
-          setStoredStudentAccessLevel(student.access_level ?? 1)
-          studentId = student.id
-          level = student.access_level ?? 1
+      if (status !== 'ready' || !student) {
+        if (status === 'unauthenticated') {
+          router.replace('/login')
         }
+        setLoading(false)
+        return
       }
 
-      if (level == null) level = 1
-      setAccessLevel(level)
+      const supabase = getSupabaseClient()
 
-      if (level < 2) {
+      if (accessLevel < 2) {
         setAccessBlocked(true)
         setLoading(false)
         return

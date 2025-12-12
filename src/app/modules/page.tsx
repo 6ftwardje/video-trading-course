@@ -4,16 +4,9 @@ import { useEffect, useState } from 'react'
 import Container from '@/components/ui/Container'
 import ModuleProgressCard from '@/components/ModuleProgressCard'
 import { WaveLoader } from '@/components/ui/wave-loader'
+import { useStudent } from '@/components/StudentProvider'
 import { getModulesSimple, getLessonsForModules, getWatchedLessonIds } from '@/lib/progress'
 import { getExamByModuleId, hasPassedExamForModule } from '@/lib/exam'
-import {
-  getStoredStudentId,
-  getStoredStudentAccessLevel,
-  getStudentByAuthUserId,
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-} from '@/lib/student'
-import { getSupabaseClient } from '@/lib/supabaseClient'
 
 type ModuleRow = { id: number; title: string; description: string | null; order: number | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
@@ -27,40 +20,21 @@ type ModuleWithProgress = ModuleRow & {
 }
 
 export default function ModulesPage() {
+  const { student, status } = useStudent()
   const [loading, setLoading] = useState(true)
   const [modules, setModules] = useState<ModuleWithProgress[]>([])
-  const [accessLevel, setAccessLevel] = useState<number | null>(null)
+
+  const accessLevel = student?.access_level ?? 1
+  const studentId = student?.id ?? null
 
   useEffect(() => {
     const run = async () => {
-      setLoading(true)
-      const supabase = getSupabaseClient()
-      // Use getSession() instead of getUser() - middleware already validates access
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.user) {
-        setModules([])
+      if (status !== 'ready' || !student) {
         setLoading(false)
         return
       }
 
-      let studentId = getStoredStudentId()
-      let level = getStoredStudentAccessLevel()
-
-      if (!studentId || level == null) {
-        const student = await getStudentByAuthUserId(session.user.id)
-        if (student?.id) {
-          setStoredStudent(student.id, student.email)
-          setStoredStudentAccessLevel(student.access_level ?? 1)
-          studentId = student.id
-          level = student.access_level ?? 1
-        }
-      }
-
-      if (level == null) level = 1
-      setAccessLevel(level)
+      setLoading(true)
 
       const mods = (await getModulesSimple()) as ModuleRow[]
       const moduleIds = mods.map(m => m.id)
@@ -83,7 +57,7 @@ export default function ModulesPage() {
         let isLockedByExam = false
         let previousModuleId: number | null = null
         
-        if (studentId && (level ?? 1) >= 2) {
+        if (studentId && accessLevel >= 2) {
           // Module 1 is always unlocked for access level 2+
           if (i > 0) {
             const prevModule = sortedMods[i - 1]
@@ -117,7 +91,7 @@ export default function ModulesPage() {
     }
 
     run()
-  }, [])
+  }, [status, student, accessLevel, studentId])
 
   return (
     <Container className="pb-20 pt-8 md:pt-12">
@@ -131,7 +105,7 @@ export default function ModulesPage() {
           </p>
         </header>
 
-        {!loading && (accessLevel ?? 1) < 2 && (
+        {!loading && accessLevel < 2 && (
           <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
             🔒 Je hebt momenteel Basic toegang. Modules zijn zichtbaar zodat je weet wat er komt, maar video's en examens worden
             ontgrendeld zodra je mentor je account upgrade naar Full.
@@ -145,7 +119,7 @@ export default function ModulesPage() {
         ) : modules.length ? (
           <div className="space-y-6">
             {modules.map(module => (
-              <ModuleProgressCard key={module.id} module={{ ...module, accessLevel: accessLevel ?? 1 }} />
+              <ModuleProgressCard key={module.id} module={{ ...module, accessLevel }} />
             ))}
           </div>
         ) : (

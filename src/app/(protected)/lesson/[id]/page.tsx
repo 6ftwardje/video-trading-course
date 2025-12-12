@@ -4,13 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { use } from 'react'
 import Player from '@vimeo/player'
 import { getSupabaseClient } from '@/lib/supabaseClient'
-import {
-  getStoredStudentAccessLevel,
-  getStoredStudentId,
-  getStudentByAuthUserId,
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-} from '@/lib/student'
+import { useStudent } from '@/components/StudentProvider'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Lock } from 'lucide-react'
@@ -61,24 +55,30 @@ function getVimeoVideoId(videoUrl: string): string | null {
 
 export default function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const { student, status } = useStudent()
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [lessons, setLessons] = useState<LessonListItem[]>([])
   const [nextLesson, setNextLesson] = useState<LessonListItem | null>(null)
   const [prevLesson, setPrevLesson] = useState<LessonListItem | null>(null)
   const [progress, setProgress] = useState<Record<number, boolean>>({})
-  const [accessLevel, setAccessLevel] = useState<number | null>(null)
   const [examId, setExamId] = useState<number | null>(null)
   const [examPassed, setExamPassed] = useState<boolean>(false)
   const [nextModuleId, setNextModuleId] = useState<number | null>(null)
   const playerRef = useRef<HTMLDivElement>(null)
+
+  const accessLevel = student?.access_level ?? 1
+  const studentId = student?.id ?? null
 
   useEffect(() => {
     let player: Player | null = null
     
     const init = async () => {
       try {
+        if (status !== 'ready' || !student) {
+          return
+        }
+
         const supabase = getSupabaseClient()
-        let studentId = getStoredStudentId()
         
         const lessonIdNum = Number(id)
         if (isNaN(lessonIdNum)) {
@@ -111,24 +111,6 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
         const currentLesson = current as Lesson
 
         setLesson(currentLesson)
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
-        let level = getStoredStudentAccessLevel()
-        if (user && (!studentId || level == null)) {
-          const student = await getStudentByAuthUserId(user.id)
-          if (student?.id) {
-            setStoredStudent(student.id, student.email, student.name ?? null)
-            setStoredStudentAccessLevel(student.access_level ?? 1)
-            studentId = student.id
-            level = student.access_level ?? 1
-          }
-        }
-
-        if (level == null) level = 1
-        setAccessLevel(level)
 
         // Alle lessen in module
         const { data: all, error: allError } = await supabase
@@ -179,7 +161,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
           const idx = sortedAll.findIndex(l => l.id === currentLesson.id)
           const isLastLesson = idx === sortedAll.length - 1
           
-          if (isLastLesson && studentId && (level ?? 1) >= 2) {
+          if (isLastLesson && studentId && accessLevel >= 2) {
             // Check of exam bestaat voor deze module
             const exam = await getExamByModuleId(currentLesson.module_id)
             if (exam) {
@@ -200,7 +182,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
         }
 
         // Player instellen
-        if ((level ?? 1) >= 2 && currentLesson.video_url && playerRef.current) {
+        if (accessLevel >= 2 && currentLesson.video_url && playerRef.current) {
           const videoId = getVimeoVideoId(currentLesson.video_url)
           if (videoId) {
             player = new Player(playerRef.current, { 
@@ -236,7 +218,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
         player.destroy().catch(console.error)
       }
     }
-  }, [id])
+  }, [id, status, student, accessLevel, studentId])
 
   if (!lesson) {
     return (
@@ -248,7 +230,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     )
   }
 
-  const isBasic = (accessLevel ?? 1) < 2
+  const isBasic = accessLevel < 2
 
   return (
     <Container className="pt-8 md:pt-12 pb-16">

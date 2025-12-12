@@ -8,15 +8,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardModulesSection from '@/components/DashboardModulesSection'
 import DashboardProgress from '@/components/DashboardProgress'
 import TradingSessions from '@/components/TradingSessions'
-import {
-  getStoredStudentEmail,
-  getStoredStudentName,
-  getStoredStudentId,
-  getStoredStudentAccessLevel,
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-  getStudentByAuthUserId,
-} from '@/lib/student'
+import { useStudent } from '@/components/StudentProvider'
 import { getLessonsForModules, getModulesSimple, getWatchedLessonIds, findNextLesson } from '@/lib/progress'
 import { getExamByModuleId } from '@/lib/exam'
 import { getSupabaseClient } from '@/lib/supabaseClient'
@@ -27,53 +19,27 @@ type ModuleWithProgress = ModuleRow & { totalLessons: number; watchedCount: numb
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { student, status } = useStudent()
   const [loading, setLoading] = useState(true)
-  const [email, setEmail] = useState<string | null>(null)
   const [modules, setModules] = useState<ModuleWithProgress[]>([])
   const [activeModule, setActiveModule] = useState<ModuleWithProgress | null>(null)
   const [nextLessonHref, setNextLessonHref] = useState<string | null>(null)
   const [progressText, setProgressText] = useState<string>('Welkom terug')
-  const [accessLevel, setAccessLevel] = useState<number | null>(null)
+
+  const accessLevel = student?.access_level ?? 1
+  const studentId = student?.id ?? null
+  const email = student?.email ?? null
 
   useEffect(() => {
     const run = async () => {
-      setLoading(true)
-      const supabase = getSupabaseClient()
-      // Use getSession() instead of getUser() - middleware already validates access
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.user) {
-        router.replace('/login')
+      if (status !== 'ready' || !student) {
+        if (status === 'unauthenticated') {
+          router.replace('/login')
+        }
         return
       }
 
-      const storedEmail = getStoredStudentEmail()
-      const storedName = getStoredStudentName()
-      setEmail(storedEmail)
-
-      let studentId = getStoredStudentId()
-      let level = getStoredStudentAccessLevel()
-      let studentName = storedName
-      if (level != null) {
-        setAccessLevel(level)
-      }
-
-      if (!studentId || level == null) {
-        const student = await getStudentByAuthUserId(session.user.id)
-        if (student?.id) {
-          setStoredStudent(student.id, student.email, student.name ?? null)
-          setStoredStudentAccessLevel(student.access_level ?? 1)
-          studentId = student.id
-          level = student.access_level ?? 1
-          studentName = student.name
-          setEmail(student.email)
-        }
-      }
-
-      if (level == null) level = 1
-      setAccessLevel(level)
+      setLoading(true)
 
       const mods = (await getModulesSimple()) as ModuleRow[]
       const moduleIds = mods.map(m => m.id)
@@ -94,7 +60,7 @@ export default function DashboardPage() {
       setModules(byModule)
 
       const next = findNextLesson(mods, lessons, watchedSet)
-      if (level >= 2) {
+      if (accessLevel >= 2) {
         if (next?.lesson?.id) setNextLessonHref(`/lesson/${next.lesson.id}`)
         else if (mods[0]?.id) setNextLessonHref(`/module/${mods[0].id}`)
         else setNextLessonHref(null)
@@ -102,7 +68,7 @@ export default function DashboardPage() {
         setNextLessonHref(null)
       }
 
-      if (level < 2) {
+      if (accessLevel < 2) {
         setProgressText('Je hebt Basic toegang. Upgrade voor alle videolessen.')
       } else if (next?.module && next?.lesson) {
         const modLessons = lessons.filter(l => l.module_id === next.module.id)
@@ -130,7 +96,7 @@ export default function DashboardPage() {
     }
 
     run()
-  }, [router])
+  }, [router, status, student])
 
   const progressPanel = {
     loading,
@@ -155,10 +121,10 @@ export default function DashboardPage() {
           {/* Hero Dashboard - WITH card wrapper */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
             <HeroDashboard
-              userName={(getStoredStudentName() ?? email) || undefined}
+              userName={student?.name ?? email ?? undefined}
               nextLessonUrl={nextLessonHref || undefined}
               progressText={progressText}
-              accessLevel={accessLevel ?? 1}
+              accessLevel={accessLevel}
               progressPanel={progressPanel}
             />
           </div>
@@ -175,7 +141,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
             <DashboardProgress
               loading={progressPanel.loading}
-              accessLevel={accessLevel ?? 1}
+              accessLevel={accessLevel}
               activeModule={progressPanel.activeModule}
               totalCompleted={progressPanel.totalCompleted}
               totalLessons={progressPanel.totalLessons}
@@ -188,7 +154,7 @@ export default function DashboardPage() {
             <DashboardModulesSection
               loading={loading}
               activeModule={activeModule}
-              accessLevel={accessLevel ?? 1}
+              accessLevel={accessLevel}
             />
           </div>
         </div>

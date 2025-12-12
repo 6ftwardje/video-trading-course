@@ -8,13 +8,7 @@ import Container from "@/components/ui/Container";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff, Book, Bell } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import {
-  getStoredStudentAccessLevel,
-  getStoredStudentEmail,
-  getStoredStudentName,
-  getStoredStudentId,
-  clearStoredStudent,
-} from "@/lib/student";
+import { useStudent } from "@/components/StudentProvider";
 import { getUnreadCount } from "@/lib/updates";
 import MobileNav from "@/components/ui/mobile-nav";
 
@@ -34,64 +28,25 @@ const courseMaterialLink = {
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [studentEmail, setStudentEmail] = useState<string | null>(null);
-  const [accessLevel, setAccessLevel] = useState<number | null>(null);
-  const [userName, setUserName] = useState<string>("Account");
+  const { student, status } = useStudent();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // Derive values from student context
+  const studentEmail = student?.email ?? null;
+  const accessLevel = student?.access_level ?? null;
+  const userName = student?.name ?? student?.email ?? "Account";
+
   useEffect(() => {
-    const email = getStoredStudentEmail();
-    const name = getStoredStudentName();
-    setStudentEmail(email);
-    const level = getStoredStudentAccessLevel();
-    setAccessLevel(level);
-    
-    // Set display name: name ?? email
-    const displayName = name ?? email ?? "Account";
-    setUserName(displayName);
-    
-    // Fetch user name for sidebar if not in localStorage
-    // Use getSession() instead of getUser() to avoid unnecessary server requests
-    const fetchUserName = async () => {
-      if (name) {
-        // Already have name in localStorage, use it
-        return;
-      }
-      
-      try {
-        const supabase = getSupabaseClient();
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (session?.user?.user_metadata?.full_name) {
-          setUserName(session.user.user_metadata.full_name);
-        } else if (email) {
-          // Fallback to email if no name available
-          setUserName(email);
-        }
-      } catch (error) {
-        // Fallback to email if error
-        if (email) {
-          setUserName(email);
-        }
-      }
-    };
-    fetchUserName();
-
     // Fetch unread count for updates
     const fetchUnreadCount = async () => {
-      const studentId = getStoredStudentId();
-      const accessLevel = getStoredStudentAccessLevel();
-      
       // Only fetch for access level 2 and 3
-      if (studentId && (accessLevel === 2 || accessLevel === 3)) {
+      if (student?.id && (accessLevel === 2 || accessLevel === 3)) {
         try {
-          const count = await getUnreadCount(studentId);
+          const count = await getUnreadCount(student.id, student.access_level ?? null);
           setUnreadCount(count);
         } catch (error) {
           console.error('Error fetching unread count', error);
@@ -100,24 +55,27 @@ export default function Navbar() {
         setUnreadCount(0);
       }
     };
-    fetchUnreadCount();
 
-    // Listen for updates-read event to refresh unread count
-    const handleUpdatesRead = () => {
+    if (status === 'ready' && student) {
       fetchUnreadCount();
-    };
-    window.addEventListener('updates-read', handleUpdatesRead);
 
-    // Refresh unread count periodically and on pathname change
-    const interval = setInterval(() => {
-      fetchUnreadCount();
-    }, 10000); // Refresh every 10 seconds
+      // Listen for updates-read event to refresh unread count
+      const handleUpdatesRead = () => {
+        fetchUnreadCount();
+      };
+      window.addEventListener('updates-read', handleUpdatesRead);
 
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('updates-read', handleUpdatesRead);
-    };
-  }, [pathname]);
+      // Refresh unread count periodically and on pathname change
+      const interval = setInterval(() => {
+        fetchUnreadCount();
+      }, 10000); // Refresh every 10 seconds
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('updates-read', handleUpdatesRead);
+      };
+    }
+  }, [pathname, status, student, accessLevel]);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -138,14 +96,49 @@ export default function Navbar() {
 
   const handleLogout = useCallback(async () => {
     try {
+      console.log('[Navbar] Starting logout...');
       const supabase = getSupabaseClient();
-      await supabase.auth.signOut();
-      clearStoredStudent();
-      setStudentEmail(null);
-      setAccessLevel(null);
-      router.replace("/login");
+      
+      // Sign out and wait for it to complete
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("[Navbar] SignOut error:", error);
+        console.error("[Navbar] Error details:", JSON.stringify(error, null, 2));
+      } else {
+        console.log('[Navbar] Sign out successful');
+      }
+      
+      // Clear any remaining state
+      console.log('[Navbar] Clearing state and redirecting...');
+      
+      // Use a longer delay to ensure everything is cleaned up
+      // Also use window.location.href instead of replace to ensure it works
+      setTimeout(() => {
+        try {
+          console.log('[Navbar] Executing redirect to /login');
+          // Try multiple redirect methods
+          if (window.location) {
+            window.location.href = "/login";
+          } else {
+            console.error('[Navbar] window.location is not available');
+          }
+        } catch (redirectError) {
+          console.error('[Navbar] Redirect error:', redirectError);
+          // Last resort: try router
+          router.push("/login");
+        }
+      }, 200);
     } catch (error) {
-      console.error("Logout error", error);
+      console.error("[Navbar] Logout catch error:", error);
+      console.error("[Navbar] Error stack:", error instanceof Error ? error.stack : 'No stack');
+      // Even if there's an error, try to redirect
+      try {
+        window.location.href = "/login";
+      } catch (e) {
+        console.error('[Navbar] Final redirect attempt failed:', e);
+        router.push("/login");
+      }
     }
   }, [router]);
 

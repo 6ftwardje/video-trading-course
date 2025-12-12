@@ -14,13 +14,7 @@ import {
   getSignedImageUrl,
   UpdateWithAuthor,
 } from '@/lib/updates'
-import {
-  getStoredStudentAccessLevel,
-  getStoredStudentId,
-  getStudentByAuthUserId,
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-} from '@/lib/student'
+import { useStudent } from '@/components/StudentProvider'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { WaveLoader } from '@/components/ui/wave-loader'
 import { AccentButton } from '@/components/ui/Buttons'
@@ -92,11 +86,13 @@ function UpdateImageDisplay({
 
 export default function UpdatesPage() {
   const router = useRouter()
+  const { student, status } = useStudent()
   const [updates, setUpdates] = useState<UpdateWithAuthor[] | null>(null)
   const [loading, setLoading] = useState(true)
-  const [accessLevel, setAccessLevel] = useState<number | null>(null)
-  const [currentStudentId, setCurrentStudentId] = useState<string | null>(null)
   const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false)
+
+  const accessLevel = student?.access_level ?? 1
+  const currentStudentId = student?.id ?? null
 
   // Create state
   const [isCreating, setIsCreating] = useState(false)
@@ -131,33 +127,13 @@ export default function UpdatesPage() {
       setLoading(true)
       const supabase = getSupabaseClient()
 
-      // Check authentication
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.user) {
-        router.replace('/login')
+      if (status !== 'ready' || !student) {
+        if (status === 'unauthenticated') {
+          router.replace('/login')
+        }
+        setLoading(false)
         return
       }
-
-      // Haal access level uit localStorage of via bestaande student helpers
-      let storedAccessLevel = getStoredStudentAccessLevel()
-      let studentId = getStoredStudentId()
-
-      if (!studentId || storedAccessLevel == null) {
-        const student = await getStudentByAuthUserId(session.user.id)
-        if (student?.id) {
-          setStoredStudent(student.id, student.email, student.name ?? null)
-          setStoredStudentAccessLevel(student.access_level ?? 1)
-          studentId = student.id
-          storedAccessLevel = student.access_level ?? 1
-        }
-      }
-
-      if (storedAccessLevel == null) storedAccessLevel = 1
-      setAccessLevel(storedAccessLevel)
-      setCurrentStudentId(studentId)
 
       try {
         const data = await fetchUpdatesWithAuthor()
@@ -165,10 +141,10 @@ export default function UpdatesPage() {
 
         // Mark all updates as read for access level 2 and 3
         // Only run once on initial load, not during edit/create actions
-        if (studentId && (storedAccessLevel === 2 || storedAccessLevel === 3) && data.length > 0) {
+        if (currentStudentId && (accessLevel === 2 || accessLevel === 3) && data.length > 0) {
           const updateIds = data.map((u) => u.id)
           try {
-            await markAllAsRead(studentId, updateIds)
+            await markAllAsRead(currentStudentId, updateIds, accessLevel)
             setHasMarkedAsRead(true)
             // Trigger navbar refresh by dispatching a custom event
             window.dispatchEvent(new CustomEvent('updates-read'))
@@ -197,7 +173,7 @@ export default function UpdatesPage() {
     }
 
     void init()
-  }, [router])
+  }, [router, status, student, currentStudentId, accessLevel])
 
   const handleCreate = async () => {
     if (!newContent.trim()) {

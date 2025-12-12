@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Home, BookOpen, LogOut, Users, User, Bell, Book } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getStoredStudentAccessLevel, getStoredStudentEmail, clearStoredStudent } from "@/lib/student";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { useStudent } from "@/components/StudentProvider";
 
 type NavItem = {
   href: string;
@@ -17,17 +17,13 @@ type NavItem = {
 
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
-  const [accessLevel, setAccessLevel] = useState<number | null>(null);
-  const [studentEmail, setStudentEmail] = useState<string | null>(null);
+  const { student, status } = useStudent();
   const pathname = usePathname();
   const router = useRouter();
 
-  useEffect(() => {
-    const level = getStoredStudentAccessLevel();
-    const email = getStoredStudentEmail();
-    setAccessLevel(level);
-    setStudentEmail(email);
-  }, []);
+  // Derive values from student context
+  const accessLevel = student?.access_level ?? null;
+  const studentEmail = student?.email ?? null;
 
   // Body scroll lock
   useEffect(() => {
@@ -55,14 +51,18 @@ export default function MobileNav() {
   const handleLogout = async () => {
     try {
       const supabase = getSupabaseClient();
-      await supabase.auth.signOut();
-      clearStoredStudent();
-      setStudentEmail(null);
-      setAccessLevel(null);
       setIsOpen(false);
-      router.replace("/login");
+      // Sign out
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Logout error", error);
+      }
+      // Force a hard redirect to login page - this clears all state
+      window.location.replace("/login");
     } catch (error) {
       console.error("Logout error", error);
+      // Even if there's an error, try to redirect
+      window.location.replace("/login");
     }
   };
 
@@ -236,3 +236,5 @@ export default function MobileNav() {
     </>
   );
 }
+
+

@@ -1,5 +1,5 @@
 import { getSupabaseClient } from './supabaseClient'
-import { getStoredStudentId, getStoredStudentAccessLevel } from './student'
+import { getStoredStudentId } from './student'
 
 export type Update = {
   id: string
@@ -263,11 +263,9 @@ export async function deleteUpdate(id: string): Promise<boolean> {
   return true
 }
 
-export async function getUnreadCount(studentId: string | null): Promise<number> {
+export async function getUnreadCount(studentId: string | null, accessLevel: number | null = null): Promise<number> {
   if (!studentId) return 0
 
-  const accessLevel = getStoredStudentAccessLevel()
-  
   // Only for access_level 2 and 3. For access_level 1: always return 0.
   if (accessLevel !== 2 && accessLevel !== 3) {
     return 0
@@ -308,14 +306,13 @@ export async function getUnreadCount(studentId: string | null): Promise<number> 
 
 export async function markAllAsRead(
   studentId: string | null,
-  updateIds: string[]
+  updateIds: string[],
+  accessLevel: number | null = null
 ): Promise<void> {
   if (!studentId || !updateIds || updateIds.length === 0) {
     return
   }
 
-  const accessLevel = getStoredStudentAccessLevel()
-  
   // Skip if access_level = 1
   if (accessLevel !== 2 && accessLevel !== 3) {
     return

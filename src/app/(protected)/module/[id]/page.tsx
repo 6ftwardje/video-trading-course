@@ -2,13 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseClient } from '@/lib/supabaseClient'
-import {
-  getStoredStudentAccessLevel,
-  getStoredStudentId,
-  getStudentByAuthUserId,
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-} from '@/lib/student'
+import { useStudent } from '@/components/StudentProvider'
 import { getExamByModuleId, hasPassedExamForModule } from '@/lib/exam'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
 import { getModulesSimple } from '@/lib/progress'
@@ -23,15 +17,18 @@ type ProgressRow = { lesson_id: number; watched: boolean }
 type PracticalLesson = PracticalLessonRecord
 
 export default function ModulePage({ params }: { params: Promise<{ id: string }> }) {
+  const { student, status } = useStudent()
   const [moduleId, setModuleId] = useState<string>('')
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [progress, setProgress] = useState<Record<number, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [examId, setExamId] = useState<number | null>(null)
   const [practicalLessons, setPracticalLessons] = useState<PracticalLesson[]>([])
-  const [accessLevel, setAccessLevel] = useState<number | null>(null)
   const [moduleLocked, setModuleLocked] = useState<boolean>(false)
   const [previousModuleId, setPreviousModuleId] = useState<number | null>(null)
+
+  const accessLevel = student?.access_level ?? 1
+  const studentId = student?.id ?? null
 
   useEffect(() => {
     const load = async () => {
@@ -75,29 +72,14 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         const practicals = await getPracticalLessons(moduleIdNum)
         setPracticalLessons(practicals)
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
-        let studentId = getStoredStudentId()
-        let level = getStoredStudentAccessLevel()
-
-        if (user && (!studentId || level == null)) {
-          const student = await getStudentByAuthUserId(user.id)
-          if (student?.id) {
-            setStoredStudent(student.id, student.email, student.name ?? null)
-            setStoredStudentAccessLevel(student.access_level ?? 1)
-            studentId = student.id
-            level = student.access_level ?? 1
-          }
+        if (status !== 'ready' || !student) {
+          setLoading(false)
+          return
         }
-
-        if (level == null) level = 1
-        setAccessLevel(level)
 
         // Check module locking: Module 1 is always unlocked for access level 2+
         // Module N is only unlocked if exam of module N-1 is passed
-        if (studentId && (level ?? 1) >= 2) {
+        if (studentId && accessLevel >= 2) {
           const allModules = await getModulesSimple()
           const sortedModules = [...allModules].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
           const currentModuleIndex = sortedModules.findIndex(m => m.id === moduleIdNum)
@@ -144,7 +126,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
       }
     }
     load()
-  }, [params])
+  }, [params, status, student, accessLevel, studentId])
 
   useEffect(() => {
     const fetchExam = async () => {
@@ -156,9 +138,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   }, [params])
 
   const unlockedIds = useMemo(() => {
-    if ((accessLevel ?? 1) < 2 || moduleLocked) return new Set<number>()
+    if (accessLevel < 2 || moduleLocked) return new Set<number>()
     // Regel: les n is unlocked als alle vorige lessen watched zijn
-    const sorted = [...lessons].sort((a, b) => a.order - b.order)
+    const sorted = [...lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     const ids: number[] = []
     let gateOpen = true
     for (const lesson of sorted) {

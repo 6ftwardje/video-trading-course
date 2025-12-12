@@ -8,13 +8,7 @@ import Container from '@/components/ui/Container'
 import { ArrowLeft, Lock } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
-import {
-  getStoredStudentAccessLevel,
-  getStoredStudentId,
-  getStudentByAuthUserId,
-  setStoredStudent,
-  setStoredStudentAccessLevel,
-} from '@/lib/student'
+import { useStudent } from '@/components/StudentProvider'
 
 type PracticalLesson = PracticalLessonRecord
 
@@ -43,10 +37,13 @@ function extractFirstUrl(text?: string | null) {
 
 export default function PracticalLessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const { student, status } = useStudent()
   const [lesson, setLesson] = useState<PracticalLesson | null>(null)
   const [lessons, setLessons] = useState<PracticalLesson[]>([])
   const playerRef = useRef<HTMLDivElement>(null)
-  const [accessLevel, setAccessLevel] = useState<number | null>(getStoredStudentAccessLevel())
+
+  const accessLevel = student?.access_level ?? 1
+  const studentId = student?.id ?? null
 
   useEffect(() => {
     const load = async () => {
@@ -81,24 +78,9 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
         video_url: (data as any).video_url ?? data.location ?? extractFirstUrl(data.description)
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      let studentId = getStoredStudentId()
-      let level = getStoredStudentAccessLevel()
-
-      if (user && (!studentId || level == null)) {
-        const student = await getStudentByAuthUserId(user.id)
-        if (student?.id) {
-          setStoredStudent(student.id, student.email, student.name ?? null)
-          setStoredStudentAccessLevel(student.access_level ?? 1)
-          level = student.access_level ?? 1
-        }
+      if (status !== 'ready' || !student) {
+        return
       }
-
-      if (level == null) level = 1
-      setAccessLevel(level)
 
       setLesson(resolvedLesson)
 

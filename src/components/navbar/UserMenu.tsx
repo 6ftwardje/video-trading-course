@@ -117,14 +117,21 @@ export default function UserMenu() {
   const handleLogout = useCallback(async () => {
     try {
       const supabase = getSupabaseClient();
-      await supabase.auth.signOut();
       clearStoredStudent();
       closeDropdown();
-      router.replace("/login");
+      // Sign out
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Logout error", error);
+      }
+      // Force a hard redirect to login page - this clears all state
+      window.location.replace("/login");
     } catch (error) {
       console.error("Logout error", error);
+      // Even if there's an error, try to redirect
+      window.location.replace("/login");
     }
-  }, [router, closeDropdown]);
+  }, [closeDropdown]);
 
   return (
     <div className="relative" ref={menuRef}>
