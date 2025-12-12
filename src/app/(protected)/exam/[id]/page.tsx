@@ -176,7 +176,6 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     try {
       const pct = score / total
       const passed = pct >= PASS_THRESHOLD
-      const studentId = getStoredStudentId()
       if (studentId) {
         const { error } = await insertExamResult(studentId, examId, score, passed)
         if (error) {

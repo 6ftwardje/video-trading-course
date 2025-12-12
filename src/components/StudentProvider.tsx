@@ -158,12 +158,13 @@ export function StudentProvider({ children }: StudentProviderProps) {
               }
             }
           )
-          .subscribe()
-
-        // Handle subscription errors
-        subscription.on('error', (error) => {
-          console.error('Realtime subscription error:', error)
-        })
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              console.log('[StudentProvider] Realtime subscription active')
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('[StudentProvider] Realtime subscription error')
+            }
+          })
         
         isLoading = false
       } catch (error) {
