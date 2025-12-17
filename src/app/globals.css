@@ -40,3 +40,34 @@ html, body {
   color: white;
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(70, 112, 219, 0.5), 0 0 40px rgba(70, 112, 219, 0.3), 0 0 60px rgba(70, 112, 219, 0.1);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(70, 112, 219, 0.7), 0 0 60px rgba(70, 112, 219, 0.5), 0 0 90px rgba(70, 112, 219, 0.2);
+    transform: scale(1.01);
+  }
+}
+
+@keyframes pulse-glow-bg {
+  0%, 100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes shine {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
