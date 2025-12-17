@@ -6,11 +6,12 @@ import { useStudent } from '@/components/StudentProvider'
 import { getExamByModuleId, hasPassedExamForModule } from '@/lib/exam'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
 import { getModulesSimple } from '@/lib/progress'
-import { CheckCircle2, Lock } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Container from '@/components/ui/Container'
 import { WaveLoader } from '@/components/ui/wave-loader'
+import { RequireAccess } from '@/components/RequireAccess'
 
 type Lesson = { id: number; title: string; order: number; module_id: number; thumbnail_url?: string | null }
 type ProgressRow = { lesson_id: number; watched: boolean }
@@ -153,7 +154,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   }, [params])
 
   const unlockedIds = useMemo(() => {
-    if (accessLevel < 2 || moduleLocked) return new Set<number>()
+    if (moduleLocked) return new Set<number>()
     // Regel: les n is unlocked als alle vorige lessen watched zijn
     const sorted = [...lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     const ids: number[] = []
@@ -171,7 +172,6 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   const watchedCount = Object.values(progress).filter(Boolean).length
   const total = lessons.length
   const pct = total ? Math.round((watchedCount / total) * 100) : 0
-  const isBasic = (accessLevel ?? 1) < 2
 
   return (
     <Container className="pt-8 md:pt-12 pb-16">
@@ -189,14 +189,8 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         </div>
       </div>
 
-      {isBasic && (
-        <div className="mb-6 rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
-          🔒 Deze module is zichtbaar maar niet toegankelijk met je Basic toegang. Neem contact op met je mentor om te upgraden
-          en alle videolessen en praktijkcases te openen.
-        </div>
-      )}
 
-      {!isBasic && moduleLocked && previousModuleId && (
+      {moduleLocked && previousModuleId && (
         <div className="mb-6 rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
           🔒 Deze module is vergrendeld. Voltooi eerst het examen van module {previousModuleId} om deze module te ontgrendelen.
         </div>
@@ -212,46 +206,47 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
             {lessons.map((lesson) => {
               const isWatched = !!progress[lesson.id]
               const isUnlocked = unlockedIds.has(lesson.id)
-              const lessonLocked = isBasic || moduleLocked || !isUnlocked
+              const lessonLocked = moduleLocked || !isUnlocked
               
               if (!lessonLocked) {
                 return (
-                  <Link
-                    key={lesson.id}
-                    href={`/lesson/${lesson.id}`}
-                    className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 hover:border-[var(--accent)]/40 transition cursor-pointer"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="relative w-24 h-16 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
-                        <Image
-                          src={lesson.thumbnail_url || 'https://placehold.co/320x180?text=Thumbnail'}
-                          alt={lesson.title}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {isWatched ? (
-                          <CheckCircle2 className="text-[var(--accent)] flex-shrink-0" />
-                        ) : (
-                          <div className="w-5 h-5 rounded-full border border-[var(--border)] flex-shrink-0" />
-                        )}
-                        <div>
-                          <div className="font-medium text-white">{lesson.title}</div>
-                          <div className="text-xs text-[var(--text-dim)]">Les {lesson.order}</div>
+                  <RequireAccess key={lesson.id} requiredLevel={2} accessLevel={accessLevel}>
+                    <Link
+                      href={`/lesson/${lesson.id}`}
+                      className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 hover:border-[var(--accent)]/40 transition cursor-pointer"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-24 h-16 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
+                          <Image
+                            src={lesson.thumbnail_url || 'https://placehold.co/320x180?text=Thumbnail'}
+                            alt={lesson.title}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {isWatched ? (
+                            <CheckCircle2 className="text-[var(--accent)] flex-shrink-0" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border border-[var(--border)] flex-shrink-0" />
+                          )}
+                          <div>
+                            <div className="font-medium text-white">{lesson.title}</div>
+                            <div className="text-xs text-[var(--text-dim)]">Les {lesson.order}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {isWatched ? (
-                      <span className="text-[var(--accent)] text-sm">✓ Voltooid</span>
-                    ) : (
-                      <span className="px-3 py-1 rounded-md bg-[var(--accent)]/20 border border-[var(--accent)]/40 text-[var(--accent)] text-sm">
-                        Start
-                      </span>
-                    )}
-                  </Link>
+                      {isWatched ? (
+                        <span className="text-[var(--accent)] text-sm">✓ Voltooid</span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-md bg-[var(--accent)]/20 border border-[var(--accent)]/40 text-[var(--accent)] text-sm">
+                          Start
+                        </span>
+                      )}
+                    </Link>
+                  </RequireAccess>
                 )
               }
               
@@ -271,17 +266,14 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
                       />
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#7C99E3]/60 bg-[#7C99E3]/20 text-[#7C99E3]">
-                        <Lock className="h-4 w-4" />
-                      </span>
                       <div>
                         <div className="font-medium text-white">{lesson.title}</div>
                         <div className="text-xs text-[var(--text-dim)]">Les {lesson.order}</div>
-                        {isBasic && (
-                          <div className="text-xs text-[#7C99E3]">Upgrade naar Full om deze les te bekijken</div>
-                        )}
-                        {!isBasic && moduleLocked && (
+                        {moduleLocked && (
                           <div className="text-xs text-[#7C99E3]">Voltooi eerst het examen van module {previousModuleId}</div>
+                        )}
+                        {!moduleLocked && (
+                          <div className="text-xs text-[#7C99E3]">Deze les wordt ontgrendeld nadat je de vorige volledig bekeek.</div>
                         )}
                       </div>
                     </div>
@@ -291,58 +283,59 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
                     disabled
                     className="cursor-not-allowed rounded-md border border-[#7C99E3]/40 bg-[#7C99E3]/10 px-4 py-2 text-sm text-[#7C99E3]"
                     title={
-                      isBasic 
-                        ? 'Upgrade om deze les te bekijken' 
-                        : moduleLocked 
+                      moduleLocked 
                         ? `Voltooi eerst het examen van module ${previousModuleId}`
                         : 'Deze les wordt ontgrendeld nadat je de vorige volledig bekeek.'
                     }
                   >
-                    {isBasic ? 'Alleen voor Full members' : moduleLocked ? 'Module vergrendeld' : 'Vergrendeld'}
+                    {moduleLocked ? 'Module vergrendeld' : 'Vergrendeld'}
                   </button>
                 </div>
               )
             })}
           </div>
 
-          {practicalLessons.length > 0 && !isBasic && !moduleLocked && (
-            <section className="mt-10">
-              <h2 className="text-xl font-semibold mb-4 text-[#7C99E3]">Praktijklessen</h2>
-              <div className="space-y-3">
-                {practicalLessons.map((pl) => (
-                  <Link
-                    key={pl.id}
-                    href={`/praktijk/${pl.id}`}
-                    className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 hover:border-[#7C99E3]/40 transition cursor-pointer"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="relative w-24 h-16 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
-                        <Image
-                          src={(pl as any).thumbnail_url || 'https://placehold.co/320x180?text=Praktijk'}
-                          alt={pl.title}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
+          {practicalLessons.length > 0 && !moduleLocked && (
+            <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+              <section className="mt-10">
+                <h2 className="text-xl font-semibold mb-4 text-[#7C99E3]">Praktijklessen</h2>
+                <div className="space-y-3">
+                  {practicalLessons.map((pl) => (
+                    <Link
+                      key={pl.id}
+                      href={`/praktijk/${pl.id}`}
+                      className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 hover:border-[#7C99E3]/40 transition cursor-pointer"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-24 h-16 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
+                          <Image
+                            src={(pl as any).thumbnail_url || 'https://placehold.co/320x180?text=Praktijk'}
+                            alt={pl.title}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                        <div>
+                          <div className="font-medium text-white">{pl.title}</div>
+                          {pl.description && (
+                            <div className="text-xs text-[var(--text-dim)] line-clamp-2">{pl.description}</div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-white">{pl.title}</div>
-                        {pl.description && (
-                          <div className="text-xs text-[var(--text-dim)] line-clamp-2">{pl.description}</div>
-                        )}
-                      </div>
-                    </div>
-                    <span className="px-3 py-1 rounded-md bg-[#7C99E3]/10 border border-[#7C99E3]/30 text-[#7C99E3] text-sm">
-                      Bekijk
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
+                      <span className="px-3 py-1 rounded-md bg-[#7C99E3]/10 border border-[#7C99E3]/30 text-[#7C99E3] text-sm">
+                        Bekijk
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            </RequireAccess>
           )}
 
           {/* EXAMEN CTA (zichtbaar als alle lessen watched zijn) */}
-          {lessons.length > 0 && watchedCount === total && examId && !isBasic && !moduleLocked && (
+          {lessons.length > 0 && watchedCount === total && examId && !moduleLocked && (
+            <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
             <div className="mt-8 bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 flex items-center justify-between">
               <div>
                 <div className="font-semibold">Examen van deze module is klaar</div>
@@ -356,6 +349,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
                 Start examen
               </Link>
             </div>
+            </RequireAccess>
           )}
         </>
       )}

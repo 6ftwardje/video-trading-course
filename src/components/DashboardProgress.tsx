@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { WaveLoader } from "@/components/ui/wave-loader";
 
 type ActiveModule = {
@@ -43,36 +43,15 @@ export default function DashboardProgress({
     return <LoadingState className={className} />;
   }
 
-  const isBasic = accessLevel < 2;
+  // Don't show progress for level 1 users
+  if (accessLevel < 2) {
+    return null;
+  }
+
   const overallPct = totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0;
   const modulePct = activeModule?.totalLessons
     ? Math.round((activeModule.watchedCount / activeModule.totalLessons) * 100)
     : 0;
-
-  if (isBasic) {
-    return (
-      <div
-        className={`rounded-2xl border border-[#7C99E3]/40 bg-[#1E2A55]/60 p-6 shadow-[var(--shadow-soft)] backdrop-blur ${className}`}
-      >
-        <div className="flex items-start gap-3">
-          <Sparkles className="mt-1 h-6 w-6 text-[#7C99E3]" />
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Ontgrendel de volledige cursus</h3>
-            <p className="text-sm text-[#C5D4FFCC]">
-              Upgrade je toegang om alle videolessen, opdrachten en live sessies van het Trade Platform vrij te spelen.
-            </p>
-            <a
-              href="mailto:support@cryptoriez.com"
-              className="inline-flex items-center gap-2 rounded-lg border border-[#7C99E3]/40 bg-[#7C99E3]/10 px-4 py-2 text-sm font-semibold text-[#7C99E3] transition hover:border-[#7C99E3]/70 hover:bg-[#7C99E3]/20"
-            >
-              Vraag een upgrade aan
-              <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (!totalLessons) {
     return (

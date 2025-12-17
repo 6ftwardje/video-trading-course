@@ -50,7 +50,11 @@ function formatCountdown(target: Date) {
   return `${hours}u ${minutes}m`
 }
 
-export default function TradingSessions() {
+type TradingSessionsProps = {
+  accessLevel?: number
+}
+
+export default function TradingSessions({ accessLevel = 2 }: TradingSessionsProps) {
   const [now, setNow] = useState<Date | null>(null)
   const [mounted, setMounted] = useState(false)
 

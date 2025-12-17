@@ -21,6 +21,7 @@ import { AccentButton } from '@/components/ui/Buttons'
 import { Edit2, Trash2, X, Save, Plus, Upload, Image as ImageIcon } from 'lucide-react'
 import ImageModal from '@/components/ImageModal'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import { RequireAccess } from '@/components/RequireAccess'
 
 // Helper function to format date in "dd MMM yyyy HH:mm" format
 function formatUpdateDate(date: Date): string {
@@ -417,8 +418,6 @@ export default function UpdatesPage() {
   }
 
   const isMentor = accessLevel === 3
-  const isBasic = accessLevel === 1
-  const canSeeFullContent = accessLevel === 2 || accessLevel === 3
 
   return (
     <Container className="pb-20 pt-8 md:pt-12">
@@ -465,12 +464,6 @@ export default function UpdatesPage() {
                 </button>
               )}
             </div>
-            {isBasic && (
-              <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-500">
-                Je hebt momenteel geen volledige toegang tot de inhoud van deze updates. Upgrade je
-                toegang om alles te zien.
-              </div>
-            )}
             {error && (
               <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500">
                 {error}
@@ -667,97 +660,87 @@ export default function UpdatesPage() {
                       )}
                     </div>
 
-                    <div className="text-sm leading-relaxed">
-                      {isEditing ? (
-                        <>
-                          <textarea
-                            value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
-                            placeholder="Inhoud"
-                            rows={8}
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white placeholder:text-[var(--text-dim)] focus:border-[var(--accent)] focus:outline-none resize-y"
-                          />
-                          <div className="mt-4">
-                            <label className="block text-sm font-medium text-white mb-1.5">
-                              Afbeelding (optioneel)
-                            </label>
-                            {editImagePreview ? (
-                              <div className="relative">
-                                <img
-                                  src={editImagePreview}
-                                  alt="Preview"
-                                  className="w-full max-w-md rounded-lg shadow-md"
-                                />
-                                <button
-                                  onClick={() => handleDeleteImage(true)}
-                                  disabled={uploadingImage}
-                                  className="absolute top-2 right-2 rounded-full bg-red-500/80 hover:bg-red-500 p-2 transition-colors"
-                                  aria-label="Verwijder afbeelding"
-                                >
-                                  <Trash2 className="h-4 w-4 text-white" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div
-                                onDrop={(e) => handleDrop(e, true)}
-                                onDragOver={handleDragOver}
-                                className="border-2 border-dashed border-[var(--border)] rounded-lg p-6 text-center hover:border-[var(--accent)] transition-colors"
-                              >
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => handleFileInputChange(e, true)}
-                                  disabled={uploadingImage}
-                                  className="hidden"
-                                  id={`edit-image-upload-${update.id}`}
-                                />
-                                <label
-                                  htmlFor={`edit-image-upload-${update.id}`}
-                                  className="cursor-pointer flex flex-col items-center gap-2"
-                                >
-                                  <Upload className="h-6 w-6 text-[var(--text-dim)]" />
-                                  <span className="text-sm text-[var(--text-dim)]">
-                                    {uploadingImage
-                                      ? 'Uploaden...'
-                                      : 'Sleep een afbeelding hierheen of klik om te uploaden'}
-                                  </span>
-                                  <span className="text-xs text-[var(--text-dim)]">
-                                    PNG, JPG, JPEG, WebP (max 1MB)
-                                  </span>
-                                </label>
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      ) : canSeeFullContent ? (
-                        <>
-                          <MarkdownRenderer content={update.content} />
-                          {update.image_path && (
-                            <UpdateImageDisplay
-                              imagePath={update.image_path}
-                              onImageClick={(url) => setModalImage(url)}
-                              loadImageUrl={loadImageUrl}
+                    {accessLevel >= 2 ? (
+                      <div className="text-sm leading-relaxed">
+                        {isEditing ? (
+                          <>
+                            <textarea
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              placeholder="Inhoud"
+                              rows={8}
+                              className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white placeholder:text-[var(--text-dim)] focus:border-[var(--accent)] focus:outline-none resize-y"
                             />
-                          )}
-                        </>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="relative h-24 w-full rounded-md overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-[var(--muted)] to-[var(--muted)]/50 blur-sm" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-xs text-[var(--text-dim)]">Inhoud verborgen</span>
+                            <div className="mt-4">
+                              <label className="block text-sm font-medium text-white mb-1.5">
+                                Afbeelding (optioneel)
+                              </label>
+                              {editImagePreview ? (
+                                <div className="relative">
+                                  <img
+                                    src={editImagePreview}
+                                    alt="Preview"
+                                    className="w-full max-w-md rounded-lg shadow-md"
+                                  />
+                                  <button
+                                    onClick={() => handleDeleteImage(true)}
+                                    disabled={uploadingImage}
+                                    className="absolute top-2 right-2 rounded-full bg-red-500/80 hover:bg-red-500 p-2 transition-colors"
+                                    aria-label="Verwijder afbeelding"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-white" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div
+                                  onDrop={(e) => handleDrop(e, true)}
+                                  onDragOver={handleDragOver}
+                                  className="border-2 border-dashed border-[var(--border)] rounded-lg p-6 text-center hover:border-[var(--accent)] transition-colors"
+                                >
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileInputChange(e, true)}
+                                    disabled={uploadingImage}
+                                    className="hidden"
+                                    id={`edit-image-upload-${update.id}`}
+                                  />
+                                  <label
+                                    htmlFor={`edit-image-upload-${update.id}`}
+                                    className="cursor-pointer flex flex-col items-center gap-2"
+                                  >
+                                    <Upload className="h-6 w-6 text-[var(--text-dim)]" />
+                                    <span className="text-sm text-[var(--text-dim)]">
+                                      {uploadingImage
+                                        ? 'Uploaden...'
+                                        : 'Sleep een afbeelding hierheen of klik om te uploaden'}
+                                    </span>
+                                    <span className="text-xs text-[var(--text-dim)]">
+                                      PNG, JPG, JPEG, WebP (max 1MB)
+                                    </span>
+                                  </label>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                          <p className="text-xs text-[var(--text-dim)] leading-relaxed">
-                            Deze update is enkel volledig zichtbaar voor leden met volledige toegang.
-                            Upgrade je account om de volledige inhoud te lezen.
-                          </p>
-                          {update.image_path && (
-                            <div className="h-40 w-full bg-[var(--muted)] rounded-lg blur-sm" />
-                          )}
-                        </div>
-                      )}
-                    </div>
+                          </>
+                        ) : (
+                          <>
+                            <MarkdownRenderer content={update.content} />
+                            {update.image_path && (
+                              <UpdateImageDisplay
+                                imagePath={update.image_path}
+                                onImageClick={(url) => setModalImage(url)}
+                                loadImageUrl={loadImageUrl}
+                              />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                        <div></div>
+                      </RequireAccess>
+                    )}
 
                     {!isEditing && (
                       <p className="text-xs text-white/40 mt-2">

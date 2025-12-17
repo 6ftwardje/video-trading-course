@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import HeroDashboard from '@/components/HeroDashboard'
 import Container from '@/components/ui/Container'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -69,7 +70,7 @@ export default function DashboardPage() {
       }
 
       if (accessLevel < 2) {
-        setProgressText('Je hebt Basic toegang. Upgrade voor alle videolessen.')
+        setProgressText('Je hebt een gratis account. Upgrade voor de volledige video course.')
       } else if (next?.module && next?.lesson) {
         const modLessons = lessons.filter(l => l.module_id === next.module.id)
         const modWatched = modLessons.reduce((acc, l) => acc + (watchedSet.has(l.id) ? 1 : 0), 0)
@@ -134,40 +135,45 @@ export default function DashboardPage() {
 
           {/* Trading Sessions - appears here on mobile, after HeroDashboard */}
           <div className="lg:hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
-            <TradingSessions />
+            <TradingSessions accessLevel={accessLevel} />
           </div>
 
           {/* Progress Section - WITH card wrapper */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
-            <DashboardProgress
-              loading={progressPanel.loading}
-              accessLevel={accessLevel}
-              activeModule={progressPanel.activeModule}
-              totalCompleted={progressPanel.totalCompleted}
-              totalLessons={progressPanel.totalLessons}
-              nextLessonUrl={progressPanel.nextLessonUrl}
-            />
-          </div>
+          {accessLevel >= 2 && (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+              <DashboardProgress
+                loading={progressPanel.loading}
+                accessLevel={accessLevel}
+                activeModule={progressPanel.activeModule}
+                totalCompleted={progressPanel.totalCompleted}
+                totalLessons={progressPanel.totalLessons}
+                nextLessonUrl={progressPanel.nextLessonUrl}
+              />
+            </div>
+          )}
 
           {/* Active Module - WITH card wrapper */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
-            <DashboardModulesSection
-              loading={loading}
-              activeModule={activeModule}
-              accessLevel={accessLevel}
-            />
-          </div>
+          {accessLevel >= 2 && (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+              <DashboardModulesSection
+                loading={loading}
+                activeModule={activeModule}
+                accessLevel={accessLevel}
+              />
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN */}
         <div className="space-y-8 lg:sticky lg:top-10 h-fit">
           {/* Trading Sessions - WITH card wrapper, sticky on desktop */}
           <div className="hidden lg:block rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
-            <TradingSessions />
+            <TradingSessions accessLevel={accessLevel} />
           </div>
         </div>
       </div>
     </div>
   )
 }
+
 

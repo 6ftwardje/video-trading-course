@@ -7,10 +7,11 @@ import { getSupabaseClient } from '@/lib/supabaseClient'
 import { useStudent } from '@/components/StudentProvider'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Lock } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Container from '@/components/ui/Container'
 import { getExamByModuleId, hasPassedExamForModule, getNextModule } from '@/lib/exam'
 import { WaveLoader } from '@/components/ui/wave-loader'
+import { RequireAccess } from '@/components/RequireAccess'
 
 type Lesson = {
   id: number
@@ -230,8 +231,6 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     )
   }
 
-  const isBasic = accessLevel < 2
-
   return (
     <Container className="pt-8 md:pt-12 pb-16">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -248,19 +247,11 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
           </Link>
 
           {/* Video */}
-          <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
-            {isBasic ? (
-              <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#0B0F17] text-center text-[#7C99E3]">
-                <Lock className="h-10 w-10" />
-                <p className="max-w-sm text-sm">
-                  Deze les is alleen beschikbaar voor leden met volledige toegang. Upgrade via je mentor om de video te
-                  bekijken.
-                </p>
-              </div>
-            ) : (
+          <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+            <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
               <div ref={playerRef} className="h-full w-full" />
-            )}
-          </div>
+            </div>
+          </RequireAccess>
 
           {/* Titel en beschrijving */}
           <div>
@@ -280,71 +271,61 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
           {/* Navigatieknoppen */}
           <div className="flex items-center justify-between pt-6 border-t border-[var(--border)]">
             {prevLesson ? (
-              <Link
-                href={`/lesson/${prevLesson.id}`}
-                className={`px-4 py-2 rounded-md border transition text-white ${
-                  isBasic ? 'bg-[var(--muted)]/50 border-[var(--border)]/50 cursor-not-allowed opacity-60 pointer-events-none' : 'bg-[var(--card)] hover:bg-[var(--muted)] border-[var(--border)]'
-                }`}
-              >
-                ← {prevLesson.title}
-              </Link>
+              <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                <Link
+                  href={`/lesson/${prevLesson.id}`}
+                  className="px-4 py-2 rounded-md border transition text-white bg-[var(--card)] hover:bg-[var(--muted)] border-[var(--border)]"
+                >
+                  ← {prevLesson.title}
+                </Link>
+              </RequireAccess>
             ) : <div />}
 
             {nextLesson ? (
-              isBasic ? (
-                <button
-                  disabled
-                  className="px-4 py-2 rounded-md border transition bg-[#7C99E3]/10 border-[#7C99E3]/30 text-[#7C99E3] cursor-not-allowed opacity-70"
-                >
-                  Upgrade voor toegang
-                </button>
-              ) : progress[lesson.id] ? (
+              <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                {progress[lesson.id] ? (
                 <Link
                   href={`/lesson/${nextLesson.id}`}
                   className="px-4 py-2 rounded-md border transition bg-[var(--accent)]/20 border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 text-[var(--accent)]"
                 >
                   Volgende →
                 </Link>
-              ) : (
-                <button
-                  disabled
-                  className="px-4 py-2 rounded-md border transition bg-[var(--card)] border-[var(--border)] text-[var(--text-dim)] cursor-not-allowed opacity-60"
-                  title="Voltooi eerst deze les om door te gaan"
-                >
-                  Volgende →
-                </button>
-              )
+                ) : (
+                  <button
+                    disabled
+                    className="px-4 py-2 rounded-md border transition bg-[var(--card)] border-[var(--border)] text-[var(--text-dim)] cursor-not-allowed opacity-60"
+                    title="Voltooi eerst deze les om door te gaan"
+                  >
+                    Volgende →
+                  </button>
+                )}
+              </RequireAccess>
             ) : (
               // Laatste les: toon exam link of volgende module link
-              isBasic ? (
-                <Link
-                  href={`/module/${lesson.module_id}`}
-                  className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
-                >
-                  Terug naar module
-                </Link>
-              ) : examId && examPassed && nextModuleId ? (
+              <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                {examId && examPassed && nextModuleId ? (
                 <Link
                   href={`/module/${nextModuleId}`}
                   className="px-4 py-2 rounded-md bg-[var(--accent)]/20 border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 text-[var(--accent)] transition"
                 >
                   Ga naar volgende module →
                 </Link>
-              ) : examId && !examPassed ? (
-                <Link
-                  href={`/exam/${examId}?module=${lesson.module_id}`}
-                  className="px-4 py-2 rounded-md bg-[var(--accent)]/20 border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 text-[var(--accent)] transition"
-                >
-                  Start examen →
-                </Link>
-              ) : (
-                <Link
-                  href={`/module/${lesson.module_id}`}
-                  className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
-                >
-                  Terug naar module
-                </Link>
-              )
+                ) : examId && !examPassed ? (
+                  <Link
+                    href={`/exam/${examId}?module=${lesson.module_id}`}
+                    className="px-4 py-2 rounded-md bg-[var(--accent)]/20 border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 text-[var(--accent)] transition"
+                  >
+                    Start examen →
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/module/${lesson.module_id}`}
+                    className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
+                  >
+                    Terug naar module
+                  </Link>
+                )}
+              </RequireAccess>
             )}
           </div>
         </div>
@@ -367,38 +348,37 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                 
                 return (
                   <li key={l.id}>
-                    <Link
-                      href={isBasic || !isUnlocked ? '#' : `/lesson/${l.id}`}
-                      onClick={(e) => {
-                        if (isBasic || !isUnlocked) {
-                          e.preventDefault()
-                        }
-                      }}
-                      className={`flex items-center gap-3 p-2 rounded-lg border transition ${
-                        l.id === lesson.id
-                          ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-                          : isBasic
-                          ? 'border-[#7C99E3]/40 bg-[#7C99E3]/10 text-[#7C99E3]'
-                          : isUnlocked
-                          ? 'border-[var(--border)] hover:border-[var(--accent)]/50'
-                          : 'border-[var(--border)] opacity-60 cursor-not-allowed'
-                      }`}
-                    >
-                      <div className="relative w-16 h-10 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
-                        <Image
-                          src={l.thumbnail_url || 'https://placehold.co/160x90?text=Lesson'}
-                          alt={l.title}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      </div>
-                      <span className="text-sm text-white/90 flex-1">{l.title}</span>
-                      {progress[l.id] && !isBasic && (
-                        <span className="text-[var(--accent)] text-xs">✓</span>
-                      )}
-                      {isBasic && <Lock className="h-4 w-4 text-[#7C99E3]" />}
-                    </Link>
+                    <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                      <Link
+                        href={!isUnlocked ? '#' : `/lesson/${l.id}`}
+                        onClick={(e) => {
+                          if (!isUnlocked) {
+                            e.preventDefault()
+                          }
+                        }}
+                        className={`flex items-center gap-3 p-2 rounded-lg border transition ${
+                          l.id === lesson.id
+                            ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                            : isUnlocked
+                            ? 'border-[var(--border)] hover:border-[var(--accent)]/50'
+                            : 'border-[var(--border)] opacity-60 cursor-not-allowed'
+                        }`}
+                      >
+                        <div className="relative w-16 h-10 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
+                          <Image
+                            src={l.thumbnail_url || 'https://placehold.co/160x90?text=Lesson'}
+                            alt={l.title}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                        <span className="text-sm text-white/90 flex-1">{l.title}</span>
+                        {progress[l.id] && (
+                          <span className="text-[var(--accent)] text-xs">✓</span>
+                        )}
+                      </Link>
+                    </RequireAccess>
                   </li>
                 )
               })}

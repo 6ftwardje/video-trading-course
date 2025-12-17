@@ -7,6 +7,7 @@ import { useStudent } from '@/components/StudentProvider'
 import { getExamById, getExamByModuleId, getExamQuestions, getModuleLessons, getWatchedLessonIds, insertExamResult, getNextModule } from '@/lib/exam'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { WaveLoader } from '@/components/ui/wave-loader'
+import { RequireAccess } from '@/components/RequireAccess'
 
 type Question = {
   id: number
@@ -41,7 +42,6 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   const [result, setResult] = useState<{ score: number; passed: boolean } | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [gatedBlocked, setGatedBlocked] = useState(false)
-  const [accessBlocked, setAccessBlocked] = useState(false)
   const [started, setStarted] = useState(false)
   const [confirmSubmit, setConfirmSubmit] = useState(false)
   const [nextModuleId, setNextModuleId] = useState<number | null>(null)
@@ -90,7 +90,6 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
       setLoading(true)
       setErrorMsg(null)
       setGatedBlocked(false)
-      setAccessBlocked(false)
 
       if (status !== 'ready' || !student) {
         if (status === 'unauthenticated') {
@@ -101,12 +100,6 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
       }
 
       const supabase = getSupabaseClient()
-
-      if (accessLevel < 2) {
-        setAccessBlocked(true)
-        setLoading(false)
-        return
-      }
 
       if (!studentId) {
         setErrorMsg('Geen student gevonden. Log opnieuw in om verder te gaan.')
@@ -258,52 +251,35 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     )
   }
 
-  if (accessBlocked) {
-    return (
-      <div className="space-y-4 pt-8 md:pt-12 px-4">
-        <h1 className="text-2xl font-semibold text-[#7C99E3]">Alleen voor Full leden</h1>
-        <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-6 text-sm text-[#7C99E3]">
-          <p>
-            Dit examen is enkel beschikbaar voor studenten met volledige toegang. Neem contact op met je mentor om je
-            account te upgraden.
-          </p>
-          <Link
-            href={`/module/${moduleId}`}
-            className="mt-4 inline-block rounded-lg border border-[#7C99E3]/40 bg-[#7C99E3]/20 px-4 py-2 text-[#7C99E3] transition hover:bg-[#7C99E3]/30"
-          >
-            Terug naar de module
-          </Link>
-        </div>
-      </div>
-    )
-  }
 
 
   // Intro screen before exam starts
   if (!started && !result && !loading && questions.length > 0) {
     return (
-      <div className="max-w-2xl mx-auto pt-8 md:pt-12 px-4">
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-8 md:p-12 text-center space-y-6">
-          <h1 className="text-3xl font-semibold text-[var(--accent)]">Examen: {title}</h1>
-          <div className="space-y-4 text-gray-300">
-            <p className="text-lg">
-              Dit examen bevat <strong className="text-[var(--accent)]">{total}</strong> vragen.
-            </p>
-            <p>
-              Je hebt minstens <strong className="text-[var(--accent)]">75%</strong> nodig om te slagen.
-            </p>
-            <p className="text-sm text-gray-400 pt-2">
-              Zodra je start, kan je niet meer terug. Zorg dat je alle vragen beantwoord hebt voordat je indient.
-            </p>
+      <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+        <div className="max-w-2xl mx-auto pt-8 md:pt-12 px-4">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-8 md:p-12 text-center space-y-6">
+            <h1 className="text-3xl font-semibold text-[var(--accent)]">Examen: {title}</h1>
+            <div className="space-y-4 text-gray-300">
+              <p className="text-lg">
+                Dit examen bevat <strong className="text-[var(--accent)]">{total}</strong> vragen.
+              </p>
+              <p>
+                Je hebt minstens <strong className="text-[var(--accent)]">75%</strong> nodig om te slagen.
+              </p>
+              <p className="text-sm text-gray-400 pt-2">
+                Zodra je start, kan je niet meer terug. Zorg dat je alle vragen beantwoord hebt voordat je indient.
+              </p>
+            </div>
+            <button
+              onClick={() => setStarted(true)}
+              className="px-8 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition text-lg"
+            >
+              Start examen
+            </button>
           </div>
-          <button
-            onClick={() => setStarted(true)}
-            className="px-8 py-3 rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 transition text-lg"
-          >
-            Start examen
-          </button>
         </div>
-      </div>
+      </RequireAccess>
     )
   }
 
@@ -323,7 +299,8 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     })
     
     return (
-      <div className="space-y-6 max-w-3xl mx-auto pt-8 md:pt-12 px-4">
+      <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+        <div className="space-y-6 max-w-3xl mx-auto pt-8 md:pt-12 px-4">
         <h1 className="text-3xl font-semibold text-[var(--accent)] text-center">{title}</h1>
         <div className={`bg-[var(--card)] border rounded-xl p-8 md:p-10 ${result.passed ? 'border-green-500/50 bg-green-900/10' : 'border-red-500/50 bg-red-900/10'}`}>
           <div className="text-center space-y-4">
@@ -419,7 +396,8 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
             )}
           </div>
         </div>
-      </div>
+        </div>
+      </RequireAccess>
     )
   }
 
@@ -437,7 +415,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   const answeredCount = Object.keys(answers).length
 
   return (
-    <>
+    <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
       <div className="space-y-6 max-w-4xl mx-auto pb-20 pt-8 md:pt-12 px-4">
         {/* Progress bar at top */}
         <div className="space-y-3">
@@ -555,7 +533,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
           </div>
         </div>
       )}
-    </>
+    </RequireAccess>
   )
 }
 

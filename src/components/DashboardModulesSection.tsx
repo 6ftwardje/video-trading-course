@@ -23,6 +23,11 @@ export default function DashboardModulesSection({
   activeModule,
   accessLevel,
 }: DashboardModulesSectionProps) {
+  // Don't show current module for level 1 users
+  if (accessLevel < 2) {
+    return null;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">

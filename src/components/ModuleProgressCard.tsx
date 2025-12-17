@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Lock } from 'lucide-react'
 
 type ModuleProgress = {
@@ -20,30 +21,51 @@ type Props = {
 }
 
 export default function ModuleProgressCard({ module }: Props) {
+  const router = useRouter()
   const isLockedByAccess = typeof module.accessLevel === 'number' && module.accessLevel < 2
   const isLocked = isLockedByAccess || module.isLockedByExam
 
   return (
     <div className="space-y-3">
       {isLocked ? (
-        <div className="block rounded-2xl border border-dashed border-[#7C99E3]/40 bg-[var(--card)]/60 p-6 opacity-70">
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+        <div className="relative block rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 overflow-hidden">
+          <div className={`flex flex-col gap-5 md:flex-row md:items-center md:justify-between ${isLockedByAccess ? 'opacity-50 blur-sm' : ''}`}>
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-[#7C99E3]">
-                <Lock className="h-4 w-4" />
-                <span className="text-xs uppercase tracking-wide">
-                  {isLockedByAccess ? 'Alleen voor Full members' : 'Vergrendeld'}
-                </span>
-              </div>
               <h3 className="text-xl font-semibold text-white">{module.title}</h3>
               {module.description && <p className="text-sm text-[var(--text-dim)]">{module.description}</p>}
-              {isLockedByAccess ? (
-                <p className="text-sm text-[#7C99E3]">Vraag je mentor om een upgrade voor volledige toegang.</p>
-              ) : module.isLockedByExam && module.previousModuleId ? (
-                <p className="text-sm text-[#7C99E3]">Voltooi eerst het examen van module {module.previousModuleId} om deze module te ontgrendelen.</p>
-              ) : null}
+              <div className="min-w-[10rem] text-left md:text-right">
+                <div className="text-sm text-white/90">
+                  {module.watchedCount}/{module.totalLessons} lessen • {module.pct}%
+                </div>
+                <div className="mt-2 h-2 w-full rounded-full bg-[var(--muted)]">
+                  <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${module.pct}%` }} />
+                </div>
+              </div>
             </div>
           </div>
+          {isLockedByAccess && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <div className="text-center space-y-3 p-4">
+                <Lock className="h-6 w-6 text-[#7C99E3] mx-auto" />
+                <p className="text-sm font-medium text-white">Beschikbaar bij volledige toegang</p>
+                <button
+                  onClick={() => router.push("/upgrade")}
+                  className="inline-flex items-center justify-center rounded-lg bg-[#7C99E3] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#7C99E3]/90"
+                >
+                  Ontgrendelen
+                </button>
+              </div>
+            </div>
+          )}
+          {!isLockedByAccess && module.isLockedByExam && module.previousModuleId && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <div className="text-center space-y-2 p-4">
+                <Lock className="h-6 w-6 text-[#7C99E3] mx-auto" />
+                <p className="text-sm font-medium text-white">Vergrendeld</p>
+                <p className="text-xs text-[var(--text-dim)]">Voltooi eerst het examen van module {module.previousModuleId}</p>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <a

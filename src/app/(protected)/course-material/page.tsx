@@ -6,6 +6,7 @@ import { useStudent } from '@/components/StudentProvider'
 import Container from '@/components/ui/Container'
 import { Download } from 'lucide-react'
 import { WaveLoader } from '@/components/ui/wave-loader'
+import { RequireAccess } from '@/components/RequireAccess'
 
 export default function CourseMaterialPage() {
   const { student, status } = useStudent()
@@ -32,11 +33,6 @@ export default function CourseMaterialPage() {
 
         console.log('[CourseMaterial] Access level:', accessLevel, 'Student ID:', studentId, 'User ID:', student.auth_user_id)
 
-        if (accessLevel < 2) {
-          console.log('[CourseMaterial] Access denied: access_level < 2')
-          setLoading(false)
-          return
-        }
 
         // Fetch signed URL from Supabase Storage
         // The RLS policy will check that the user has access_level >= 2
@@ -163,47 +159,11 @@ export default function CourseMaterialPage() {
     load()
   }, [status, student, accessLevel, studentId])
 
-  const isBasic = accessLevel < 2
-
   if (loading) {
     return (
       <Container className="pt-8 md:pt-12 pb-16">
         <div className="flex items-center justify-center py-12">
           <WaveLoader message="Laden..." />
-        </div>
-      </Container>
-    )
-  }
-
-  if (isBasic) {
-    return (
-      <Container className="pt-8 md:pt-12 pb-16">
-        <h1 className="text-3xl font-bold text-[var(--accent)] mb-6">Cursus PDF</h1>
-        <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
-          🔒 Deze cursus is alleen beschikbaar voor leden met volledige toegang. Neem contact op met je mentor om te upgraden
-          en toegang te krijgen tot het cursusmateriaal.
-        </div>
-      </Container>
-    )
-  }
-
-  if (error) {
-    return (
-      <Container className="pt-8 md:pt-12 pb-16">
-        <h1 className="text-3xl font-bold text-[var(--accent)] mb-6">Cursus PDF</h1>
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
-          <p className="text-[var(--text-dim)]">{error}</p>
-        </div>
-      </Container>
-    )
-  }
-
-  if (!pdfUrl) {
-    return (
-      <Container className="pt-8 md:pt-12 pb-16">
-        <h1 className="text-3xl font-bold text-[var(--accent)] mb-6">Cursus PDF</h1>
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
-          <p className="text-[var(--text-dim)]">PDF-bestand niet beschikbaar.</p>
         </div>
       </Container>
     )
@@ -215,29 +175,41 @@ export default function CourseMaterialPage() {
         <h1 className="text-3xl font-bold text-[var(--accent)] mb-4">Cursus PDF</h1>
       </div>
 
-      <div className="space-y-6">
-        {/* PDF Preview */}
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden">
-          <iframe
-            src={pdfUrl}
-            className="w-full"
-            style={{ height: '80vh' }}
-            title="Cursus PDF"
-          />
-        </div>
+      <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+        {error ? (
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+            <p className="text-[var(--text-dim)]">{error}</p>
+          </div>
+        ) : !pdfUrl ? (
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+            <p className="text-[var(--text-dim)]">PDF-bestand niet beschikbaar.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* PDF Preview */}
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden">
+              <iframe
+                src={pdfUrl}
+                className="w-full"
+                style={{ height: '80vh' }}
+                title="Cursus PDF"
+              />
+            </div>
 
-        {/* Download Button */}
-        <div className="flex justify-center">
-          <a
-            href={pdfUrl}
-            download="cursus.pdf"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[var(--accent)] text-black font-medium hover:opacity-90 transition"
-          >
-            <Download className="h-5 w-5" />
-            Download PDF
-          </a>
-        </div>
-      </div>
+            {/* Download Button */}
+            <div className="flex justify-center">
+              <a
+                href={pdfUrl}
+                download="cursus.pdf"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[var(--accent)] text-black font-medium hover:opacity-90 transition"
+              >
+                <Download className="h-5 w-5" />
+                Download PDF
+              </a>
+            </div>
+          </div>
+        )}
+      </RequireAccess>
     </Container>
   )
 }

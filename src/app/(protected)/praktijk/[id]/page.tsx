@@ -5,10 +5,11 @@ import Player from '@vimeo/player'
 import Link from 'next/link'
 import Image from 'next/image'
 import Container from '@/components/ui/Container'
-import { ArrowLeft, Lock } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
 import { useStudent } from '@/components/StudentProvider'
+import { RequireAccess } from '@/components/RequireAccess'
 
 type PracticalLesson = PracticalLessonRecord
 
@@ -128,8 +129,6 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
     )
   }
 
-  const isBasic = (accessLevel ?? 1) < 2
-
   return (
     <Container className="pt-20 pb-16">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -143,21 +142,15 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
             <span className="text-sm font-medium">Terug naar module</span>
           </Link>
 
-          <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black" ref={isBasic ? undefined : playerRef}>
-            {isBasic ? (
-              <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#0B0F17] text-center text-[#7C99E3]">
-                <Lock className="h-10 w-10" />
-                <p className="max-w-sm text-sm">
-                  Praktijklessen zijn alleen beschikbaar voor leden met volledige toegang. Neem contact op met je mentor
-                  om te upgraden.
-                </p>
-              </div>
-            ) : !lesson.video_url ? (
-              <div className="w-full h-full flex items-center justify-center text-[var(--text-dim)]">
-                Geen video beschikbaar voor deze praktijkles.
-              </div>
-            ) : null}
-          </div>
+          <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+            <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black" ref={playerRef}>
+              {!lesson.video_url ? (
+                <div className="w-full h-full flex items-center justify-center text-[var(--text-dim)]">
+                  Geen video beschikbaar voor deze praktijkles.
+                </div>
+              ) : null}
+            </div>
+          </RequireAccess>
 
           <div>
             <h1 className="text-3xl font-semibold text-white">{lesson.title}</h1>
@@ -170,48 +163,36 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-6 border-t border-[var(--border)]">
-            {navigation.prev ? (
-              <Link
-                href={isBasic ? '#' : `/praktijk/${navigation.prev.id}`}
-                onClick={e => {
-                  if (isBasic) e.preventDefault()
-                }}
-                className={`px-4 py-2 rounded-md border transition ${
-                  isBasic
-                    ? 'cursor-not-allowed border-[#7C99E3]/40 bg-[#7C99E3]/10 text-[#7C99E3]'
-                    : 'bg-[var(--card)] hover:bg-[var(--muted)] border-[var(--border)] text-white'
-                }`}
-              >
-                ← {navigation.prev.title}
-              </Link>
-            ) : (
-              <div />
-            )}
+          <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+            <div className="flex items-center justify-between pt-6 border-t border-[var(--border)]">
+              {navigation.prev ? (
+                <Link
+                  href={`/praktijk/${navigation.prev.id}`}
+                  className="px-4 py-2 rounded-md border transition bg-[var(--card)] hover:bg-[var(--muted)] border-[var(--border)] text-white"
+                >
+                  ← {navigation.prev.title}
+                </Link>
+              ) : (
+                <div />
+              )}
 
-            {navigation.next ? (
-              <Link
-                href={isBasic ? '#' : `/praktijk/${navigation.next.id}`}
-                onClick={e => {
-                  if (isBasic) e.preventDefault()
-                }}
-                className={`px-4 py-2 rounded-md border transition ${
-                  isBasic
-                    ? 'cursor-not-allowed border-[#7C99E3]/40 bg-[#7C99E3]/10 text-[#7C99E3]'
-                    : 'bg-[#7C99E3]/10 border-[#7C99E3]/30 hover:bg-[#7C99E3]/20 text-[#7C99E3]'
-                }`}
-              >
-                Volgende →
-              </Link>
-            ) : (
-              <Link
-                href={`/module/${lesson.module_id}`}
-                className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
-              >
-                Terug naar module
-              </Link>
-            )}
-          </div>
+              {navigation.next ? (
+                <Link
+                  href={`/praktijk/${navigation.next.id}`}
+                  className="px-4 py-2 rounded-md border transition bg-[#7C99E3]/10 border-[#7C99E3]/30 hover:bg-[#7C99E3]/20 text-[#7C99E3]"
+                >
+                  Volgende →
+                </Link>
+              ) : (
+                <Link
+                  href={`/module/${lesson.module_id}`}
+                  className="px-4 py-2 rounded-md bg-[var(--card)] hover:bg-[var(--muted)] border border-[var(--border)] transition text-white"
+                >
+                  Terug naar module
+                </Link>
+              )}
+            </div>
+          </RequireAccess>
         </div>
 
         <aside className="lg:col-span-4 space-y-4">
@@ -220,30 +201,27 @@ export default function PracticalLessonPage({ params }: { params: Promise<{ id: 
             <ul className="space-y-3">
               {orderedLessons.map((item) => (
                 <li key={item.id}>
-                  <Link
-                    href={isBasic ? '#' : `/praktijk/${item.id}`}
-                    onClick={e => {
-                      if (isBasic) e.preventDefault()
-                    }}
-                    className={`flex items-center gap-3 p-2 rounded-lg border transition ${
-                      item.id === lesson.id
-                        ? 'border-[#7C99E3] bg-[#7C99E3]/10'
-                        : isBasic
-                        ? 'border-[#7C99E3]/40 bg-[#7C99E3]/10 text-[#7C99E3]'
-                        : 'border-[var(--border)] hover:border-[#7C99E3]/40'
-                    }`}
-                  >
-                    <div className="relative w-16 h-10 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
-                      <Image
-                        src={(item as any).thumbnail_url || 'https://placehold.co/160x90?text=Praktijk'}
-                        alt={item.title}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                    <span className="text-sm text-white/90 flex-1">{item.title}</span>
-                  </Link>
+                  <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                    <Link
+                      href={`/praktijk/${item.id}`}
+                      className={`flex items-center gap-3 p-2 rounded-lg border transition ${
+                        item.id === lesson.id
+                          ? 'border-[#7C99E3] bg-[#7C99E3]/10'
+                          : 'border-[var(--border)] hover:border-[#7C99E3]/40'
+                      }`}
+                    >
+                      <div className="relative w-16 h-10 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
+                        <Image
+                          src={(item as any).thumbnail_url || 'https://placehold.co/160x90?text=Praktijk'}
+                          alt={item.title}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                      <span className="text-sm text-white/90 flex-1">{item.title}</span>
+                    </Link>
+                  </RequireAccess>
                 </li>
               ))}
             </ul>
