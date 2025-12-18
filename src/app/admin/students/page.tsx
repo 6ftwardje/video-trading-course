@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Select } from '@/components/ui/select'
+import { Loader2 } from 'lucide-react'
 
 type StudentRow = {
   id: string
@@ -15,6 +17,11 @@ type StudentRow = {
   name: string | null
   access_level: number
   created_at: string
+}
+
+type MeResponse = {
+  id: string
+  access_level: number
 }
 
 type StudentsResponse = {
@@ -73,6 +80,166 @@ function levelBadgeVariant(level: number): 'default' | 'secondary' | 'outline' {
   return 'outline'
 }
 
+type Level = 1 | 2 | 3
+
+function isLevel(n: unknown): n is Level {
+  return n === 1 || n === 2 || n === 3
+}
+
+function LevelSelectCell({
+  studentId,
+  email,
+  initialLevel,
+  disabled,
+  onCommitted,
+}: {
+  studentId: string
+  email: string
+  initialLevel: number
+  disabled: boolean
+  onCommitted: (level: Level) => void
+}) {
+  const [selected, setSelected] = useState<Level>(() => (isLevel(initialLevel) ? initialLevel : 1))
+  const [committed, setCommitted] = useState<Level>(() => (isLevel(initialLevel) ? initialLevel : 1))
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successTick, setSuccessTick] = useState(0)
+
+  const abortRef = useRef<AbortController | null>(null)
+  const debounceRef = useRef<number | null>(null)
+  const latestDesiredRef = useRef<Level>(committed)
+
+  // Keep component aligned if server data changes (e.g. pagination refresh).
+  useEffect(() => {
+    const next = isLevel(initialLevel) ? initialLevel : 1
+    setSelected(next)
+    setCommitted(next)
+    latestDesiredRef.current = next
+    setPending(false)
+    setError(null)
+    abortRef.current?.abort()
+    abortRef.current = null
+    if (debounceRef.current) window.clearTimeout(debounceRef.current)
+    debounceRef.current = null
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId, initialLevel])
+
+  const sendPatch = async (level: Level) => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    setPending(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/students/${studentId}/level`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ access_level: level }),
+        signal: controller.signal,
+      })
+
+      if (!res.ok) {
+        let message = `Update failed (${res.status})`
+        try {
+          const json = (await res.json()) as { error?: string }
+          if (json?.error) message = json.error
+        } catch {
+          // ignore parse errors
+        }
+        setSelected(committed) // rollback
+        setError(message)
+        return
+      }
+
+      // Success: commit and inform parent (so table stays in sync with server state).
+      setCommitted(level)
+      setSelected(level)
+      onCommitted(level)
+      setSuccessTick((t) => t + 1)
+    } catch (e: unknown) {
+      const isAbort =
+        controller.signal.aborted ||
+        (e instanceof DOMException && e.name === 'AbortError') ||
+        (e instanceof Error && e.name === 'AbortError')
+      if (isAbort) return
+      const message = e instanceof Error ? e.message : 'Network error'
+      setSelected(committed) // rollback
+      setError(message)
+    } finally {
+      if (!controller.signal.aborted) setPending(false)
+    }
+  }
+
+  // Auto-hide "Level updated" after a moment.
+  useEffect(() => {
+    if (successTick === 0) return
+    const t = window.setTimeout(() => {
+      // no-op state change; we just rely on successTick for re-render timing
+    }, 1200)
+    return () => window.clearTimeout(t)
+  }, [successTick])
+
+  const queueUpdate = (level: Level) => {
+    latestDesiredRef.current = level
+    if (debounceRef.current) window.clearTimeout(debounceRef.current)
+    debounceRef.current = window.setTimeout(() => {
+      void sendPatch(latestDesiredRef.current)
+    }, 200)
+  }
+
+  const showSuccess = successTick > 0 && !pending && !error && selected === committed
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="relative w-[150px]">
+        <Select
+          value={String(selected)}
+          onValueChange={(v) => {
+            const n = Number.parseInt(v, 10)
+            if (!isLevel(n)) return
+            setSelected(n)
+            setError(null)
+            if (n === committed) return
+            queueUpdate(n)
+          }}
+          disabled={disabled || pending}
+          options={[
+            { label: 'Level 1', value: '1' },
+            { label: 'Level 2', value: '2' },
+            { label: 'Level 3', value: '3' },
+          ]}
+          aria-label={`Update access level for ${email}`}
+        />
+        {pending ? (
+          <div className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2">
+            <Loader2 className="h-4 w-4 animate-spin text-[var(--text-dim)]" />
+          </div>
+        ) : null}
+      </div>
+
+      {error ? (
+        <div className="flex items-center gap-2">
+          <div className="text-xs text-red-400">{error}</div>
+          <button
+            type="button"
+            className="text-xs text-[var(--accent)] underline-offset-2 hover:underline"
+            onClick={() => {
+              setSelected(committed)
+              setError(null)
+              queueUpdate(latestDesiredRef.current)
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      ) : showSuccess ? (
+        <div className="text-xs text-[var(--text-dim)]">Level updated</div>
+      ) : null}
+    </div>
+  )
+}
+
 export default function AdminStudentsPage() {
   const sortOptions: SortOption[] = useMemo(
     () => [
@@ -101,6 +268,8 @@ export default function AdminStudentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<number | null>(null)
+
+  const [myLevel, setMyLevel] = useState<number | null>(null)
 
   const requestIdRef = useRef(0)
   const [refreshTick, setRefreshTick] = useState(0)
@@ -212,6 +381,31 @@ export default function AdminStudentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey, refreshTick])
 
+  // Fetch current user's access level (for showing/hiding the Level dropdown).
+  useEffect(() => {
+    let mounted = true
+    const run = async () => {
+      try {
+        const res = await fetch('/api/me', { method: 'GET', headers: { accept: 'application/json' } })
+        if (!res.ok) {
+          if (!mounted) return
+          setMyLevel(null)
+          return
+        }
+        const json = (await res.json()) as MeResponse
+        if (!mounted) return
+        setMyLevel(typeof json?.access_level === 'number' ? json.access_level : null)
+      } catch {
+        if (!mounted) return
+        setMyLevel(null)
+      }
+    }
+    void run()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   const canPrev = offset > 0
   const canNext = offset + limit < total
 
@@ -219,6 +413,7 @@ export default function AdminStudentsPage() {
   const showingTo = total === 0 ? 0 : Math.min(offset + limit, total)
 
   const noAccess = status === 401 || status === 403
+  const canEditLevels = myLevel === 3 && !noAccess
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
@@ -380,7 +575,19 @@ export default function AdminStudentsPage() {
                           <TableCell className="font-medium">{s.name?.trim() ? s.name : '—'}</TableCell>
                           <TableCell className="text-[var(--text-dim)]">{s.email}</TableCell>
                           <TableCell>
-                            <Badge variant={levelBadgeVariant(s.access_level)}>Level {s.access_level}</Badge>
+                            {canEditLevels ? (
+                              <LevelSelectCell
+                                studentId={s.id}
+                                email={s.email}
+                                initialLevel={s.access_level}
+                                disabled={loading}
+                                onCommitted={(level) => {
+                                  setData((rows) => rows.map((r) => (r.id === s.id ? { ...r, access_level: level } : r)))
+                                }}
+                              />
+                            ) : (
+                              <Badge variant={levelBadgeVariant(s.access_level)}>Level {s.access_level}</Badge>
+                            )}
                           </TableCell>
                           <TableCell className="text-[var(--text-dim)]">{formatDateBrussels(s.created_at)}</TableCell>
                         </TableRow>
