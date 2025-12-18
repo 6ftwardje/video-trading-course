@@ -5,12 +5,31 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { BRAND } from "@/components/ui/Brand";
 import Container from "@/components/ui/Container";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff, Book, Bell } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { useStudent } from "@/components/StudentProvider";
 import { getUnreadCount } from "@/lib/updates";
 import MobileNav from "@/components/ui/mobile-nav";
+
+const AdminPanelIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    {/* unique icon: shield + list */}
+    <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z" />
+    <path d="M8 10h8" />
+    <path d="M8 13h8" />
+    <path d="M8 16h5" />
+  </svg>
+);
 
 const baseLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -23,6 +42,12 @@ const courseMaterialLink = {
   href: "/course-material",
   label: "Cursus PDF",
   icon: Book,
+};
+
+const adminStudentsLink = {
+  href: "/admin/students",
+  label: "Students",
+  icon: AdminPanelIcon,
 };
 
 export default function Navbar() {
@@ -145,9 +170,11 @@ export default function Navbar() {
   const levelLabel = accessLevel === 3 ? "Mentor" : accessLevel === 2 ? "Full" : "Basic";
 
   // Conditionally include course material link for access level >= 2
-  const links = accessLevel != null && accessLevel >= 2
-    ? [...baseLinks, courseMaterialLink]
-    : baseLinks;
+  const links = useMemo(() => {
+    const items = accessLevel != null && accessLevel >= 2 ? [...baseLinks, courseMaterialLink] : [...baseLinks];
+    if (accessLevel === 3) items.push(adminStudentsLink);
+    return items;
+  }, [accessLevel]);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {

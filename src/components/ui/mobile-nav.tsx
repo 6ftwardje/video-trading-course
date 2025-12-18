@@ -9,6 +9,24 @@ import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { useStudent } from "@/components/StudentProvider";
 
+const AdminPanelIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z" />
+    <path d="M8 10h8" />
+    <path d="M8 13h8" />
+    <path d="M8 16h5" />
+  </svg>
+);
+
 type NavItem = {
   href: string;
   label: string;
@@ -94,10 +112,10 @@ export default function MobileNav() {
       items.push({ href: "/course-material", label: "Cursus PDF", icon: Book });
     }
 
-    // Mentor Panel for level 3 (if route exists - currently not implemented)
-    // if (accessLevel === 3) {
-    //   items.push({ href: "/mentor-panel", label: "Mentor Panel", icon: Users });
-    // }
+    // Admin: Students (level 3)
+    if (accessLevel === 3) {
+      items.push({ href: "/admin/students", label: "Students", icon: AdminPanelIcon });
+    }
 
     return items;
   };
