@@ -12,6 +12,9 @@ import { useStudent } from "@/components/StudentProvider";
 import { getUnreadCount } from "@/lib/updates";
 import MobileNav from "@/components/ui/mobile-nav";
 
+type NavIcon = React.ComponentType<{ className?: string }>
+type NavLink = { href: string; label: string; icon: NavIcon }
+
 const AdminPanelIcon = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"
@@ -31,20 +34,20 @@ const AdminPanelIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const baseLinks = [
+const baseLinks: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/modules", label: "Modules", icon: BookOpen },
   { href: "/updates", label: "Updates", icon: Bell },
   { href: "/mentorship", label: "Mentorship", icon: Users },
 ];
 
-const courseMaterialLink = {
+const courseMaterialLink: NavLink = {
   href: "/course-material",
   label: "Cursus PDF",
   icon: Book,
 };
 
-const adminStudentsLink = {
+const adminStudentsLink: NavLink = {
   href: "/admin/students",
   label: "Students",
   icon: AdminPanelIcon,

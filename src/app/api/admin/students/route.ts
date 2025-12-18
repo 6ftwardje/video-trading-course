@@ -32,17 +32,20 @@ export async function GET(request: NextRequest) {
     }
 
     const sortAllowlist: ReadonlyArray<SortField> = ['created_at', 'access_level', 'email']
-    const sort: SortField =
-      sortRaw === null ? 'created_at' : sortAllowlist.includes(sortRaw as SortField) ? (sortRaw as SortField) : null
-
-    if (sort === null) {
-      return NextResponse.json({ error: 'Invalid sort parameter' }, { status: 400 })
+    let sort: SortField = 'created_at'
+    if (sortRaw !== null) {
+      if (!sortAllowlist.includes(sortRaw as SortField)) {
+        return NextResponse.json({ error: 'Invalid sort parameter' }, { status: 400 })
+      }
+      sort = sortRaw as SortField
     }
 
-    const order: SortOrder = orderRaw === null ? 'desc' : orderRaw === 'asc' || orderRaw === 'desc' ? orderRaw : null
-
-    if (order === null) {
-      return NextResponse.json({ error: 'Invalid order parameter' }, { status: 400 })
+    let order: SortOrder = 'desc'
+    if (orderRaw !== null) {
+      if (orderRaw !== 'asc' && orderRaw !== 'desc') {
+        return NextResponse.json({ error: 'Invalid order parameter' }, { status: 400 })
+      }
+      order = orderRaw
     }
 
     let limit = parseIntParam(limitRaw, 20)
