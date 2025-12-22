@@ -9,6 +9,7 @@ import { BRAND } from '@/components/ui/Brand'
 import {
   clearStoredStudent,
 } from '@/lib/student'
+import { sendPasswordResetEmail } from '@/lib/auth/resetPassword'
 
 type Mode = 'login' | 'register'
 
@@ -37,6 +38,10 @@ export default function LoginClient() {
   const [infoMessage, setInfoMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [rateLimitCooldown, setRateLimitCooldown] = useState<number | null>(null)
+  const [showResetForm, setShowResetForm] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetSuccess, setResetSuccess] = useState(false)
 
   useEffect(() => {
     const checkSession = async () => {
@@ -284,6 +289,134 @@ export default function LoginClient() {
     setInfoMessage(null)
     setPassword('')
     setConfirmPassword('')
+    setShowResetForm(false)
+    setResetEmail('')
+    setResetSuccess(false)
+  }
+
+  const handleShowResetForm = () => {
+    setShowResetForm(true)
+    setResetEmail(email) // Pre-fill with current email if available
+    setErrorMessage(null)
+    setInfoMessage(null)
+    setResetSuccess(false)
+  }
+
+  const handleCancelReset = () => {
+    setShowResetForm(false)
+    setResetEmail('')
+    setResetSuccess(false)
+    setErrorMessage(null)
+    setInfoMessage(null)
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrorMessage(null)
+    setInfoMessage(null)
+
+    if (!resetEmail || !resetEmail.trim()) {
+      setErrorMessage('Vul je e-mailadres in.')
+      return
+    }
+
+    setResetLoading(true)
+
+    try {
+      await sendPasswordResetEmail(resetEmail)
+      setResetSuccess(true)
+      setErrorMessage(null)
+      setInfoMessage(null)
+    } catch (error: any) {
+      console.error('Password reset error:', error)
+      setErrorMessage('Er is een fout opgetreden bij het verzenden van de reset link. Probeer het later opnieuw.')
+      setResetSuccess(false)
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
+  // Show reset form if active
+  if (showResetForm) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0B0F17] px-4 text-white">
+        <div className="w-full max-w-sm space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
+          <div className="space-y-3">
+            <div className="flex justify-center mb-4">
+              <Image 
+                src={BRAND.logoWithTextUrl} 
+                alt="Het Trade Platform Logo" 
+                width={232} 
+                height={40} 
+                className="h-10 w-auto"
+              />
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-center text-2xl font-semibold text-[#7C99E3]">
+                Wachtwoord vergeten?
+              </h1>
+              <p className="text-center text-sm text-gray-400">
+                Vul je e-mailadres in en we sturen je een link om je wachtwoord opnieuw in te stellen.
+              </p>
+            </div>
+          </div>
+
+          {resetSuccess ? (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-[#7C99E3]/10 border border-[#7C99E3]/30 p-4">
+                <p className="text-sm text-[#7C99E3]" role="alert">
+                  Als dit e-mailadres bestaat, ontvang je een reset link.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancelReset}
+                className="w-full rounded bg-[#7C99E3] py-2 font-semibold text-black transition hover:opacity-90"
+              >
+                Terug naar login
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <input
+                type="email"
+                placeholder="E-mailadres"
+                className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
+                value={resetEmail}
+                autoComplete="email"
+                onChange={e => setResetEmail(e.target.value)}
+                disabled={resetLoading}
+                required
+              />
+
+              {errorMessage && (
+                <p className="text-sm text-red-400" role="alert">
+                  {errorMessage}
+                </p>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="flex-1 rounded bg-[#7C99E3] py-2 font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {resetLoading ? 'Verzenden...' : 'Reset link versturen'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelReset}
+                  disabled={resetLoading}
+                  className="rounded border border-gray-600 bg-gray-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Annuleren
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -351,14 +484,25 @@ export default function LoginClient() {
             autoComplete={mode === 'login' ? 'email' : 'new-email'}
             onChange={e => setEmail(e.target.value)}
           />
-          <input
-            type="password"
-            placeholder="Wachtwoord"
-            className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
-            value={password}
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            onChange={e => setPassword(e.target.value)}
-          />
+          <div className="space-y-2">
+            <input
+              type="password"
+              placeholder="Wachtwoord"
+              className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
+              value={password}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              onChange={e => setPassword(e.target.value)}
+            />
+            {mode === 'login' && (
+              <button
+                type="button"
+                onClick={handleShowResetForm}
+                className="text-xs text-gray-400 hover:text-[#7C99E3] transition underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-[#7C99E3]/40 focus:rounded"
+              >
+                Wachtwoord vergeten?
+              </button>
+            )}
+          </div>
           {mode === 'register' && (
             <input
               type="password"

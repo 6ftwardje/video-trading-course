@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Container from '@/components/ui/Container'
 import { useStudent } from '@/components/StudentProvider'
-import { getSupabaseClient } from '@/lib/supabaseClient'
+import { sendPasswordResetEmail } from '@/lib/auth/resetPassword'
 import { Shield, Key, Trash2, FileText, Mail, Calendar, Lock } from 'lucide-react'
 
 const LEVEL_LABELS: Record<number, string> = {
@@ -32,18 +32,9 @@ export default function AccountPage() {
 
     setIsResettingPassword(true)
     try {
-      const supabase = getSupabaseClient()
-      const { error } = await supabase.auth.resetPasswordForEmail(authUser.email, {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
-      })
-
-      if (error) {
-        console.error('Password reset error:', error)
-        alert('Er is een fout opgetreden bij het verzenden van de wachtwoord reset email.')
-      } else {
-        setPasswordResetSent(true)
-      }
-    } catch (error) {
+      await sendPasswordResetEmail(authUser.email, `${window.location.origin}/auth/callback?type=recovery`)
+      setPasswordResetSent(true)
+    } catch (error: any) {
       console.error('Password reset error:', error)
       alert('Er is een fout opgetreden bij het verzenden van de wachtwoord reset email.')
     } finally {
@@ -334,4 +325,10 @@ export default function AccountPage() {
     </Container>
   )
 }
+
+
+
+
+
+
 
