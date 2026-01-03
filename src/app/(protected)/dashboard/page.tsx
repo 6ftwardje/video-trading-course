@@ -48,13 +48,18 @@ export default function DashboardPage() {
 
       const watchedSet = await getWatchedLessonIds(studentId || '', lessons.map(l => l.id))
 
+      // OPTIMIZATION: Fetch all exams in parallel
+      const examPromises = mods.map(m => getExamByModuleId(m.id))
+      const exams = await Promise.all(examPromises)
+      const examMap = new Map(exams.map((exam, idx) => [mods[idx].id, exam]))
+
       const byModule: ModuleWithProgress[] = []
       for (const m of mods) {
         const ls = lessons.filter(l => l.module_id === m.id)
         const total = ls.length
         const watched = ls.reduce((acc, l) => acc + (watchedSet.has(l.id) ? 1 : 0), 0)
         const pct = total ? Math.round((watched / total) * 100) : 0
-        const exam = await getExamByModuleId(m.id)
+        const exam = examMap.get(m.id) ?? null
         byModule.push({ ...m, totalLessons: total, watchedCount: watched, pct, examId: exam?.id ?? null })
       }
 

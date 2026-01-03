@@ -41,6 +41,7 @@ export function StudentProvider({ children }: StudentProviderProps) {
   const [student, setStudent] = useState<Student | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'unauthenticated' | 'error'>('loading')
   const statusRef = useRef(status)
+  const isLoadingRef = useRef(false)
   
   // Keep ref in sync with state
   useEffect(() => {
@@ -66,16 +67,14 @@ export function StudentProvider({ children }: StudentProviderProps) {
     let subscription: ReturnType<typeof supabase.channel> | null = null
     let isMounted = true
     let loadingTimeout: NodeJS.Timeout | null = null
-    let isLoading = false
 
     const loadStudent = async () => {
-      // Prevent concurrent loads
-      if (isLoading) {
-        console.log('[StudentProvider] Already loading, skipping...')
+      // Prevent concurrent loads using ref that persists across effect runs
+      if (isLoadingRef.current) {
         return
       }
       
-      isLoading = true
+      isLoadingRef.current = true
       
       try {
         console.log('[StudentProvider] Loading student...')
@@ -92,7 +91,7 @@ export function StudentProvider({ children }: StudentProviderProps) {
         } = await supabase.auth.getSession()
 
         if (!isMounted) {
-          isLoading = false
+          isLoadingRef.current = false
           return
         }
 
@@ -105,7 +104,7 @@ export function StudentProvider({ children }: StudentProviderProps) {
             clearTimeout(loadingTimeout)
             loadingTimeout = null
           }
-          isLoading = false
+          isLoadingRef.current = false
           return
         }
 
@@ -116,7 +115,7 @@ export function StudentProvider({ children }: StudentProviderProps) {
         const studentData = await getStudentByAuthUserId(session.user.id)
 
         if (!isMounted) {
-          isLoading = false
+          isLoadingRef.current = false
           return
         }
 
@@ -128,7 +127,7 @@ export function StudentProvider({ children }: StudentProviderProps) {
             clearTimeout(loadingTimeout)
             loadingTimeout = null
           }
-          isLoading = false
+          isLoadingRef.current = false
           return
         }
 
@@ -215,10 +214,10 @@ export function StudentProvider({ children }: StudentProviderProps) {
             }
           })
         
-        isLoading = false
+        isLoadingRef.current = false
       } catch (error) {
         console.error('[StudentProvider] Error loading student:', error)
-        isLoading = false
+        isLoadingRef.current = false
         if (isMounted) {
           setStatus('error')
           if (loadingTimeout) {
@@ -262,12 +261,15 @@ export function StudentProvider({ children }: StudentProviderProps) {
           await subscription.unsubscribe()
           subscription = null
         }
+        isLoadingRef.current = false
         setAuthUser(null)
         setStudent(null)
         setStatus('unauthenticated')
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        // Reload student when auth changes
-        await loadStudent()
+        // Reload student when auth changes (but skip if initial load is still in progress)
+        if (!isLoadingRef.current) {
+          await loadStudent()
+        }
       }
     })
 

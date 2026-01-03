@@ -349,3 +349,89 @@ export async function getNextModule(currentModuleId: number): Promise<Module | n
   }
 }
 
+/**
+ * Batch function to fetch exam results for multiple modules in parallel.
+ * Returns a Map<moduleId, boolean> indicating if each module's exam was passed.
+ */
+export async function getExamResultsForModules(
+  studentId: string,
+  moduleIds: number[]
+): Promise<Map<number, boolean>> {
+  if (!studentId || moduleIds.length === 0) {
+    return new Map()
+  }
+
+  try {
+    const supabase = getSupabaseClient()
+
+    // Get all exams for these modules in one query
+    // Note: We use the same logic as getExamByModuleId - get newest exam per module
+    // Since we can't use order/limit per module easily, we'll fetch all and process
+    const { data: exams, error: examsError } = await supabase
+      .from('exams')
+      .select('id,module_id')
+      .in('module_id', moduleIds)
+
+    if (examsError) {
+      console.error('[getExamResultsForModules] Error fetching exams:', examsError)
+      return new Map()
+    }
+
+    if (!exams || exams.length === 0) {
+      // No exams found for these modules
+      return new Map(moduleIds.map(id => [id, false]))
+    }
+
+    // Get the newest exam per module (highest ID, since we can't use order easily in batch)
+    const examByModuleId = new Map<number, number>()
+    for (const exam of exams) {
+      if (exam.module_id) {
+        const existing = examByModuleId.get(exam.module_id)
+        if (!existing || exam.id > existing) {
+          examByModuleId.set(exam.module_id, exam.id)
+        }
+      }
+    }
+
+    const examIds = Array.from(examByModuleId.values())
+
+    if (examIds.length === 0) {
+      return new Map(moduleIds.map(id => [id, false]))
+    }
+
+    // Get all passed exam results for these exams in one query
+    const { data: results, error: resultsError } = await supabase
+      .from('exam_results')
+      .select('exam_id')
+      .eq('student_id', studentId)
+      .eq('passed', true)
+      .in('exam_id', examIds)
+
+    if (resultsError) {
+      console.error('[getExamResultsForModules] Error fetching exam results:', resultsError)
+      return new Map(moduleIds.map(id => [id, false]))
+    }
+
+    // Create a set of exam IDs that were passed
+    const passedExamIds = new Set((results || []).map(r => r.exam_id))
+
+    // Create a map from module ID to exam ID
+    const moduleToExamId = new Map<number, number>()
+    examByModuleId.forEach((examId, moduleId) => {
+      moduleToExamId.set(moduleId, examId)
+    })
+
+    // Build the result map: moduleId -> boolean (passed)
+    const resultMap = new Map<number, boolean>()
+    for (const moduleId of moduleIds) {
+      const examId = moduleToExamId.get(moduleId)
+      resultMap.set(moduleId, examId !== undefined && passedExamIds.has(examId))
+    }
+
+    return resultMap
+  } catch (err) {
+    console.error('[getExamResultsForModules] Exception:', err instanceof Error ? err.message : String(err))
+    return new Map(moduleIds.map(id => [id, false]))
+  }
+}
+

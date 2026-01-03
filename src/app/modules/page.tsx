@@ -6,7 +6,7 @@ import ModuleProgressCard from '@/components/ModuleProgressCard'
 import { WaveLoader } from '@/components/ui/wave-loader'
 import { useStudent } from '@/components/StudentProvider'
 import { getModulesSimple, getLessonsForModules, getWatchedLessonIds } from '@/lib/progress'
-import { getExamByModuleId, hasPassedExamForModule } from '@/lib/exam'
+import { getExamByModuleId, getExamResultsForModules } from '@/lib/exam'
 
 type ModuleRow = { id: number; title: string; description: string | null; order: number | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
@@ -44,6 +44,18 @@ export default function ModulesPage() {
       // Sort modules by order
       const sortedMods = [...mods].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
 
+      // OPTIMIZATION: Fetch all exams in parallel
+      const examPromises = sortedMods.map(mod => getExamByModuleId(mod.id))
+      const exams = await Promise.all(examPromises)
+      const examMap = new Map(exams.map((exam, idx) => [sortedMods[idx].id, exam]))
+
+      // OPTIMIZATION: Fetch all exam results in parallel (for access level 2+)
+      let examResultsMap = new Map<number, boolean>()
+      if (studentId && accessLevel >= 2 && sortedMods.length > 1) {
+        const prevModuleIds = sortedMods.slice(1).map((_, idx) => sortedMods[idx].id)
+        examResultsMap = await getExamResultsForModules(studentId, prevModuleIds)
+      }
+
       const withProgress: ModuleWithProgress[] = []
       for (let i = 0; i < sortedMods.length; i++) {
         const mod = sortedMods[i]
@@ -51,7 +63,7 @@ export default function ModulesPage() {
         const total = modLessons.length
         const watched = modLessons.reduce((acc, l) => acc + (watchedSet.has(l.id) ? 1 : 0), 0)
         const pct = total ? Math.round((watched / total) * 100) : 0
-        const exam = await getExamByModuleId(mod.id)
+        const exam = examMap.get(mod.id) ?? null
         
         // Check if module is locked by exam
         let isLockedByExam = false
@@ -62,17 +74,12 @@ export default function ModulesPage() {
           if (i > 0) {
             const prevModule = sortedMods[i - 1]
             previousModuleId = prevModule.id
-            console.log(`[ModulesPage] Checking if module ${mod.id} is locked - previous module: ${prevModule.id}, studentId: ${studentId}`)
-            const prevExamPassed = await hasPassedExamForModule(studentId, prevModule.id)
+            const prevExamPassed = examResultsMap.get(prevModule.id) ?? false
             isLockedByExam = !prevExamPassed
-            console.log(`[ModulesPage] Module ${mod.id} - prevExamPassed: ${prevExamPassed}, isLockedByExam: ${isLockedByExam}`)
-          } else {
-            console.log(`[ModulesPage] Module ${mod.id} is module 1, always unlocked for access level 2+`)
           }
         } else {
           // Access level < 2 means locked by access (not by exam)
           isLockedByExam = false
-          console.log(`[ModulesPage] Module ${mod.id} - access level < 2, locked by access`)
         }
         
         withProgress.push({
