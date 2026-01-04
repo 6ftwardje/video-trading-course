@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar'
 import ChatbotOverlay from '@/components/ChatbotOverlay'
 import { StudentProvider } from '@/components/StudentProvider'
 
-const HIDDEN_ROUTES = ['/login', '/confirmed', '/privacy', '/terms']
+const HIDDEN_ROUTES = ['/login', '/confirmed', '/privacy', '/terms', '/reset-password']
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
