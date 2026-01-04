@@ -32,7 +32,7 @@ export default function AccountPage() {
 
     setIsResettingPassword(true)
     try {
-      await sendPasswordResetEmail(authUser.email, `${window.location.origin}/auth/callback?type=recovery`)
+      await sendPasswordResetEmail(authUser.email)
       setPasswordResetSent(true)
     } catch (error: any) {
       console.error('Password reset error:', error)

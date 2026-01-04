@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/client'
  * Sends a password reset email to the specified email address.
  * 
  * @param email - The email address to send the reset link to
- * @param redirectTo - Optional redirect URL after password reset. Defaults to /confirmed
+ * @param redirectTo - Optional redirect URL after password reset. Defaults to https://hettradeplatform.be/reset-password
  * @returns Promise that resolves if successful, rejects with error if failed
  */
 export async function sendPasswordResetEmail(
@@ -18,7 +18,7 @@ export async function sendPasswordResetEmail(
   }
 
   const supabase = createClient()
-  const redirectUrl = redirectTo || `${window.location.origin}/confirmed`
+  const redirectUrl = redirectTo || 'https://hettradeplatform.be/reset-password'
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: redirectUrl,
@@ -28,6 +28,7 @@ export async function sendPasswordResetEmail(
     throw error
   }
 }
+
 
 
 
