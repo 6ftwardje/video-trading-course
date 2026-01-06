@@ -139,10 +139,8 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // Redirect to dashboard
-        // Student record will be loaded by StudentProvider
-        // DB trigger should handle student creation if needed
-        router.replace('/dashboard')
+        // Redirect to confirmed page after email verification
+        router.replace('/confirmed')
       } catch (error) {
         console.error('Unexpected error in auth callback:', error)
         setStatus('error')

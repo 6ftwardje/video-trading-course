@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { motion } from 'framer-motion'
 import { createClient } from '@/utils/supabase/client'
 import { BRAND } from '@/components/ui/Brand'
 import {
@@ -33,10 +34,12 @@ export default function LoginClient() {
   const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [fullName, setFullName] = useState('')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [infoMessage, setInfoMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [registrationSuccess, setRegistrationSuccess] = useState(false)
   const [rateLimitCooldown, setRateLimitCooldown] = useState<number | null>(null)
   const [showResetForm, setShowResetForm] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
@@ -175,6 +178,11 @@ export default function LoginClient() {
       return
     }
 
+    if (!name || !name.trim()) {
+      setErrorMessage('Vul je naam in.')
+      return
+    }
+
     if (!email || !password || !confirmPassword) {
       setErrorMessage('Vul je e-mailadres en wachtwoord in.')
       return
@@ -200,7 +208,8 @@ export default function LoginClient() {
         password,
         options: {
           data: {
-            full_name: fullName || null,
+            name: name.trim(),
+            phone: phone.trim() || null,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -261,9 +270,21 @@ export default function LoginClient() {
     const authUser = signUpData.user
     const session = signUpData.session
 
+    // Registration successful - log metadata
+    if (authUser) {
+      console.log('Registration successful:', {
+        name: name.trim(),
+        phone: phone.trim() || null,
+        authUserId: authUser.id,
+      })
+    }
+
+    // Show confirmation message and hide form
+    setRegistrationSuccess(true)
+    setLoading(false)
+
     if (!authUser) {
       setInfoMessage('We konden je account nog niet activeren. Controleer je e-mail voor de bevestigingslink.')
-      setLoading(false)
       return
     }
 
@@ -271,11 +292,10 @@ export default function LoginClient() {
       setInfoMessage(
         'Je account is aangemaakt! Bevestig je e-mailadres via de link in je mailbox. Na bevestiging word je automatisch ingelogd.',
       )
-      setLoading(false)
       return
     }
 
-    // Registration successful - redirect to dashboard
+    // If session exists, redirect to dashboard
     // Student record will be created by DB trigger and loaded by StudentProvider
     router.push('/dashboard')
   }
@@ -289,6 +309,9 @@ export default function LoginClient() {
     setInfoMessage(null)
     setPassword('')
     setConfirmPassword('')
+    setName('')
+    setPhone('')
+    setRegistrationSuccess(false)
     setShowResetForm(false)
     setResetEmail('')
     setResetSuccess(false)
@@ -339,8 +362,33 @@ export default function LoginClient() {
   // Show reset form if active
   if (showResetForm) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0B0F17] px-4 text-white">
-        <div className="w-full max-w-sm space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
+      <div className="min-h-screen bg-[#0B0F17] text-white">
+        {/* Navigation */}
+        <nav className="w-full border-b border-slate-800/50 bg-[#0B0F17]/80 backdrop-blur-sm sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <Link href="/">
+                <Image 
+                  src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The%20Trade%20Platform%20white.png"
+                  alt="Het Trade Platform"
+                  width={160}
+                  height={32}
+                  className="h-8 w-auto"
+                  priority
+                />
+              </Link>
+              <Link
+                href="/"
+                className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              >
+                Terug naar homepagina
+              </Link>
+            </div>
+          </div>
+        </nav>
+
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+          <div className="w-full max-w-sm space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
           <div className="space-y-3">
             <div className="flex justify-center mb-4">
               <Image 
@@ -414,14 +462,92 @@ export default function LoginClient() {
               </div>
             </form>
           )}
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0B0F17] px-4 text-white">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
+    <div className="min-h-screen bg-[#0B0F17] text-white">
+      {/* Navigation */}
+      <nav className="w-full border-b border-slate-800/50 bg-[#0B0F17]/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/">
+              <Image 
+                src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The%20Trade%20Platform%20white.png"
+                alt="Het Trade Platform"
+                width={160}
+                height={32}
+                className="h-8 w-auto"
+                priority
+              />
+            </Link>
+            <Link
+              href="/"
+              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+            >
+              Terug naar homepagina
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+        {registrationSuccess && mode === 'register' ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="w-full max-w-md text-center"
+          >
+            <div className="space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
+              {/* Check icon */}
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 flex items-center justify-center rounded-full bg-[#7C99E3]/20 border border-[#7C99E3]/30">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-8 w-8 text-[#7C99E3]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h1 className="text-2xl font-semibold text-[#7C99E3] mb-3">
+                Registratie succesvol!
+              </h1>
+
+              {/* Message */}
+              {infoMessage ? (
+                <p className="text-gray-400 mb-8 text-sm leading-relaxed">
+                  {infoMessage}
+                </p>
+              ) : (
+                <p className="text-gray-400 mb-8 text-sm leading-relaxed">
+                  Je account is aangemaakt! Bevestig je e-mailadres via de link in je mailbox. Na bevestiging word je automatisch ingelogd.
+                </p>
+              )}
+
+              {/* CTA */}
+              <div className="flex flex-col items-center gap-3">
+                <Link
+                  href="/"
+                  className="px-6 py-2 bg-[#7C99E3] text-black font-semibold rounded-md hover:opacity-90 transition"
+                >
+                  Terug naar homepagina
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
         <div className="space-y-3">
           <div className="flex justify-center mb-4">
             <Image 
@@ -469,11 +595,12 @@ export default function LoginClient() {
           {mode === 'register' && (
             <input
               type="text"
-              placeholder="Naam (optioneel)"
+              placeholder="Naam"
               className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
-              value={fullName}
+              value={name}
               autoComplete="name"
-              onChange={e => setFullName(e.target.value)}
+              onChange={e => setName(e.target.value)}
+              required
             />
           )}
           <input
@@ -504,14 +631,29 @@ export default function LoginClient() {
             )}
           </div>
           {mode === 'register' && (
-            <input
-              type="password"
-              placeholder="Bevestig wachtwoord"
-              className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
-              value={confirmPassword}
-              autoComplete="new-password"
-              onChange={e => setConfirmPassword(e.target.value)}
-            />
+            <>
+              <input
+                type="password"
+                placeholder="Bevestig wachtwoord"
+                className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
+                value={confirmPassword}
+                autoComplete="new-password"
+                onChange={e => setConfirmPassword(e.target.value)}
+              />
+              <div className="space-y-1">
+                <input
+                  type="tel"
+                  placeholder="+31 6 12345678"
+                  className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
+                  value={phone}
+                  autoComplete="tel"
+                  onChange={e => setPhone(e.target.value)}
+                />
+                <p className="text-xs text-gray-400">
+                  Optioneel – alleen gebruikt voor persoonlijke onboarding, geen spam.
+                </p>
+              </div>
+            </>
           )}
         </div>
 
@@ -574,6 +716,8 @@ export default function LoginClient() {
           </p>
         )}
       </form>
+        )}
+      </div>
     </div>
   )
 }

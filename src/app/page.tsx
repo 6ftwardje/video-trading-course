@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { BRAND } from "@/components/ui/Brand";
-import { ArrowRight, PlayCircle, BookOpen, Users, CheckCircle2, ChevronDown } from "lucide-react";
+import { ArrowRight, PlayCircle, BookOpen, Users, CheckCircle2, ChevronDown, Star } from "lucide-react";
 import ImageModal from "@/components/ImageModal";
 
 export default function LandingPage() {
@@ -136,28 +136,81 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
+      <section className="relative px-4 sm:px-6 lg:px-8 py-6 sm:py-12 lg:py-24">
+        <div className="max-w-4xl mx-auto text-center space-y-3 sm:space-y-6 lg:space-y-8">
           {/* Main Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-            <span className="bg-gradient-to-r from-[#7C99E3] via-[#6b8af0] to-[#7C99E3] bg-clip-text text-transparent">
-              Leer professioneel traden
+          <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-tight">
+            <span className="text-white">
+              Maak een gratis account en{' '}
             </span>
-            <br />
-            <span className="text-white">met een gestructureerde aanpak</span>
+            <span className="text-white">
+              ontdek de strategie.
+            </span>
           </h1>
 
+          {/* iPhone Image - Under Title */}
+          <div className="flex items-center justify-center pt-1 sm:pt-2">
+            <div className="relative w-full max-w-[200px] sm:max-w-xs md:max-w-sm">
+              <div className="relative">
+                {/* Glow effect behind phone */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#7C99E3]/20 to-[#6b8af0]/20 blur-3xl rounded-full transform scale-110"></div>
+                
+                {/* iPhone Image */}
+                <div className="relative transform hover:scale-[1.02] transition-transform duration-300">
+                  <Image
+                    src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/hand%20mockup.png"
+                    alt="Het Trade Platform op iPhone - Leer traden waar en wanneer je wilt"
+                    width={1600}
+                    height={1600}
+                    className="w-full h-auto object-contain drop-shadow-2xl"
+                    priority
+                    sizes="(max-width: 640px) 320px, 384px"
+                  />
+                </div>
+                
+                {/* Floating badge */}
+                <div className="absolute -bottom-2 sm:-bottom-4 right-0 sm:right-2 lg:right-4 bg-gradient-to-r from-[#7C99E3] to-[#6b8af0] text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 rounded-lg sm:rounded-xl shadow-xl transform rotate-3 hover:rotate-0 hover:scale-105 transition-all duration-300 border border-white/20 sm:border-2">
+                  <p className="text-[10px] sm:text-xs lg:text-sm font-bold whitespace-nowrap flex items-center gap-1 sm:gap-1.5">
+                    <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">module 1 gratis bekijken</span>
+                    <span className="sm:hidden">module 1 gratis</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Subheadline - Pain Points */}
-          <p className="text-lg sm:text-xl md:text-2xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-slate-300 max-w-2xl mx-auto leading-snug sm:leading-relaxed px-2 py-[10px]">
             Stop met gissen en start met leren. Ontdek een bewezen methode die je stap voor stap begeleidt van beginner naar zelfverzekerde trader.
           </p>
 
+          {/* 4 Star Review - Social Proof */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 lg:gap-4 pt-1 sm:pt-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-0.5 sm:gap-1">
+                {[...Array(4)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-[#7C99E3] text-[#7C99E3]" />
+                ))}
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600" />
+              </div>
+              <div className="text-left">
+                <p className="text-xs sm:text-sm font-semibold text-white">4.0 uit 5 sterren</p>
+                <p className="text-[10px] sm:text-xs text-slate-400">Geverifieerde reviews</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[#7C99E3]/10 border border-[#7C99E3]/30">
+              <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-[#7C99E3]" />
+              <p className="text-[10px] sm:text-xs font-medium text-[#7C99E3]">Geen creditcard • 100% gratis</p>
+            </div>
+          </div>
+
           {/* CTA Section */}
-          <div className="space-y-4 pt-4">
+          <div className="space-y-2 sm:space-y-3 lg:space-y-4 pt-2 sm:pt-3 lg:pt-4">
             <div className="relative inline-block mx-auto">
               <Link
                 href="/login?mode=register"
-                className="inline-flex items-center gap-2 px-8 py-5 rounded-xl text-white font-bold text-lg sm:text-xl relative z-10 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 overflow-hidden"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-6 sm:px-8 py-3 sm:py-4 lg:py-5 rounded-xl text-white font-bold text-base sm:text-lg lg:text-xl relative z-10 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 overflow-hidden"
                 style={{ 
                   background: 'linear-gradient(90deg, rgba(70, 112, 219, 1) 0%, rgba(107, 138, 240, 1) 50%, rgba(70, 112, 219, 1) 100%)',
                   backgroundSize: '200% auto',
@@ -165,7 +218,7 @@ export default function LandingPage() {
                 }}
               >
                 <span className="relative z-20">Maak gratis een account</span>
-                <ArrowRight className="h-5 w-5 relative z-20" />
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 relative z-20" />
               </Link>
               <div 
                 className="absolute inset-0 bg-[rgba(70,112,219,0.2)] blur-xl rounded-xl -z-0"
@@ -174,9 +227,14 @@ export default function LandingPage() {
                 }}
               ></div>
             </div>
-            <p className="text-sm text-slate-400">
-              <span className="text-[#7C99E3] font-medium">✓ Gratis & vrijblijvend</span> • Bekijk direct een gratis introductievideo in het dashboard
-            </p>
+            <div className="space-y-1 sm:space-y-2 px-2">
+              <p className="text-xs sm:text-sm text-slate-400 leading-tight">
+                <span className="text-[#7C99E3] font-medium">✓ Volledig gratis</span> • <span className="text-[#7C99E3] font-medium">✓ Geen creditcard</span> • Direct toegang
+              </p>
+              <p className="text-[10px] sm:text-xs text-slate-500 italic leading-tight">
+                Start direct zonder betalingsgegevens. 100% gratis en vrijblijvend.
+              </p>
+            </div>
           </div>
         </div>
       </section>
