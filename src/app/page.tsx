@@ -239,48 +239,48 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {/* Benefit 1 */}
-            <div className="bg-[#121826]/50 border border-slate-800/50 rounded-xl p-6 sm:p-8 hover:border-[#7C99E3]/30 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg bg-[#7C99E3]/10 flex items-center justify-center mb-4">
-                <PlayCircle className="h-6 w-6 text-[#7C99E3]" />
+      {/* Social Proof & Video Section */}
+      <section className="px-4 sm:px-6 lg:px-8 py-[27px] sm:py-16 lg:py-20" style={{ backgroundColor: 'rgba(20, 20, 20, 1)' }}>
+        <div className="max-w-4xl mx-auto">
+          {/* Social Proof */}
+          <div className="text-center mb-8 sm:mb-12">
+            <p className="text-sm sm:text-xl md:text-2xl text-slate-300 mb-0">
+              Ontwikkeld in samenwerking met
+            </p>
+            <p className="text-[39px] sm:text-3xl md:text-4xl font-black text-[#F79939]">
+              Cryptoriez
+            </p>
+            <p className="text-sm sm:text-base text-slate-400 mt-3 max-w-2xl mx-auto">
+              Cryptoriez is één van de meest bekeken trading-kanalen op YouTube voor iedereen die de markt serieus wil leren begrijpen. Wekelijks kijken duizenden traders naar hun marktupdates, analyses en educatieve video's waarin crypto en traditionele markten helder worden uitgelegd.
+            </p>
+            {/* Stats */}
+            <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 mt-6">
+              <div className="text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-[#F79939]">4600</p>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1">abbonees</p>
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">
-                Video-gebaseerd leren
-              </h3>
-              <p className="text-slate-400 leading-relaxed">
-                Volg modules met praktische video-lessen die je direct kunt toepassen. Leer in je eigen tempo, wanneer het jou uitkomt.
-              </p>
+              <div className="text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-[#F79939]">400+</p>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1">videos</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-[#F79939]">NL / BE</p>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1">focus</p>
+              </div>
             </div>
+          </div>
 
-            {/* Benefit 2 */}
-            <div className="bg-[#121826]/50 border border-slate-800/50 rounded-xl p-6 sm:p-8 hover:border-[#7C99E3]/30 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg bg-[#7C99E3]/10 flex items-center justify-center mb-4">
-                <BookOpen className="h-6 w-6 text-[#7C99E3]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">
-                Gestructureerd curriculum
-              </h3>
-              <p className="text-slate-400 leading-relaxed">
-                Van basisbegrippen tot geavanceerde strategieën. Elke module bouwt voort op de vorige, zodat je solide fundamenten legt.
-              </p>
-            </div>
-
-            {/* Benefit 3 */}
-            <div className="bg-[#121826]/50 border border-slate-800/50 rounded-xl p-6 sm:p-8 hover:border-[#7C99E3]/30 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg bg-[#7C99E3]/10 flex items-center justify-center mb-4">
-                <Users className="h-6 w-6 text-[#7C99E3]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">
-                Praktijkgericht
-              </h3>
-              <p className="text-slate-400 leading-relaxed">
-                Test je kennis met examens en oefen met praktijkcases. Leer niet alleen theorie, maar pas het ook direct toe.
-              </p>
-            </div>
+          {/* YouTube Video */}
+          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+            <iframe
+              className="absolute top-0 left-0 w-full h-full rounded-xl"
+              src="https://www.youtube.com/embed/5DjxIjcPoKc?si=_R_tcKxzcm4iQrPT"
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
           </div>
         </div>
       </section>
@@ -290,7 +290,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white" style={{ fontSize: '27px' }}>
                 Het Trade Platform
               </h2>
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-[#7C99E3] text-white">
@@ -314,10 +314,14 @@ export default function LandingPage() {
                 <button
                   onClick={() => toggleModule(module.id)}
                   className="w-full flex items-center justify-between p-4 sm:p-6 text-left hover:bg-[#121826]/70 transition-colors"
+                  style={{
+                    color: 'rgba(255, 255, 255, 1)',
+                    background: 'linear-gradient(90deg, rgba(63, 78, 115, 0.4) 0%, rgba(21, 26, 39, 1) 100%)',
+                  }}
                 >
                   <div className="flex-1">
-                    <h3 className="text-lg sm:text-xl font-semibold text-white mb-1">
-                      MODULE {module.id}: {module.title}
+                    <h3 className="text-lg sm:text-xl text-white mb-1">
+                      <span className="font-bold">MODULE {module.id}:</span> <span className="font-normal">{module.title}</span>
                     </h3>
                   </div>
                   <ChevronDown
@@ -363,7 +367,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+      <section className="px-4 sm:px-6 lg:px-8 py-0">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
@@ -393,35 +397,6 @@ export default function LandingPage() {
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200" />
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-[#121826]/30 border border-slate-800/50 rounded-xl p-8 sm:p-10 text-center space-y-6">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-white">
-              Serieuze educatie, geen hype
-            </h2>
-            <p className="text-slate-300 leading-relaxed max-w-2xl mx-auto">
-              Het Trade Platform is ontwikkeld door ervaren traders die begrijpen wat het betekent om te leren traden. 
-              We focussen op solide fundamenten, risicomanagement en een realistische kijk op trading.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-6 pt-4">
-              <div className="flex items-center gap-2 text-slate-400">
-                <CheckCircle2 className="h-5 w-5 text-[#7C99E3]" />
-                <span className="text-sm">Geen get-rich-quick beloftes</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-400">
-                <CheckCircle2 className="h-5 w-5 text-[#7C99E3]" />
-                <span className="text-sm">Professionele begeleiding</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-400">
-                <CheckCircle2 className="h-5 w-5 text-[#7C99E3]" />
-                <span className="text-sm">Bewezen methodologie</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>
