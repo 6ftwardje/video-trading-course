@@ -158,10 +158,10 @@ export default function LandingPage() {
                 {/* iPhone Image */}
                 <div className="relative transform hover:scale-[1.02] transition-transform duration-300">
                   <Image
-                    src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/hand%20mockup.png"
+                    src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/hand%20mockup%20small.webp"
                     alt="Het Trade Platform op iPhone - Leer traden waar en wanneer je wilt"
-                    width={1600}
-                    height={1600}
+                    width={800}
+                    height={800}
                     className="w-full h-auto object-contain drop-shadow-2xl"
                     priority
                     sizes="(max-width: 640px) 320px, 384px"
