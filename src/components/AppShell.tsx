@@ -22,8 +22,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     [pathname],
   )
 
+  // Always wrap with StudentProvider, but it will only show loading state when chrome is visible
   return (
-    <StudentProvider>
+    <StudentProvider hideLoadingOnPublicRoutes={hideChrome}>
       <div className={hideChrome ? '' : 'md:pl-16'}>
         {!hideChrome && <Navbar />}
         {!hideChrome && <ChatbotOverlay />}

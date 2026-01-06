@@ -33,9 +33,10 @@ export function useStudent() {
 
 type StudentProviderProps = {
   children: ReactNode
+  hideLoadingOnPublicRoutes?: boolean
 }
 
-export function StudentProvider({ children }: StudentProviderProps) {
+export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }: StudentProviderProps) {
   const pathname = usePathname()
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [student, setStudent] = useState<Student | null>(null)
@@ -286,8 +287,8 @@ export function StudentProvider({ children }: StudentProviderProps) {
     }
   }, [])
 
-  // Show loading state while loading
-  if (status === 'loading') {
+  // Show loading state while loading, but only if not on public routes
+  if (status === 'loading' && !hideLoadingOnPublicRoutes) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)]">
         <div className="flex flex-col items-center gap-4">
@@ -298,8 +299,17 @@ export function StudentProvider({ children }: StudentProviderProps) {
     )
   }
 
-  // Show error state if student record is missing
-  if (status === 'error') {
+  // On public routes, render children even while loading (silently load in background)
+  if (status === 'loading' && hideLoadingOnPublicRoutes) {
+    return (
+      <StudentContext.Provider value={{ authUser, student, status }}>
+        {children}
+      </StudentContext.Provider>
+    )
+  }
+
+  // Show error state if student record is missing, but only if not on public routes
+  if (status === 'error' && !hideLoadingOnPublicRoutes) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)]">
         <div className="max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
@@ -318,6 +328,15 @@ export function StudentProvider({ children }: StudentProviderProps) {
           </button>
         </div>
       </div>
+    )
+  }
+
+  // On public routes with error, render children anyway (error will be handled by middleware/redirects)
+  if (status === 'error' && hideLoadingOnPublicRoutes) {
+    return (
+      <StudentContext.Provider value={{ authUser, student, status }}>
+        {children}
+      </StudentContext.Provider>
     )
   }
 
