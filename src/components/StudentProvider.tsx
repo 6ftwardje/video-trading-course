@@ -178,14 +178,23 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
                   return
                 }
 
-                console.log('[StudentProvider] Updating student from realtime:', {
-                  oldAccessLevel: currentStudentData?.access_level,
-                  newAccessLevel: updatedStudent.access_level,
+                // Only update if access_level actually changed to prevent unnecessary re-renders
+                const oldAccessLevel = currentStudentData?.access_level
+                const newAccessLevel = updatedStudent.access_level
+                
+                console.log('[StudentProvider] Realtime UPDATE received:', {
+                  oldAccessLevel,
+                  newAccessLevel,
                   studentId: updatedStudent.id
                 })
 
-                setStudent(updatedStudent)
-                console.log('[StudentProvider] ✅ Student state updated successfully via Realtime')
+                // Only update state if access_level changed or if this is the first load
+                if (oldAccessLevel !== newAccessLevel || !currentStudentData) {
+                  setStudent(updatedStudent)
+                  console.log('[StudentProvider] ✅ Student state updated successfully via Realtime (access_level changed)')
+                } else {
+                  console.log('[StudentProvider] ⏭️ Skipping update - access_level unchanged')
+                }
               } catch (error) {
                 console.error('[StudentProvider] Error processing realtime update:', error)
                 // Fallback: reload student data

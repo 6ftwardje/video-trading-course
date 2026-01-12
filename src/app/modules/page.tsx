@@ -98,7 +98,7 @@ export default function ModulesPage() {
     }
 
     run()
-  }, [status, student, accessLevel, studentId])
+  }, [status, studentId, accessLevel]) // Use specific values instead of whole student object
 
   return (
     <Container className="pb-20 pt-8 md:pt-12">
