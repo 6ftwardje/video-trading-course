@@ -445,6 +445,7 @@ export default function LandingPage() {
                     height={1600}
                     className="w-full h-auto object-contain group-hover:opacity-90 transition-opacity duration-200"
                     sizes="100vw"
+                    unoptimized
                   />
                 </div>
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200" />
