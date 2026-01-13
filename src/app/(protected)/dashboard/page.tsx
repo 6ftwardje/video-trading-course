@@ -102,7 +102,7 @@ export default function DashboardPage() {
     }
 
     run()
-  }, [router, status, student])
+  }, [router, status, studentId, accessLevel]) // Use specific values instead of whole student object
 
   const progressPanel = {
     loading,

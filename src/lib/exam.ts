@@ -434,4 +434,3 @@ export async function getExamResultsForModules(
     return new Map(moduleIds.map(id => [id, false]))
   }
 }
-

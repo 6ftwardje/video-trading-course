@@ -94,7 +94,7 @@ export default function MentorshipPage() {
     }
 
     run()
-  }, [router, status, student])
+  }, [router, status, studentId, accessLevel]) // Use specific values instead of whole student object
 
   const handleBookSession = (mentor: Mentor) => {
     if ((accessLevel ?? 1) < 2) {

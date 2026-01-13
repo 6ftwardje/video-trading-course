@@ -174,7 +174,7 @@ export default function UpdatesPage() {
     }
 
     void init()
-  }, [router, status, student, currentStudentId, accessLevel])
+  }, [router, status, currentStudentId, accessLevel]) // Use specific values instead of whole student object
 
   const handleCreate = async () => {
     if (!newContent.trim()) {

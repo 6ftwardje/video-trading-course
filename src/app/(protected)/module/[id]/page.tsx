@@ -142,7 +142,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
       }
     }
     load()
-  }, [params, status, student, accessLevel, studentId])
+  }, [params, status, studentId, accessLevel]) // Use specific values instead of whole student object
 
   useEffect(() => {
     const fetchExam = async () => {

@@ -157,7 +157,7 @@ export default function CourseMaterialPage() {
     }
 
     load()
-  }, [status, student, accessLevel, studentId])
+  }, [status, studentId, accessLevel]) // Use specific values instead of whole student object
 
   if (loading) {
     return (

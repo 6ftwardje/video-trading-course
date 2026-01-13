@@ -66,15 +66,16 @@ export default function Navbar() {
   // Derive values from student context
   const studentEmail = student?.email ?? null;
   const accessLevel = student?.access_level ?? null;
+  const studentId = student?.id ?? null;
   const userName = student?.name ?? student?.email ?? "Account";
 
   useEffect(() => {
     // Fetch unread count for updates
     const fetchUnreadCount = async () => {
       // Only fetch for access level 2 and 3
-      if (student?.id && (accessLevel === 2 || accessLevel === 3)) {
+      if (studentId && (accessLevel === 2 || accessLevel === 3)) {
         try {
-          const count = await getUnreadCount(student.id, student.access_level ?? null);
+          const count = await getUnreadCount(studentId, accessLevel ?? null);
           setUnreadCount(count);
         } catch (error) {
           console.error('Error fetching unread count', error);
@@ -84,7 +85,7 @@ export default function Navbar() {
       }
     };
 
-    if (status === 'ready' && student) {
+    if (status === 'ready' && studentId) {
       fetchUnreadCount();
 
       // Listen for updates-read event to refresh unread count
@@ -103,7 +104,7 @@ export default function Navbar() {
         window.removeEventListener('updates-read', handleUpdatesRead);
       };
     }
-  }, [pathname, status, student, accessLevel]);
+  }, [pathname, status, studentId, accessLevel]); // Use specific values instead of whole student object
 
   // Close user menu on outside click
   useEffect(() => {

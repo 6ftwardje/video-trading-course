@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { BRAND } from "@/components/ui/Brand";
-import { ArrowRight, PlayCircle, BookOpen, Users, CheckCircle2, ChevronDown, Star } from "lucide-react";
+import { ArrowRight, PlayCircle, BookOpen, Users, CheckCircle2, ChevronDown, Star, PhoneCall } from "lucide-react";
 import ImageModal from "@/components/ImageModal";
 
 export default function LandingPage() {
@@ -144,7 +144,7 @@ export default function LandingPage() {
               Maak een gratis account en{' '}
             </span>
             <span className="text-white">
-              ontdek de strategie.
+              leer traden.
             </span>
           </h1>
 
@@ -171,18 +171,23 @@ export default function LandingPage() {
                 {/* Floating badge */}
                 <div className="absolute -bottom-2 sm:-bottom-4 right-0 sm:right-2 lg:right-4 bg-gradient-to-r from-[#7C99E3] to-[#6b8af0] text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 rounded-lg sm:rounded-xl shadow-xl transform rotate-3 hover:rotate-0 hover:scale-105 transition-all duration-300 border border-white/20 sm:border-2">
                   <p className="text-[10px] sm:text-xs lg:text-sm font-bold whitespace-nowrap flex items-center gap-1 sm:gap-1.5">
-                    <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">module 1 gratis bekijken</span>
-                    <span className="sm:hidden">module 1 gratis</span>
+                    <PhoneCall className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">1 gratis kennismakingscall</span>
+                    <span className="sm:hidden">gratis call</span>
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Subheadline - Pain Points */}
+          {/* Subheadline */}
           <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-slate-300 max-w-2xl mx-auto leading-snug sm:leading-relaxed px-2 py-[10px]">
-            Stop met gissen en start met leren. Ontdek een bewezen methode die je stap voor stap begeleidt van beginner naar zelfverzekerde trader.
+            Je staat er niet alleen voor. Je krijgt begeleiding bij het leren traden.
+          </p>
+          
+          {/* Extra line about call */}
+          <p className="text-sm sm:text-base md:text-lg text-slate-400 max-w-2xl mx-auto leading-snug px-2">
+            Na je registratie kun je in het dashboard een gratis kennismakingscall inplannen met Rousso of een mentor. Je bespreekt dan je persoonlijke aanpak.
           </p>
 
           {/* 4 Star Review - Social Proof */}
@@ -234,6 +239,52 @@ export default function LandingPage() {
               <p className="text-[10px] sm:text-xs text-slate-500 italic leading-tight">
                 Start direct zonder betalingsgegevens. 100% gratis en vrijblijvend.
               </p>
+              <p className="text-[10px] sm:text-xs text-slate-500 leading-tight mt-1">
+                Na registratie kun je in het dashboard een gratis kennismakingscall inplannen.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3 Steps Section */}
+      <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+              Zo werkt het
+            </h2>
+          </div>
+          <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#7C99E3] flex items-center justify-center text-white font-bold text-lg sm:text-xl">
+                1
+              </div>
+              <div className="flex-1 pt-1">
+                <p className="text-base sm:text-lg text-slate-300">
+                  Maak gratis een account aan.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#7C99E3] flex items-center justify-center text-white font-bold text-lg sm:text-xl">
+                2
+              </div>
+              <div className="flex-1 pt-1">
+                <p className="text-base sm:text-lg text-slate-300">
+                  Je krijgt toegang tot het dashboard en de eerste modules.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#7C99E3] flex items-center justify-center text-white font-bold text-lg sm:text-xl">
+                3
+              </div>
+              <div className="flex-1 pt-1">
+                <p className="text-base sm:text-lg text-slate-300">
+                  In het dashboard kun je een gratis kennismakingscall inplannen met Rousso of een mentor. Je bespreekt dan jouw situatie en aanpak.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -251,7 +302,7 @@ export default function LandingPage() {
               Cryptoriez
             </p>
             <p className="text-sm sm:text-base text-slate-400 mt-3 max-w-2xl mx-auto">
-              Cryptoriez is één van de meest bekeken trading-kanalen op YouTube voor iedereen die de markt serieus wil leren begrijpen. Wekelijks kijken duizenden traders naar hun marktupdates, analyses en educatieve video's waarin crypto en traditionele markten helder worden uitgelegd.
+              Cryptoriez is een educatief YouTube-kanaal over trading. Wekelijks kijken duizenden mensen naar hun marktupdates en educatieve video's. In deze video's leggen ze crypto en traditionele markten helder uit.
             </p>
             {/* Stats */}
             <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 mt-6">
@@ -298,10 +349,10 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-2">
-              Een stap-voor-stap cursus die je van beginner naar expert brengt.
+              Een stap-voor-stap cursus over traden.
             </p>
             <p className="text-base text-slate-400 max-w-2xl mx-auto">
-              Het programma wordt continu vernieuwd en we voegen regelmatig nieuw materiaal toe.
+              Het programma wordt regelmatig vernieuwd. We voegen ook nieuw materiaal toe.
             </p>
           </div>
 
@@ -371,10 +422,10 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Wat onze studenten zeggen
+              Wat anderen zeggen
             </h2>
             <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-              Lees wat anderen ervaren met Het Trade Platform
+              Lees wat anderen vinden van Het Trade Platform
             </p>
           </div>
           <div className="space-y-6">
@@ -408,7 +459,7 @@ export default function LandingPage() {
             Klaar om te beginnen?
           </h2>
           <p className="text-lg sm:text-xl text-slate-300">
-            Maak nu een gratis account aan en bekijk direct de introductievideo in je dashboard.
+            Maak een gratis account aan. Geen creditcard nodig. Na je aanmelding kun je in het dashboard een gratis kennismakingscall inplannen met Rousso of een mentor.
           </p>
           <div className="relative inline-block">
             <Link

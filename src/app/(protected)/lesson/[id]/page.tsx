@@ -219,7 +219,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
         player.destroy().catch(console.error)
       }
     }
-  }, [id, status, student, accessLevel, studentId])
+  }, [id, status, studentId, accessLevel]) // Use specific values instead of whole student object
 
   if (!lesson) {
     return (
