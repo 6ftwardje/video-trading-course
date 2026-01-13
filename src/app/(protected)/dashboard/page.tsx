@@ -9,6 +9,8 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardModulesSection from '@/components/DashboardModulesSection'
 import DashboardProgress from '@/components/DashboardProgress'
 import TradingSessions from '@/components/TradingSessions'
+import IntroductionCallPopup from '@/components/IntroductionCallPopup'
+import IntroductionCallCTA from '@/components/IntroductionCallCTA'
 import { useStudent } from '@/components/StudentProvider'
 import { getLessonsForModules, getModulesSimple, getWatchedLessonIds, findNextLesson } from '@/lib/progress'
 import { getExamByModuleId } from '@/lib/exam'
@@ -26,6 +28,7 @@ export default function DashboardPage() {
   const [activeModule, setActiveModule] = useState<ModuleWithProgress | null>(null)
   const [nextLessonHref, setNextLessonHref] = useState<string | null>(null)
   const [progressText, setProgressText] = useState<string>('Welkom terug')
+  const [showPopup, setShowPopup] = useState(false)
 
   const accessLevel = student?.access_level ?? 1
   const studentId = student?.id ?? null
@@ -104,6 +107,29 @@ export default function DashboardPage() {
     run()
   }, [router, status, studentId, accessLevel]) // Use specific values instead of whole student object
 
+  // Popup logic: show after delay if not dismissed
+  useEffect(() => {
+    if (loading || status !== 'ready') return
+
+    // Check if popup was already dismissed
+    const dismissed = typeof window !== 'undefined' ? localStorage.getItem('intro-call-popup-dismissed') : null
+    if (dismissed === 'true') return
+
+    // Show popup after 6 seconds delay
+    const timer = setTimeout(() => {
+      setShowPopup(true)
+    }, 6000)
+
+    return () => clearTimeout(timer)
+  }, [loading, status])
+
+  const handlePopupClose = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('intro-call-popup-dismissed', 'true')
+    }
+    setShowPopup(false)
+  }
+
   const progressPanel = {
     loading,
     activeModule: activeModule
@@ -175,8 +201,15 @@ export default function DashboardPage() {
           <div className="hidden lg:block rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
             <TradingSessions accessLevel={accessLevel} />
           </div>
+          {/* Introduction Call CTA */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+            <IntroductionCallCTA />
+          </div>
         </div>
       </div>
+
+      {/* Introduction Call Popup */}
+      <IntroductionCallPopup isOpen={showPopup} onClose={handlePopupClose} />
     </div>
   )
 }
