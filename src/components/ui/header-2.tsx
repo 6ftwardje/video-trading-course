@@ -135,6 +135,8 @@ export function Header() {
 
 						height={32}
 
+						unoptimized
+
 						className="h-8 w-auto"
 
 						priority

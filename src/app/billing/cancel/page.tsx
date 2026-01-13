@@ -18,6 +18,7 @@ export default function BillingCancelPage() {
             height={60}
             className="h-auto w-auto max-w-full"
             priority
+            unoptimized
           />
         </div>
 

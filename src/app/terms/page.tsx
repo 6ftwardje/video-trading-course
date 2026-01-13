@@ -19,6 +19,7 @@ export default function TermsPage() {
                 height={32}
                 className="h-8 w-auto"
                 priority
+                unoptimized
               />
             </Link>
             <Link

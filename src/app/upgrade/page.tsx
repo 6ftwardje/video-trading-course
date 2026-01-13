@@ -41,6 +41,7 @@ export default function UpgradePage() {
             height={60}
             className="h-auto w-auto max-w-full"
             priority
+            unoptimized
           />
         </div>
         <div className="text-center space-y-4">

@@ -120,6 +120,7 @@ export default function LandingPage() {
                 src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform white.png"
                 alt="Het Trade Platform"
                 width={160}
+                unoptimized
                 height={32}
                 className="h-8 w-auto"
                 priority
@@ -165,6 +166,7 @@ export default function LandingPage() {
                     className="w-full h-auto object-contain drop-shadow-2xl"
                     priority
                     sizes="(max-width: 640px) 320px, 384px"
+                    unoptimized
                   />
                 </div>
                 
