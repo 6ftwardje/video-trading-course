@@ -12,7 +12,7 @@ export default function BillingCancelPage() {
       <div className="max-w-2xl w-full space-y-8">
         <div className="flex justify-center mb-8">
           <Image
-            src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The%20Trade%20Platform%20white.png"
+            src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform white.png"
             alt="The Trade Platform Logo"
             width={300}
             height={60}

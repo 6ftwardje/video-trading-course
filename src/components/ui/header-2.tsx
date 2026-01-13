@@ -127,7 +127,7 @@ export function Header() {
 
 					<Image
 
-						src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The%20Trade%20Platform.webp"
+						src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform.webp"
 
 						alt="Het Trade Platform"
 

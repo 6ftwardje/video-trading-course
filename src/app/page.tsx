@@ -117,7 +117,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             <Link href="/">
               <Image 
-                src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The%20Trade%20Platform%20white.png"
+                src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform white.png"
                 alt="Het Trade Platform"
                 width={160}
                 height={32}
@@ -158,7 +158,7 @@ export default function LandingPage() {
                 {/* iPhone Image */}
                 <div className="relative transform hover:scale-[1.02] transition-transform duration-300">
                   <Image
-                    src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/hand%20mockup%20small.webp"
+                    src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/hand mockup small.webp"
                     alt="Het Trade Platform op iPhone - Leer traden waar en wanneer je wilt"
                     width={800}
                     height={800}

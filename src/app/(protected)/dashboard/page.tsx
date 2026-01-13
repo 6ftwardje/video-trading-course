@@ -111,11 +111,14 @@ export default function DashboardPage() {
   useEffect(() => {
     if (loading || status !== 'ready') return
 
+    // Wait for page to be fully interactive before checking localStorage
+    if (typeof window === 'undefined') return
+
     // Check if popup was already dismissed
-    const dismissed = typeof window !== 'undefined' ? localStorage.getItem('intro-call-popup-dismissed') : null
+    const dismissed = localStorage.getItem('intro-call-popup-dismissed')
     if (dismissed === 'true') return
 
-    // Show popup after 6 seconds delay
+    // Show popup after 6 seconds delay (only after page is fully loaded)
     const timer = setTimeout(() => {
       setShowPopup(true)
     }, 6000)
@@ -162,7 +165,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Intro Video - NO card wrapper */}
-          <DashboardHeader thumbnailUrl="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/still%20intro%20vid.webp" />
+          <DashboardHeader thumbnailUrl="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/still intro vid.webp" />
 
           {/* Trading Sessions - appears here on mobile, after HeroDashboard */}
           <div className="lg:hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">

@@ -369,7 +369,7 @@ export default function LoginClient() {
             <div className="flex items-center justify-between h-16">
               <Link href="/">
                 <Image 
-                  src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The%20Trade%20Platform%20white.png"
+                  src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform white.png"
                   alt="Het Trade Platform"
                   width={160}
                   height={32}
@@ -476,7 +476,7 @@ export default function LoginClient() {
           <div className="flex items-center justify-between h-16">
             <Link href="/">
               <Image 
-                src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The%20Trade%20Platform%20white.png"
+                src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform white.png"
                 alt="Het Trade Platform"
                 width={160}
                 height={32}
