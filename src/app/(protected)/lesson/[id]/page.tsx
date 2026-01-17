@@ -195,14 +195,31 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
               if (!studentId) return
 
               const supabase = getSupabaseClient()
-              await supabase.from('progress').upsert({
+              const { error } = await supabase.from('progress').upsert({
                 student_id: studentId,
                 lesson_id: currentLesson.id,
                 watched: true,
                 watched_at: new Date().toISOString()
               }, { onConflict: 'student_id,lesson_id' })
 
-              setProgress(prev => ({ ...prev, [currentLesson.id]: true }))
+              if (error) {
+                console.error('Error updating progress:', error)
+              } else {
+                // Update progress state immediately
+                setProgress(prev => ({ ...prev, [currentLesson.id]: true }))
+                
+                // Force a re-render by ensuring nextLesson is set correctly
+                // Use a function to access current lessons state
+                setLessons(currentLessons => {
+                  const sorted = [...currentLessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  const currentIdx = sorted.findIndex(l => l.id === currentLesson.id)
+                  if (currentIdx >= 0 && currentIdx < sorted.length - 1) {
+                    const next = sorted[currentIdx + 1]
+                    setNextLesson(next)
+                  }
+                  return currentLessons
+                })
+              }
             })
           }
         }
@@ -220,6 +237,40 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
       }
     }
   }, [id, status, studentId, accessLevel]) // Use specific values instead of whole student object
+
+  // Refresh progress when window gains focus to ensure UI is up-to-date
+  useEffect(() => {
+    const refreshProgress = async () => {
+      if (!studentId || lessons.length === 0) return
+
+      const supabase = getSupabaseClient()
+      const { data: pr, error: progressError } = await supabase
+        .from('progress')
+        .select('lesson_id,watched')
+        .eq('student_id', studentId)
+        .in('lesson_id', lessons.map(l => l.id))
+      
+      if (!progressError && pr) {
+        const map: Record<number, boolean> = {}
+        const progressRows = (pr ?? []) as LessonProgress[]
+        progressRows.forEach(p => { 
+          map[p.lesson_id] = p.watched 
+        })
+        setProgress(prev => {
+          // Merge with existing progress to avoid losing updates
+          return { ...prev, ...map }
+        })
+      }
+    }
+
+    // Refresh on window focus (e.g., after tab switch or page refresh)
+    const handleFocus = () => {
+      refreshProgress()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [studentId, lessons])
 
   if (!lesson) {
     return (
