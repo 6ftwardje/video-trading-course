@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { useStudent } from '@/components/StudentProvider'
-import { getExamByModuleId, hasPassedExamForModule } from '@/lib/exam'
+import { getExamByModuleId } from '@/lib/exam'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
 import { getModulesSimple } from '@/lib/progress'
+import { getModuleGateStatus } from '@/lib/moduleGate'
 import { CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -27,7 +28,8 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   const [examId, setExamId] = useState<number | null>(null)
   const [practicalLessons, setPracticalLessons] = useState<PracticalLesson[]>([])
   const [moduleLocked, setModuleLocked] = useState<boolean>(false)
-  const [previousModuleId, setPreviousModuleId] = useState<number | null>(null)
+  const [previousModuleOrder, setPreviousModuleOrder] = useState<number | null>(null)
+  const [previousModuleTitle, setPreviousModuleTitle] = useState<string | null>(null)
 
   const accessLevel = student?.access_level ?? 1
   const studentId = student?.id ?? null
@@ -97,22 +99,15 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
         // Module N is only unlocked if exam of module N-1 is passed
         if (studentId && accessLevel >= 2) {
           const allModules = await getModulesSimple()
-          const sortedModules = [...allModules].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
-          const currentModuleIndex = sortedModules.findIndex(m => m.id === moduleIdNum)
-          
-          if (currentModuleIndex > 0) {
-            // Not module 1, check if previous module exam is passed
-            const prevModule = sortedModules[currentModuleIndex - 1]
-            setPreviousModuleId(prevModule.id)
-            const prevExamPassed = await hasPassedExamForModule(studentId, prevModule.id)
-            setModuleLocked(!prevExamPassed)
-          } else {
-            // Module 1 is always unlocked for access level 2+
-            setModuleLocked(false)
-          }
+          const gateStatus = await getModuleGateStatus(allModules, moduleIdNum, studentId, accessLevel)
+          setModuleLocked(gateStatus.isLockedByExam)
+          setPreviousModuleOrder(gateStatus.previousModule?.order ?? null)
+          setPreviousModuleTitle(gateStatus.previousModule?.title ?? null)
         } else {
           // Access level < 2 means locked by access
           setModuleLocked(true)
+          setPreviousModuleOrder(null)
+          setPreviousModuleTitle(null)
         }
 
         if (studentId && sortedLessons && sortedLessons.length > 0) {
@@ -172,6 +167,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   const watchedCount = Object.values(progress).filter(Boolean).length
   const total = lessons.length
   const pct = total ? Math.round((watchedCount / total) * 100) : 0
+  const previousModuleLabel = previousModuleOrder
+    ? `Module ${previousModuleOrder}`
+    : previousModuleTitle || 'de vorige module'
 
   return (
     <Container className="pt-8 md:pt-12 pb-16">
@@ -190,9 +188,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
       </div>
 
 
-      {moduleLocked && previousModuleId && (
+      {moduleLocked && (previousModuleOrder || previousModuleTitle) && (
         <div className="mb-6 rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
-          🔒 Deze module is vergrendeld. Voltooi eerst het examen van module {previousModuleId} om deze module te ontgrendelen.
+          🔒 Deze module is vergrendeld. Voltooi eerst het examen van {previousModuleLabel} om deze module te ontgrendelen.
         </div>
       )}
 
@@ -269,8 +267,10 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
                       <div>
                         <div className="font-medium text-white">{lesson.title}</div>
                         <div className="text-xs text-[var(--text-dim)]">Les {lesson.order}</div>
-                        {moduleLocked && (
-                          <div className="text-xs text-[#7C99E3]">Voltooi eerst het examen van module {previousModuleId}</div>
+                        {moduleLocked && (previousModuleOrder || previousModuleTitle) && (
+                          <div className="text-xs text-[#7C99E3]">
+                            Voltooi eerst het examen van {previousModuleLabel}
+                          </div>
                         )}
                         {!moduleLocked && (
                           <div className="text-xs text-[#7C99E3]">Deze les wordt ontgrendeld nadat je de vorige volledig bekeek.</div>
@@ -284,7 +284,9 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
                     className="cursor-not-allowed rounded-md border border-[#7C99E3]/40 bg-[#7C99E3]/10 px-4 py-2 text-sm text-[#7C99E3]"
                     title={
                       moduleLocked 
-                        ? `Voltooi eerst het examen van module ${previousModuleId}`
+                        ? previousModuleOrder || previousModuleTitle
+                          ? `Voltooi eerst het examen van ${previousModuleLabel}`
+                          : 'Module vergrendeld.'
                         : 'Deze les wordt ontgrendeld nadat je de vorige volledig bekeek.'
                     }
                   >

@@ -6,7 +6,8 @@ import ModuleProgressCard from '@/components/ModuleProgressCard'
 import { WaveLoader } from '@/components/ui/wave-loader'
 import { useStudent } from '@/components/StudentProvider'
 import { getModulesSimple, getLessonsForModules, getWatchedLessonIds } from '@/lib/progress'
-import { getExamByModuleId, getExamResultsForModules } from '@/lib/exam'
+import { getExamByModuleId } from '@/lib/exam'
+import { getModuleGateStatuses } from '@/lib/moduleGate'
 
 type ModuleRow = { id: number; title: string; description: string | null; order: number | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
@@ -16,7 +17,8 @@ type ModuleWithProgress = ModuleRow & {
   pct: number
   examId: number | null
   isLockedByExam?: boolean
-  previousModuleId?: number | null
+  previousModuleOrder?: number | null
+  previousModuleTitle?: string | null
 }
 
 export default function ModulesPage() {
@@ -49,12 +51,7 @@ export default function ModulesPage() {
       const exams = await Promise.all(examPromises)
       const examMap = new Map(exams.map((exam, idx) => [sortedMods[idx].id, exam]))
 
-      // OPTIMIZATION: Fetch all exam results in parallel (for access level 2+)
-      let examResultsMap = new Map<number, boolean>()
-      if (studentId && accessLevel >= 2 && sortedMods.length > 1) {
-        const prevModuleIds = sortedMods.slice(1).map((_, idx) => sortedMods[idx].id)
-        examResultsMap = await getExamResultsForModules(studentId, prevModuleIds)
-      }
+      const gateMap = await getModuleGateStatuses(sortedMods, studentId, accessLevel)
 
       const withProgress: ModuleWithProgress[] = []
       for (let i = 0; i < sortedMods.length; i++) {
@@ -66,21 +63,10 @@ export default function ModulesPage() {
         const exam = examMap.get(mod.id) ?? null
         
         // Check if module is locked by exam
-        let isLockedByExam = false
-        let previousModuleId: number | null = null
-        
-        if (studentId && accessLevel >= 2) {
-          // Module 1 is always unlocked for access level 2+
-          if (i > 0) {
-            const prevModule = sortedMods[i - 1]
-            previousModuleId = prevModule.id
-            const prevExamPassed = examResultsMap.get(prevModule.id) ?? false
-            isLockedByExam = !prevExamPassed
-          }
-        } else {
-          // Access level < 2 means locked by access (not by exam)
-          isLockedByExam = false
-        }
+        const gate = gateMap.get(mod.id)
+        const isLockedByExam = gate?.isLockedByExam ?? false
+        const previousModuleOrder = gate?.previousModule?.order ?? null
+        const previousModuleTitle = gate?.previousModule?.title ?? null
         
         withProgress.push({
           ...mod,
@@ -89,7 +75,8 @@ export default function ModulesPage() {
           pct,
           examId: exam?.id ?? null,
           isLockedByExam,
-          previousModuleId,
+          previousModuleOrder,
+          previousModuleTitle,
         })
       }
 

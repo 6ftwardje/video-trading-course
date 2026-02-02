@@ -13,7 +13,8 @@ type ModuleProgress = {
   examId: number | null
   accessLevel?: number
   isLockedByExam?: boolean
-  previousModuleId?: number | null
+  previousModuleOrder?: number | null
+  previousModuleTitle?: string | null
 }
 
 type Props = {
@@ -24,6 +25,9 @@ export default function ModuleProgressCard({ module }: Props) {
   const router = useRouter()
   const isLockedByAccess = typeof module.accessLevel === 'number' && module.accessLevel < 2
   const isLocked = isLockedByAccess || module.isLockedByExam
+  const previousModuleLabel = module.previousModuleOrder
+    ? `Module ${module.previousModuleOrder}`
+    : module.previousModuleTitle || 'de vorige module'
 
   return (
     <div className="space-y-3">
@@ -57,12 +61,12 @@ export default function ModuleProgressCard({ module }: Props) {
               </div>
             </div>
           )}
-          {!isLockedByAccess && module.isLockedByExam && module.previousModuleId && (
+          {!isLockedByAccess && module.isLockedByExam && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm">
               <div className="text-center space-y-2 p-4">
                 <Lock className="h-6 w-6 text-[#7C99E3] mx-auto" />
                 <p className="text-sm font-medium text-white">Vergrendeld</p>
-                <p className="text-xs text-[var(--text-dim)]">Voltooi eerst het examen van module {module.previousModuleId}</p>
+                <p className="text-xs text-[var(--text-dim)]">Voltooi eerst het examen van {previousModuleLabel}</p>
               </div>
             </div>
           )}
