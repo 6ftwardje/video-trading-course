@@ -10,6 +10,7 @@ import Image from 'next/image'
 import { ArrowLeft } from 'lucide-react'
 import Container from '@/components/ui/Container'
 import { getExamByModuleId, hasPassedExamForModule, getNextModule } from '@/lib/exam'
+import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
 import { WaveLoader } from '@/components/ui/wave-loader'
 import { RequireAccess } from '@/components/RequireAccess'
 
@@ -35,6 +36,8 @@ type LessonProgress = {
   lesson_id: number
   watched: boolean
 }
+
+type PracticalLesson = PracticalLessonRecord
 
 function getVimeoVideoId(videoUrl: string): string | null {
   // Extract Vimeo video ID from various URL formats
@@ -65,6 +68,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
   const [examId, setExamId] = useState<number | null>(null)
   const [examPassed, setExamPassed] = useState<boolean>(false)
   const [nextModuleId, setNextModuleId] = useState<number | null>(null)
+  const [practicalLessons, setPracticalLessons] = useState<PracticalLesson[]>([])
   const playerRef = useRef<HTMLDivElement>(null)
 
   const accessLevel = student?.access_level ?? 1
@@ -129,6 +133,9 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
           ? [...allLessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           : []
         setLessons(sortedAll)
+
+        const practicals = await getPracticalLessons(currentLesson.module_id)
+        setPracticalLessons(practicals)
 
         // Progress van gebruiker ophalen
         if (studentId && sortedAll.length > 0) {
@@ -435,6 +442,42 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
               })}
             </ul>
           </div>
+
+          {practicalLessons.length > 0 && (
+            <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+              <h2 className="text-lg font-semibold mb-4 text-white/90">Praktijklessen</h2>
+              <ul className="space-y-3">
+                {practicalLessons.map((pl) => (
+                  <li key={pl.id}>
+                    <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                      <Link
+                        href={`/praktijk/${pl.id}`}
+                        className="flex items-center gap-3 p-2 rounded-lg border border-[var(--border)] transition hover:border-[#7C99E3]/40"
+                      >
+                        <div className="relative w-16 h-10 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
+                          <Image
+                            src="https://placehold.co/160x90?text=Praktijk"
+                            alt={pl.title}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-sm text-white/90">{pl.title}</div>
+                          {pl.description && (
+                            <div className="text-xs text-[var(--text-dim)] line-clamp-2">
+                              {pl.description}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    </RequireAccess>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </aside>
       </div>
     </Container>

@@ -7,7 +7,7 @@ import { getExamByModuleId } from '@/lib/exam'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
 import { getModulesSimple } from '@/lib/progress'
 import { getModuleGateStatus } from '@/lib/moduleGate'
-import { CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Container from '@/components/ui/Container'
@@ -173,17 +173,27 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
 
   return (
     <Container className="pt-8 md:pt-12 pb-16">
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-[var(--accent)]">
-            {moduleTitle || `Module ${moduleId}`}
-          </h1>
-          <p className="text-[var(--text-dim)] text-sm">
-            Voortgang: {watchedCount}/{total} • {pct}%
-          </p>
-        </div>
-        <div className="w-44 h-2 bg-[var(--muted)] rounded-full overflow-hidden">
-          <div className="h-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
+      <div className="mb-6 space-y-4">
+        <Link
+          href="/modules"
+          className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--card)]/80 px-3 py-2 text-sm text-[var(--text-dim)] transition hover:text-white hover:border-[var(--accent)]/40"
+          aria-label="Terug naar alle modules"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Alle modules
+        </Link>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-[var(--accent)]">
+              {moduleTitle || `Module ${moduleId}`}
+            </h1>
+            <p className="text-[var(--text-dim)] text-sm">
+              Voortgang: {watchedCount}/{total} • {pct}%
+            </p>
+          </div>
+          <div className="w-44 h-2 bg-[var(--muted)] rounded-full overflow-hidden">
+            <div className="h-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
+          </div>
         </div>
       </div>
 
@@ -336,6 +346,13 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
           )}
 
           {/* EXAMEN CTA (zichtbaar als alle lessen watched zijn) */}
+          {lessons.length > 0 && watchedCount === total && practicalLessons.length > 0 && !moduleLocked && (
+            <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+              <div className="mt-8 rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
+                ✅ Je hebt alle lessen bekeken. Vergeet niet de praktijklessen van deze module door te nemen.
+              </div>
+            </RequireAccess>
+          )}
           {lessons.length > 0 && watchedCount === total && examId && !moduleLocked && (
             <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
             <div className="mt-8 bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 flex items-center justify-between">
