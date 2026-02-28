@@ -2,7 +2,7 @@ import { getSupabaseClient } from '@/lib/supabaseClient'
 
 export async function getModulesSimple() {
   const supabase = getSupabaseClient()
-  const { data } = await supabase.from('modules').select('id,title,description,"order",icon_url')
+  const { data } = await supabase.from('modules').select('id,title,description,"order"')
   // Sort manually to avoid PostgREST query string issues with 'order' column
   const sorted = data ? [...data].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999)) : []
   return sorted
