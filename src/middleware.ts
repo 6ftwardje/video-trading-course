@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { debugLog } from "@/lib/debug";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
@@ -75,12 +76,19 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  debugLog("middleware", {
+    pathname: req.nextUrl.pathname,
+    hasSession: !!session?.user,
+    userId: session?.user?.id ?? null,
+  });
+
   if (!session?.user) {
     const redirectUrl = new URL("/login", req.url);
     redirectUrl.searchParams.set("redirectedFrom", req.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
+  res.headers.set("x-auth-checked", "1");
   return res;
 }
 
