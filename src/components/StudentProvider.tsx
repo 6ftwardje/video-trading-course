@@ -43,6 +43,7 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
   const [status, setStatus] = useState<'loading' | 'ready' | 'unauthenticated' | 'error'>('loading')
   const statusRef = useRef(status)
   const isLoadingRef = useRef(false)
+  const [retryCount, setRetryCount] = useState(0)
   
   // Keep ref in sync with state
   useEffect(() => {
@@ -68,6 +69,9 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
     let subscription: ReturnType<typeof supabase.channel> | null = null
     let isMounted = true
     let loadingTimeout: NodeJS.Timeout | null = null
+
+    // Allow new load on retry (previous run may have left isLoadingRef true)
+    isLoadingRef.current = false
 
     const loadStudent = async () => {
       // Prevent concurrent loads using ref that persists across effect runs
@@ -113,7 +117,9 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
         setAuthUser(session.user)
 
         // Fetch student record by auth_user_id
+        console.log('[StudentProvider] Calling getStudentByAuthUserId...')
         const studentData = await getStudentByAuthUserId(session.user.id)
+        console.log('[StudentProvider] getStudentByAuthUserId returned:', studentData ? 'student found' : 'null')
 
         if (!isMounted) {
           isLoadingRef.current = false
@@ -121,7 +127,7 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
         }
 
         if (!studentData) {
-          console.error('[StudentProvider] Student record not found for auth_user_id:', session.user.id)
+          console.error('[StudentProvider] Student record not found for auth_user_id:', session.user.id, '- check Supabase RLS and that students.auth_user_id is set')
           setStudent(null)
           setStatus('error')
           if (loadingTimeout) {
@@ -238,7 +244,7 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
       }
     }
 
-    // Set a timeout to prevent infinite loading (5 seconds - shorter)
+    // Set a timeout to prevent infinite loading (15s so localhost/Supabase have time)
     loadingTimeout = setTimeout(() => {
       if (isMounted && statusRef.current === 'loading') {
         console.warn('[StudentProvider] Loading timeout reached, checking auth state')
@@ -248,15 +254,15 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
               console.log('[StudentProvider] Timeout: No session, setting unauthenticated')
               setStatus('unauthenticated')
             } else {
-              console.log('[StudentProvider] Timeout: Session exists but student not loaded, setting error')
+              console.log('[StudentProvider] Timeout: Session exists but student not loaded (check network, Supabase RLS, and students.auth_user_id). Setting error.')
               setStatus('error')
             }
           }
         })
       }
-    }, 5000)
+    }, 15000)
 
-    // Initial load
+    // Initial load (retryCount triggers retry when user clicks Retry)
     loadStudent()
 
     // Listen for auth state changes
@@ -294,7 +300,7 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
         subscription.unsubscribe()
       }
     }
-  }, [])
+  }, [retryCount])
 
   // Show loading state while loading, but only if not on public routes
   if (status === 'loading' && !hideLoadingOnPublicRoutes) {
@@ -326,15 +332,26 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
           <p className="mb-6 text-sm text-[var(--text-dim)]">
             We konden je studentprofiel niet vinden. Neem contact op met support.
           </p>
-          <button
-            onClick={() => {
-              const supabase = getSupabaseClient()
-              supabase.auth.signOut()
-            }}
-            className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition hover:bg-white"
-          >
-            Uitloggen
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <button
+              onClick={() => {
+                setStatus('loading')
+                setRetryCount((c) => c + 1)
+              }}
+              className="rounded-lg border border-[var(--border)] bg-transparent px-4 py-2 text-sm font-medium transition hover:bg-[var(--bg)]"
+            >
+              Opnieuw proberen
+            </button>
+            <button
+              onClick={() => {
+                const supabase = getSupabaseClient()
+                supabase.auth.signOut()
+              }}
+              className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition hover:bg-white"
+            >
+              Uitloggen
+            </button>
+          </div>
         </div>
       </div>
     )

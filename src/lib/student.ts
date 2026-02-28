@@ -102,10 +102,12 @@ export async function getStudentByAuthUserId(authUserId: string): Promise<Studen
     .maybeSingle()
 
   if (error) {
-    console.error('Error fetching student record:', error)
+    console.error('[getStudentByAuthUserId] Supabase error:', error.message, 'code:', error.code, 'details:', error.details)
     return null
   }
-
+  if (!data) {
+    console.warn('[getStudentByAuthUserId] No student row for auth_user_id:', authUserId, '- ensure students.auth_user_id is set (e.g. in auth callback)')
+  }
   return data
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, use } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Player from '@vimeo/player'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -36,8 +36,8 @@ function extractFirstUrl(text?: string | null) {
   return match ? match[0] : null
 }
 
-export default function PracticalLessonPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function PracticalLessonPage({ params }: { params: { id: string } }) {
+  const id = params.id
   const { student, status } = useStudent()
   const [lesson, setLesson] = useState<PracticalLesson | null>(null)
   const [lessons, setLessons] = useState<PracticalLesson[]>([])

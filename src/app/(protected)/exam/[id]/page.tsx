@@ -26,7 +26,7 @@ function confettiLite() {
   setTimeout(() => el.remove(), 600)
 }
 
-export default function ExamPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ExamPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const search = useSearchParams()
   const { student, status } = useStudent()
@@ -69,7 +69,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     const loadParams = async () => {
-      const { id } = await params
+      const id = params.id
       const moduleIdFromUrl = Number(search.get('module') || 1)
       setModuleId(moduleIdFromUrl)
       // Try to get the newest exam for this module instead of using the URL exam_id

@@ -18,7 +18,7 @@ type Lesson = { id: number; title: string; order: number; module_id: number; thu
 type ProgressRow = { lesson_id: number; watched: boolean }
 type PracticalLesson = PracticalLessonRecord
 
-export default function ModulePage({ params }: { params: Promise<{ id: string }> }) {
+export default function ModulePage({ params }: { params: { id: string } }) {
   const { student, status } = useStudent()
   const [moduleId, setModuleId] = useState<string>('')
   const [moduleTitle, setModuleTitle] = useState<string>('')
@@ -37,7 +37,7 @@ export default function ModulePage({ params }: { params: Promise<{ id: string }>
   useEffect(() => {
     const load = async () => {
       try {
-        const { id } = await params
+        const id = params.id
         setModuleId(id)
         
         const moduleIdNum = Number(id)

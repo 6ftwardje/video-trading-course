@@ -21,11 +21,10 @@ function parseAccessLevel(value: unknown): 1 | 2 | 3 | null {
 
 export async function PATCH(
   request: NextRequest,
-  ctx: { params: Promise<{ id: string }> | { id: string } },
+  ctx: { params: { id: string } },
 ) {
   try {
-    const params = await Promise.resolve(ctx.params)
-    const studentId = validateStudentId(params?.id)
+    const studentId = validateStudentId(ctx.params?.id)
     if (!studentId) {
       return NextResponse.json({ error: 'Invalid student id' }, { status: 400 })
     }

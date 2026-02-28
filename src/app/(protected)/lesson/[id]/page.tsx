@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { use } from 'react'
 import Player from '@vimeo/player'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { useStudent } from '@/components/StudentProvider'
@@ -57,8 +56,8 @@ function getVimeoVideoId(videoUrl: string): string | null {
   return null
 }
 
-export default function LessonPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function LessonPage({ params }: { params: { id: string } }) {
+  const id = params.id
   const { student, status } = useStudent()
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [lessons, setLessons] = useState<LessonListItem[]>([])
