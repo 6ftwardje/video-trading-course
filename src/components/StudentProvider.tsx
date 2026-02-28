@@ -1,10 +1,11 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
-import { usePathname } from 'next/navigation'
+import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getStudentByAuthUserId } from '@/lib/student'
+import { debugLog } from '@/lib/debug'
 
 type Student = {
   id: string
@@ -15,10 +16,15 @@ type Student = {
   updated_at?: string
 }
 
+export type StudentStatus = 'idle' | 'loading' | 'ready' | 'unauthenticated' | 'error'
+export type ErrorReason = 'STUDENT_NOT_FOUND' | 'STUDENT_LOAD_TIMEOUT' | 'RLS' | 'NETWORK' | 'UNKNOWN' | null
+
 type StudentContextType = {
   authUser: User | null
   student: Student | null
-  status: 'loading' | 'ready' | 'unauthenticated' | 'error'
+  status: StudentStatus
+  errorReason: ErrorReason
+  retry: () => void
 }
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined)
@@ -36,121 +42,120 @@ type StudentProviderProps = {
   hideLoadingOnPublicRoutes?: boolean
 }
 
+const LOAD_TIMEOUT_MS = 8000
+const PROTECTED_PATHS = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship', '/course-material', '/account']
+
 export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }: StudentProviderProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [student, setStudent] = useState<Student | null>(null)
-  const [status, setStatus] = useState<'loading' | 'ready' | 'unauthenticated' | 'error'>('loading')
+  const [status, setStatus] = useState<StudentStatus>('idle')
+  const [errorReason, setErrorReason] = useState<ErrorReason>(null)
   const statusRef = useRef(status)
   const isLoadingRef = useRef(false)
   const [retryCount, setRetryCount] = useState(0)
-  
-  // Keep ref in sync with state
+
   useEffect(() => {
     statusRef.current = status
   }, [status])
 
-  // Redirect to login if unauthenticated on protected routes
+  const retry = useCallback(() => {
+    setErrorReason(null)
+    setStatus('loading')
+    setRetryCount((c) => c + 1)
+  }, [])
+
+  // Extra safety: redirect to login when unauthenticated on protected route (middleware is primary guard)
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      const protectedPaths = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship', '/course-material', '/account']
-      const isProtected = protectedPaths.some(path => pathname?.startsWith(path))
-      
-      if (isProtected) {
-        console.log('[StudentProvider] Unauthenticated on protected route, redirecting to login')
-        // Use window.location for immediate redirect
-        window.location.href = '/login'
-      }
+    if (status !== 'unauthenticated') return
+    const isProtected = PROTECTED_PATHS.some((p) => pathname?.startsWith(p))
+    if (isProtected) {
+      debugLog('StudentProvider', 'unauthenticated on protected route, redirecting to login')
+      const from = encodeURIComponent(pathname ?? '/')
+      router.replace(`/login?redirectedFrom=${from}`)
     }
-  }, [status, pathname])
+  }, [status, pathname, router])
 
   useEffect(() => {
     const supabase = getSupabaseClient()
     let subscription: ReturnType<typeof supabase.channel> | null = null
     let isMounted = true
-    let loadingTimeout: NodeJS.Timeout | null = null
-
-    // Allow new load on retry (previous run may have left isLoadingRef true)
-    isLoadingRef.current = false
+    let loadingTimeout: ReturnType<typeof setTimeout> | null = null
 
     const loadStudent = async () => {
-      // Prevent concurrent loads using ref that persists across effect runs
-      if (isLoadingRef.current) {
-        return
-      }
-      
+      if (isLoadingRef.current) return
       isLoadingRef.current = true
-      
+      const start = Date.now()
+      debugLog('StudentProvider', { event: 'loadStudent_start', ts: start })
+
       try {
-        console.log('[StudentProvider] Loading student...')
-        
-        // Clean up existing subscription before loading new student
+        setStatus('loading')
+        setErrorReason(null)
+
         if (subscription) {
           await subscription.unsubscribe()
           subscription = null
         }
 
-        // Use getSession() first to avoid unnecessary server requests
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+        let { data: { session } } = await supabase.auth.getSession()
+        debugLog('StudentProvider', { event: 'after_getSession', hasSession: !!session?.user, elapsed: Date.now() - start })
 
-        if (!isMounted) {
-          isLoadingRef.current = false
-          return
+        if (!isMounted) return
+
+        if (!session?.user) {
+          debugLog('StudentProvider', 'no session, trying refreshSession once')
+          await supabase.auth.refreshSession()
+          const next = await supabase.auth.getSession()
+          session = next.data.session
+          debugLog('StudentProvider', { event: 'after_refreshSession', hasSession: !!session?.user })
         }
 
         if (!session?.user) {
-          console.log('[StudentProvider] No session found, setting unauthenticated')
           setAuthUser(null)
           setStudent(null)
           setStatus('unauthenticated')
-          if (loadingTimeout) {
-            clearTimeout(loadingTimeout)
-            loadingTimeout = null
-          }
-          isLoadingRef.current = false
           return
         }
 
-        console.log('[StudentProvider] Session found, fetching student for user:', session.user.id)
         setAuthUser(session.user)
+        const getStudentStart = Date.now()
+        debugLog('StudentProvider', { event: 'getStudentByAuthUserId_start', userId: session.user.id })
 
-        // Fetch student record by auth_user_id
-        console.log('[StudentProvider] Calling getStudentByAuthUserId...')
-        const studentData = await getStudentByAuthUserId(session.user.id)
-        console.log('[StudentProvider] getStudentByAuthUserId returned:', studentData ? 'student found' : 'null')
-
-        if (!isMounted) {
-          isLoadingRef.current = false
+        let studentData: Student | null = null
+        try {
+          studentData = await getStudentByAuthUserId(session.user.id)
+        } catch (err) {
+          const elapsed = Date.now() - getStudentStart
+          debugLog('StudentProvider', { event: 'getStudentByAuthUserId_error', err, elapsed })
+          const reason: ErrorReason = (err as Error)?.message?.toLowerCase().includes('rls') ? 'RLS' : 'NETWORK'
+          if (isMounted) {
+            setStudent(null)
+            setStatus('error')
+            setErrorReason(reason)
+          }
           return
         }
+
+        const elapsed = Date.now() - getStudentStart
+        debugLog('StudentProvider', { event: 'getStudentByAuthUserId_done', found: !!studentData, elapsed })
+
+        if (!isMounted) return
 
         if (!studentData) {
-          console.error('[StudentProvider] Student record not found for auth_user_id:', session.user.id, '- check Supabase RLS and that students.auth_user_id is set')
           setStudent(null)
           setStatus('error')
-          if (loadingTimeout) {
-            clearTimeout(loadingTimeout)
-            loadingTimeout = null
-          }
-          isLoadingRef.current = false
+          setErrorReason('STUDENT_NOT_FOUND')
           return
         }
 
-        console.log('[StudentProvider] Student loaded successfully:', studentData.id)
         setStudent(studentData)
         setStatus('ready')
-        if (loadingTimeout) {
-          clearTimeout(loadingTimeout)
-          loadingTimeout = null
-        }
+        debugLog('StudentProvider', { event: 'ready', studentId: studentData.id, totalElapsed: Date.now() - start })
 
-        // Store current student data for use in callback
         const currentStudentData = studentData
         const currentAuthUserId = session.user.id
 
-        // Subscribe to realtime updates for this student
         subscription = supabase
           .channel(`student:${studentData.id}`)
           .on(
@@ -162,117 +167,57 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
               filter: `id=eq.${studentData.id}`,
             },
             async (payload) => {
-              console.log('[StudentProvider] Realtime UPDATE received:', payload)
-              
-              if (!isMounted) {
-                console.log('[StudentProvider] Component unmounted, ignoring update')
-                return
-              }
-
+              if (!isMounted) return
               try {
                 const updatedStudent = payload.new as Student
-                
-                // Validate that we have all required fields
-                if (!updatedStudent || !updatedStudent.id) {
-                  console.error('[StudentProvider] Invalid payload received:', payload)
-                  // Fallback: reload student data
-                  const reloadedStudent = await getStudentByAuthUserId(currentAuthUserId)
-                  if (reloadedStudent && isMounted) {
-                    console.log('[StudentProvider] Reloaded student after invalid payload:', reloadedStudent)
-                    setStudent(reloadedStudent)
-                  }
+                if (!updatedStudent?.id) {
+                  const reloaded = await getStudentByAuthUserId(currentAuthUserId)
+                  if (reloaded && isMounted) setStudent(reloaded)
                   return
                 }
-
-                // Only update if access_level actually changed to prevent unnecessary re-renders
-                const oldAccessLevel = currentStudentData?.access_level
-                const newAccessLevel = updatedStudent.access_level
-                
-                console.log('[StudentProvider] Realtime UPDATE received:', {
-                  oldAccessLevel,
-                  newAccessLevel,
-                  studentId: updatedStudent.id
-                })
-
-                // Only update state if access_level changed or if this is the first load
-                if (oldAccessLevel !== newAccessLevel || !currentStudentData) {
+                const oldLevel = currentStudentData?.access_level
+                const newLevel = updatedStudent.access_level
+                if (oldLevel !== newLevel || !currentStudentData) {
                   setStudent(updatedStudent)
-                  console.log('[StudentProvider] ✅ Student state updated successfully via Realtime (access_level changed)')
-                } else {
-                  console.log('[StudentProvider] ⏭️ Skipping update - access_level unchanged')
                 }
-              } catch (error) {
-                console.error('[StudentProvider] Error processing realtime update:', error)
-                // Fallback: reload student data
+              } catch {
                 try {
-                  const reloadedStudent = await getStudentByAuthUserId(currentAuthUserId)
-                  if (reloadedStudent && isMounted) {
-                    console.log('[StudentProvider] Reloaded student after error:', reloadedStudent)
-                    setStudent(reloadedStudent)
-                  }
-                } catch (reloadError) {
-                  console.error('[StudentProvider] Error reloading student:', reloadError)
+                  const reloaded = await getStudentByAuthUserId(currentAuthUserId)
+                  if (reloaded && isMounted) setStudent(reloaded)
+                } catch {
+                  // ignore
                 }
               }
             }
           )
-          .subscribe((status) => {
-            console.log('[StudentProvider] Subscription status changed:', status)
-            
-            if (status === 'SUBSCRIBED') {
-              console.log('[StudentProvider] ✅ Realtime subscription active for student:', studentData.id)
-            } else if (status === 'TIMED_OUT') {
-              console.warn('[StudentProvider] ⚠️ Realtime subscription timed out')
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('[StudentProvider] ❌ Realtime subscription error')
-            } else if (status === 'CLOSED') {
-              console.warn('[StudentProvider] ⚠️ Realtime subscription closed')
-            }
-          })
-        
-        isLoadingRef.current = false
+          .subscribe()
       } catch (error) {
-        console.error('[StudentProvider] Error loading student:', error)
-        isLoadingRef.current = false
+        const elapsed = Date.now() - start
+        debugLog('StudentProvider', { event: 'loadStudent_catch', error, elapsed })
         if (isMounted) {
           setStatus('error')
-          if (loadingTimeout) {
-            clearTimeout(loadingTimeout)
-            loadingTimeout = null
-          }
+          setErrorReason('UNKNOWN')
         }
+      } finally {
+        isLoadingRef.current = false
       }
     }
 
-    // Set a timeout to prevent infinite loading (15s so localhost/Supabase have time)
     loadingTimeout = setTimeout(() => {
-      if (isMounted && statusRef.current === 'loading') {
-        console.warn('[StudentProvider] Loading timeout reached, checking auth state')
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (isMounted && statusRef.current === 'loading') {
-            if (!session?.user) {
-              console.log('[StudentProvider] Timeout: No session, setting unauthenticated')
-              setStatus('unauthenticated')
-            } else {
-              console.log('[StudentProvider] Timeout: Session exists but student not loaded (check network, Supabase RLS, and students.auth_user_id). Setting error.')
-              setStatus('error')
-            }
-          }
-        })
+      if (statusRef.current === 'loading') {
+        debugLog('StudentProvider', { event: 'LOAD_TIMEOUT', timeoutMs: LOAD_TIMEOUT_MS })
+        if (isMounted) {
+          setStatus('error')
+          setErrorReason('STUDENT_LOAD_TIMEOUT')
+        }
       }
-    }, 15000)
+    }, LOAD_TIMEOUT_MS)
 
-    // Initial load (retryCount triggers retry when user clicks Retry)
     loadStudent()
 
-    // Listen for auth state changes
-    const {
-      data: { subscription: authSubscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return
-
       if (event === 'SIGNED_OUT' || !session?.user) {
-        // Clean up subscription
         if (subscription) {
           await subscription.unsubscribe()
           subscription = null
@@ -282,28 +227,23 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
         setStudent(null)
         setStatus('unauthenticated')
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        // Reload student when auth changes (but skip if initial load is still in progress)
         if (!isLoadingRef.current) {
-          await loadStudent()
+          loadStudent()
         }
       }
     })
 
     return () => {
       isMounted = false
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout)
-      }
-      // Cleanup
+      if (loadingTimeout) clearTimeout(loadingTimeout)
       authSubscription.unsubscribe()
-      if (subscription) {
-        subscription.unsubscribe()
-      }
+      if (subscription) subscription.unsubscribe()
     }
   }, [retryCount])
 
-  // Show loading state while loading, but only if not on public routes
-  if (status === 'loading' && !hideLoadingOnPublicRoutes) {
+  // Loader only when status is loading (or idle before first load) on protected routes
+  const showFullscreenLoader = (status === 'loading' || status === 'idle') && !hideLoadingOnPublicRoutes
+  if (showFullscreenLoader) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)]">
         <div className="flex flex-col items-center gap-4">
@@ -314,39 +254,35 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
     )
   }
 
-  // On public routes, render children even while loading (silently load in background)
-  if (status === 'loading' && hideLoadingOnPublicRoutes) {
+  if ((status === 'loading' || status === 'idle') && hideLoadingOnPublicRoutes) {
     return (
-      <StudentContext.Provider value={{ authUser, student, status }}>
+      <StudentContext.Provider value={{ authUser, student, status, errorReason, retry }}>
         {children}
       </StudentContext.Provider>
     )
   }
 
-  // Show error state if student record is missing, but only if not on public routes
   if (status === 'error' && !hideLoadingOnPublicRoutes) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)]">
         <div className="max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
           <h2 className="mb-4 text-xl font-semibold">Account Error</h2>
           <p className="mb-6 text-sm text-[var(--text-dim)]">
-            We konden je studentprofiel niet vinden. Neem contact op met support.
+            {errorReason === 'STUDENT_LOAD_TIMEOUT'
+              ? 'Het laden duurde te lang. Controleer je verbinding.'
+              : errorReason === 'STUDENT_NOT_FOUND'
+                ? 'We konden je studentprofiel niet vinden.'
+                : 'Er ging iets mis. Probeer het opnieuw.'}
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <button
-              onClick={() => {
-                setStatus('loading')
-                setRetryCount((c) => c + 1)
-              }}
+              onClick={retry}
               className="rounded-lg border border-[var(--border)] bg-transparent px-4 py-2 text-sm font-medium transition hover:bg-[var(--bg)]"
             >
               Opnieuw proberen
             </button>
             <button
-              onClick={() => {
-                const supabase = getSupabaseClient()
-                supabase.auth.signOut()
-              }}
+              onClick={() => getSupabaseClient().auth.signOut()}
               className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition hover:bg-white"
             >
               Uitloggen
@@ -357,21 +293,17 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
     )
   }
 
-  // On public routes with error, render children anyway (error will be handled by middleware/redirects)
   if (status === 'error' && hideLoadingOnPublicRoutes) {
     return (
-      <StudentContext.Provider value={{ authUser, student, status }}>
+      <StudentContext.Provider value={{ authUser, student, status, errorReason, retry }}>
         {children}
       </StudentContext.Provider>
     )
   }
 
-  // Render children for ready or unauthenticated states
-  // (unauthenticated will be handled by middleware redirects)
   return (
-    <StudentContext.Provider value={{ authUser, student, status }}>
+    <StudentContext.Provider value={{ authUser, student, status, errorReason, retry }}>
       {children}
     </StudentContext.Provider>
   )
 }
-
