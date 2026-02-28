@@ -52,6 +52,7 @@ export async function middleware(req: NextRequest) {
     return res; // Public route → no auth check
   }
 
+  // Single source of truth for "logged in or not" on protected routes (client StudentProvider is backup only)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
