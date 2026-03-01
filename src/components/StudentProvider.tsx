@@ -106,13 +106,13 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
           return
         }
 
-        if (!session?.user) {
-          debugLog('StudentProvider', 'no session, trying refreshSession once')
-          await supabase.auth.refreshSession()
-          const next = await supabase.auth.getSession()
-          session = next.data.session
-          debugLog('StudentProvider', { event: 'after_refreshSession', hasSession: !!session?.user })
-        }
+        // Always refresh once: getSession() can return a stale/expired session from localStorage
+        // (e.g. normal browser with old token). Refreshing ensures we use a valid token and fixes
+        // "works in incognito but loading loop in normal browser".
+        await supabase.auth.refreshSession()
+        const next = await supabase.auth.getSession()
+        session = next.data.session
+        debugLog('StudentProvider', { event: 'after_refreshSession', hasSession: !!session?.user })
 
         if (!session?.user) {
           setAuthUser(null)

@@ -17,6 +17,11 @@ const nextConfig = {
       },
     ],
   },
+  // Required for Netlify skew protection: pin chunk requests to the right deploy (avoids 404 on static assets after deploy)
+  experimental: {
+    useDeploymentId: true,
+    useDeploymentIdServerActions: true,
+  },
 };
 
 export default nextConfig;
