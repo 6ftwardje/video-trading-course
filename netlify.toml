@@ -1,12 +1,36 @@
 # Next.js 14: do NOT use legacy @netlify/plugin-nextjs — Netlify auto-uses OpenNext adapter.
 # The legacy plugin causes 404s on _next/static chunks (MIME type text/html).
 # See: https://docs.netlify.com/frameworks/next-js/overview/
+#
+# Do NOT add a catch-all redirect in Netlify UI (e.g. "/*" -> "/index.html" 200).
+# That would serve HTML for /_next/static/* and cause 404 + MIME type errors.
+# Leave "Publish directory" empty so the Next.js runtime controls it.
 
 [build]
   command = "npm run build"
+  # Do not set publish = "out" or "dist" — let the Next.js runtime use its default.
 
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
   # Mitigate static asset 404s when a new deploy goes live during a user session
   NETLIFY_NEXT_SKEW_PROTECTION = "true"
+
+# Ensure /_next/* and /api/* are never rewritten by a catch-all (netlify.toml runs before UI redirects).
+[[redirects]]
+  from = "/_next/*"
+  to = "/_next/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 200
+  force = true
+
+# Belt-and-suspenders: immutable cache for static assets at the edge.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
