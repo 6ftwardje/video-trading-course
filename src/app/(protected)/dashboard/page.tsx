@@ -16,7 +16,7 @@ import { getLessonsForModules, getModulesSimple, getWatchedLessonIds, findNextLe
 import { getExamByModuleId } from '@/lib/exam'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 
-type ModuleRow = { id: number; title: string; description: string | null; order: number | null }
+type ModuleRow = { id: number; title: string; description: string | null; order: number | null; icon_url: string | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
 type ModuleWithProgress = ModuleRow & { totalLessons: number; watchedCount: number; pct: number; examId: number | null }
 
