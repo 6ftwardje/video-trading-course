@@ -8,7 +8,8 @@
 
 [build]
   command = "npm run build"
-  publish = ".netlify/output/public"
+  # Plugin expects Next.js output in .next; it then produces .netlify/output and sets deploy publish dir itself.
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
