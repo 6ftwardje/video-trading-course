@@ -1,9 +1,10 @@
 import 'server-only'
 
 import { NextResponse, type NextRequest } from 'next/server'
-
 import { createAdminClient } from '@/utils/supabase/admin'
 import { createClient } from '@/utils/supabase/server'
+
+export const runtime = 'nodejs'
 
 type SortField = 'created_at' | 'access_level' | 'email'
 type SortOrder = 'asc' | 'desc'

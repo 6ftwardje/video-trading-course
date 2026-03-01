@@ -1,9 +1,10 @@
 import 'server-only'
 
 import { NextResponse, type NextRequest } from 'next/server'
-
 import { createAdminClient } from '@/utils/supabase/admin'
 import { createClient } from '@/utils/supabase/server'
+
+export const runtime = 'nodejs'
 
 function validateStudentId(id: unknown): string | null {
   if (typeof id !== 'string' || !id) return null

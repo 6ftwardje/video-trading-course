@@ -8,7 +8,7 @@
 
 [build]
   command = "npm run build"
-  # Do not set publish = "out" or "dist" — let the Next.js runtime use its default.
+  publish = ".netlify/output/public"
 
 [build.environment]
   NODE_VERSION = "20"
