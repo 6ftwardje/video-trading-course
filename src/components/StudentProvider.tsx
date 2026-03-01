@@ -42,7 +42,7 @@ type StudentProviderProps = {
   hideLoadingOnPublicRoutes?: boolean
 }
 
-const LOAD_TIMEOUT_MS = 8000
+const LOAD_TIMEOUT_MS = 15000 // Match stable: give localhost/Supabase time to respond
 const PROTECTED_PATHS = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship', '/course-material', '/account']
 
 export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }: StudentProviderProps) {
@@ -101,7 +101,10 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
         let { data: { session } } = await supabase.auth.getSession()
         debugLog('StudentProvider', { event: 'after_getSession', hasSession: !!session?.user, elapsed: Date.now() - start })
 
-        if (!isMounted) return
+        if (!isMounted) {
+          isLoadingRef.current = false
+          return
+        }
 
         if (!session?.user) {
           debugLog('StudentProvider', 'no session, trying refreshSession once')
@@ -203,13 +206,19 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
       }
     }
 
-    loadingTimeout = setTimeout(() => {
-      if (statusRef.current === 'loading') {
-        debugLog('StudentProvider', { event: 'LOAD_TIMEOUT', timeoutMs: LOAD_TIMEOUT_MS })
-        if (isMounted) {
-          setStatus('error')
-          setErrorReason('STUDENT_LOAD_TIMEOUT')
-        }
+    loadingTimeout = setTimeout(async () => {
+      if (statusRef.current !== 'loading' || !isMounted) return
+      debugLog('StudentProvider', { event: 'LOAD_TIMEOUT', timeoutMs: LOAD_TIMEOUT_MS })
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!isMounted) return
+      if (statusRef.current !== 'loading') return
+      if (!session?.user) {
+        setAuthUser(null)
+        setStudent(null)
+        setStatus('unauthenticated')
+      } else {
+        setStatus('error')
+        setErrorReason('STUDENT_LOAD_TIMEOUT')
       }
     }, LOAD_TIMEOUT_MS)
 

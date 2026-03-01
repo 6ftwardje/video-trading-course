@@ -1,9 +1,12 @@
+# Next.js 14: do NOT use legacy @netlify/plugin-nextjs — Netlify auto-uses OpenNext adapter.
+# The legacy plugin causes 404s on _next/static chunks (MIME type text/html).
+# See: https://docs.netlify.com/frameworks/next-js/overview/
+
 [build]
   command = "npm run build"
 
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+  # Mitigate static asset 404s when a new deploy goes live during a user session
+  NETLIFY_NEXT_SKEW_PROTECTION = "true"
