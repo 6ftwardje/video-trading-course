@@ -33,7 +33,7 @@ export async function getPracticalLessons(moduleId: number) {
         console.error('Error fetching practical lessons:', fallback.error)
         return []
       }
-      data = fallback.data
+      data = (fallback.data || []).map((row) => ({ ...row, thumbnail_url: null }))
     } else {
       console.error('Error fetching practical lessons:', error)
       return []
