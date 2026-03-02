@@ -43,7 +43,7 @@ type StudentProviderProps = {
 }
 
 const LOAD_TIMEOUT_MS = 15000 // Match stable: give localhost/Supabase time to respond
-const PROTECTED_PATHS = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship', '/course-material', '/account']
+const PROTECTED_PATHS = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship', '/course-material', '/account', '/updates']
 
 export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }: StudentProviderProps) {
   const pathname = usePathname()

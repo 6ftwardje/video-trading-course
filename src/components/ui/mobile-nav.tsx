@@ -105,7 +105,7 @@ export default function MobileNav() {
       items.push({ href: "/mentorship", label: "Mentorship", icon: Users });
     }
 
-    items.push({ href: "/updates", label: "Updates", icon: Bell });
+    items.push({ href: "/updates", label: "Community", icon: Bell });
 
     // Include course-material for level >= 2 to match existing Navbar behavior
     if (accessLevel === 2 || accessLevel === 3) {

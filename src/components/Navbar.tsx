@@ -6,10 +6,9 @@ import Image from "next/image";
 import { BRAND } from "@/components/ui/Brand";
 import Container from "@/components/ui/Container";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff, Book, Bell } from "lucide-react";
+import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff, Book, MessageCircle } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { useStudent } from "@/components/StudentProvider";
-import { getUnreadCount } from "@/lib/updates";
 import MobileNav from "@/components/ui/mobile-nav";
 
 type NavIcon = React.ComponentType<{ className?: string }>
@@ -37,7 +36,7 @@ const AdminPanelIcon = ({ className }: { className?: string }) => (
 const baseLinks: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/modules", label: "Modules", icon: BookOpen },
-  { href: "/updates", label: "Updates", icon: Bell },
+  { href: "/updates", label: "Community", icon: MessageCircle },
   { href: "/mentorship", label: "Mentorship", icon: Users },
 ];
 
@@ -60,51 +59,12 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Derive values from student context
   const studentEmail = student?.email ?? null;
   const accessLevel = student?.access_level ?? null;
-  const studentId = student?.id ?? null;
   const userName = student?.name ?? student?.email ?? "Account";
-
-  useEffect(() => {
-    // Fetch unread count for updates
-    const fetchUnreadCount = async () => {
-      // Only fetch for access level 2 and 3
-      if (studentId && (accessLevel === 2 || accessLevel === 3)) {
-        try {
-          const count = await getUnreadCount(studentId, accessLevel ?? null);
-          setUnreadCount(count);
-        } catch (error) {
-          console.error('Error fetching unread count', error);
-        }
-      } else {
-        setUnreadCount(0);
-      }
-    };
-
-    if (status === 'ready' && studentId) {
-      fetchUnreadCount();
-
-      // Listen for updates-read event to refresh unread count
-      const handleUpdatesRead = () => {
-        fetchUnreadCount();
-      };
-      window.addEventListener('updates-read', handleUpdatesRead);
-
-      // Refresh unread count periodically and on pathname change
-      const interval = setInterval(() => {
-        fetchUnreadCount();
-      }, 10000); // Refresh every 10 seconds
-
-      return () => {
-        clearInterval(interval);
-        window.removeEventListener('updates-read', handleUpdatesRead);
-      };
-    }
-  }, [pathname, status, studentId, accessLevel]); // Use specific values instead of whole student object
 
   // Close user menu on outside click
   useEffect(() => {
@@ -193,10 +153,9 @@ export default function Navbar() {
   const ICON_WRAPPER_WIDTH = 24; // w-6 = 24px
 
   // Internal component for navigation items with tooltips
-  const SidebarNavItem = ({ href, label, icon: Icon, badgeCount }: { href: string; label: string; icon: React.ComponentType<{ className?: string }>; badgeCount?: number }) => {
+  const SidebarNavItem = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) => {
     const active = isActive(href);
     const [showTooltip, setShowTooltip] = useState(false);
-    const showBadge = badgeCount !== undefined && badgeCount > 0 && (accessLevel === 2 || accessLevel === 3);
 
     return (
       <div className="relative group/item">
@@ -213,12 +172,6 @@ export default function Navbar() {
           {/* Fixed-width icon container - never changes size, perfectly centered in closed state */}
           <div className="w-6 h-6 flex items-center justify-center flex-shrink-0 relative">
             <Icon className="h-5 w-5" />
-            {/* Badge - shown when collapsed or expanded */}
-            {showBadge && (
-              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-[var(--accent)] text-black text-[10px] font-semibold leading-none">
-                {badgeCount > 99 ? '99+' : badgeCount}
-              </span>
-            )}
           </div>
           {/* Label wrapper with overflow-hidden and opacity transition */}
           <div
@@ -236,12 +189,6 @@ export default function Navbar() {
             <span className="text-sm whitespace-nowrap block">
               {label}
             </span>
-            {/* Badge next to label when expanded */}
-            {isExpanded && showBadge && (
-              <span className="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-[var(--accent)] text-black text-xs font-semibold leading-none">
-                {badgeCount > 99 ? '99+' : badgeCount}
-              </span>
-            )}
           </div>
         </Link>
         {/* Tooltip for collapsed state */}
@@ -342,7 +289,6 @@ export default function Navbar() {
                 href={l.href} 
                 label={l.label} 
                 icon={l.icon}
-                badgeCount={l.href === "/updates" ? unreadCount : undefined}
               />
             ))}
           </nav>
