@@ -41,26 +41,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ hasAccess: false }, { status: 401 })
     }
 
-    // Get student record to check access level
-    const { data: student, error: studentError } = await supabase
-      .from('students')
-      .select('access_level')
-      .eq('auth_user_id', user.id)
-      .maybeSingle()
-
-    if (studentError) {
-      console.error('Error fetching student:', studentError)
-      return NextResponse.json({ hasAccess: false }, { status: 403 })
-    }
-
-    if (!student) {
-      return NextResponse.json({ hasAccess: false }, { status: 403 })
-    }
-
-    // Check if user has level 2 or higher (premium access)
-    const hasAccess = (student.access_level ?? 1) >= 2
-
-    return NextResponse.json({ hasAccess })
+    // Logged-in users can always book; no progress or access level check
+    return NextResponse.json({ hasAccess: true })
   } catch (error) {
     console.error('Error checking mentorship access:', error)
     return NextResponse.json({ hasAccess: false, error: String(error) }, { status: 500 })

@@ -1,20 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import Container from '@/components/ui/Container'
 import MentorCard from '@/components/MentorCard'
 import CalendlyModal from '@/components/CalendlyModal'
 import { useStudent } from '@/components/StudentProvider'
-import { getModulesSimple, getLessonsForModules, getWatchedLessonIds } from '@/lib/progress'
 
 type Mentor = {
   name: string
   role: string
   image: string
   calendlyUrl: string
-  isAlwaysLocked?: boolean
-  requiresCompletion?: boolean
 }
 
 const MENTORS: Mentor[] = [
@@ -23,115 +19,26 @@ const MENTORS: Mentor[] = [
     role: 'Technical Trading Mentor',
     image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/rousso.jpg',
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
-    requiresCompletion: true,
   },
   {
     name: 'Jason',
     role: 'Technical Trading Mentor',
     image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/jason.jpg',
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
-    requiresCompletion: true,
-  },
-  {
-    name: 'Arno',
-    role: 'Mindset Coach',
-    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/arno.jpg',
-    calendlyUrl: 'https://calendly.com/cryptoriez/30min',
-    isAlwaysLocked: true,
-  },
-  {
-    name: 'Chris Henry',
-    role: 'Mindset Coach',
-    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/chris.jpg',
-    calendlyUrl: 'https://calendly.com/cryptoriez/30min',
-    isAlwaysLocked: true,
   },
 ]
 
 export default function MentorshipPage() {
-  const router = useRouter()
   const { student, status } = useStudent()
-  const [loading, setLoading] = useState(true)
-  const [overallProgress, setOverallProgress] = useState<number>(0)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null)
 
-  const accessLevel = student?.access_level ?? 1
-  const studentId = student?.id ?? null
-
-  useEffect(() => {
-    const run = async () => {
-      if (status !== 'ready' || !student) {
-        if (status === 'unauthenticated') {
-          router.replace('/login')
-        }
-        return
-      }
-
-      setLoading(true)
-
-      // Calculate overall progress
-      if (studentId && accessLevel >= 2) {
-        try {
-          const mods = await getModulesSimple()
-          const moduleIds = mods.map(m => m.id)
-          const lessons = await getLessonsForModules(moduleIds)
-          const watchedSet = await getWatchedLessonIds(studentId, lessons.map(l => l.id))
-
-          const totalLessons = lessons.length
-          const totalCompleted = lessons.reduce((acc, l) => acc + (watchedSet.has(l.id) ? 1 : 0), 0)
-          const progress = totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0
-          setOverallProgress(progress)
-        } catch (error) {
-          console.error('Error calculating progress:', error)
-          setOverallProgress(0)
-        }
-      } else {
-        setOverallProgress(0)
-      }
-
-      setLoading(false)
-    }
-
-    run()
-  }, [router, status, studentId, accessLevel]) // Use specific values instead of whole student object
+  const isLoggedIn = status === 'ready' && !!student
 
   const handleBookSession = (mentor: Mentor) => {
-    if ((accessLevel ?? 1) < 2) {
-      return
-    }
-
-    // Check if mentor is locked
-    if (mentor.isAlwaysLocked) {
-      return
-    }
-
-    if (mentor.requiresCompletion && overallProgress < 100) {
-      return
-    }
-
-    // Directly open Calendly modal for unlocked mentors
+    if (!isLoggedIn) return
     setSelectedMentor(mentor)
     setModalOpen(true)
-  }
-
-  const isMentorDisabled = (mentor: Mentor): boolean => {
-    // Always disabled if access level is too low
-    if ((accessLevel ?? 1) < 2) {
-      return true
-    }
-
-    // Always disabled if mentor is always locked
-    if (mentor.isAlwaysLocked) {
-      return true
-    }
-
-    // Disabled if mentor requires completion and progress is not 100%
-    if (mentor.requiresCompletion && overallProgress < 100) {
-      return true
-    }
-
-    return false
   }
 
   const handleCloseModal = () => {
@@ -152,71 +59,47 @@ export default function MentorshipPage() {
             </p>
           </header>
 
-          {loading ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 4 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="h-80 w-full animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--card)]/70"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {MENTORS.map(mentor => (
-                <MentorCard
-                  key={mentor.name}
-                  name={mentor.name}
-                  role={mentor.role}
-                  image={mentor.image}
-                  isDisabled={isMentorDisabled(mentor)}
-                  isAlwaysLocked={mentor.isAlwaysLocked ?? false}
-                  requiresCompletion={mentor.requiresCompletion ?? false}
-                  overallProgress={overallProgress}
-                  onBook={() => handleBookSession(mentor)}
-                />
-              ))}
-            </div>
-          )}
+          <div className="grid gap-6 sm:grid-cols-2">
+            {MENTORS.map(mentor => (
+              <MentorCard
+                key={mentor.name}
+                name={mentor.name}
+                role={mentor.role}
+                image={mentor.image}
+                isDisabled={!isLoggedIn}
+                showLoginPrompt={status === 'unauthenticated'}
+                onBook={() => handleBookSession(mentor)}
+              />
+            ))}
+          </div>
 
-          {/* Tradezella Section */}
+          {/* TradeZella Section */}
           <section className="mt-16 rounded-2xl border border-[var(--border)] bg-[var(--card)]/95 p-6 md:p-8">
             <div className="space-y-5">
-              <h2 className="text-xl font-semibold tracking-tight md:text-2xl">Waarom Tradezella een gamechanger is voor iedere serieuze trader</h2>
-              
+              <h2 className="text-xl font-semibold tracking-tight md:text-2xl">TradeZella — jouw edge in trade journaling</h2>
+
               <div className="space-y-3 text-sm leading-relaxed text-[var(--text-dim)]">
                 <p>
-                  Tradezella is veel meer dan een trade-journal — het is een compleet performance-systeem dat alles omzet in harde data: winrates, R-multiple, setup-kwaliteit, emotionele fouten, patronen… alles wordt zichtbaar.
+                  TradeZella is veel meer dan een trade-journal: het zet prestaties om in heldere data. Winrates, R-multiple, setup-kwaliteit en gedragspatronen worden inzichtelijk, zodat je gericht kunt verbeteren.
                 </p>
-
-                <div className="space-y-2">
-                  <p className="font-medium text-white">Door Tradezella kunnen mijn studenten:</p>
-                  <ul className="ml-5 space-y-1.5 list-disc text-[var(--text-dim)]">
-                    <li>hun fouten objectief analyseren</li>
-                    <li>exact zien welke setups wel en niet werken</li>
-                    <li>hun gedrag en emoties meten in plaats van raden</li>
-                    <li>een duidelijk stappenplan bouwen naar meer consistentie</li>
-                  </ul>
-                </div>
-
                 <p>
-                  Voor mij als mentor is Tradezella nog waardevoller: ik zie direct waar jij struikelt, welke patronen terugkomen en waar je discipline breekt. Daardoor kan ik veel gerichter en persoonlijker coachen — niet op gevoel, maar op data.
+                  Als mentor gebruik ik TradeZella om gericht te coachen op data in plaats van gevoel. Gebruik onze link en code voor voordeel.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 pt-3 border-t border-[var(--border)] sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 pt-3 border-t border-[var(--border)] sm:flex-row sm:items-center sm:justify-between">
                 <a
-                  href="https://tradezella.com?fpr=htp"
+                  href="https://refer.tradezella.com/cryptoriez"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-black transition hover:bg-white"
                 >
-                  Bezoek Tradezella
+                  Ga naar TradeZella met onze link
                 </a>
                 <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="text-[var(--text-dim)]">20% korting met code:</span>
-                  <code className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-3 py-1.5 font-mono font-semibold text-[var(--accent)]">
-                    HTP
+                  <span className="text-[var(--text-dim)]">Gebruik code:</span>
+                  <code className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-3 py-1.5 font-mono text-base font-semibold text-[var(--accent)]">
+                    Cryptoriez
                   </code>
                 </div>
               </div>

@@ -58,7 +58,7 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
 
       const { data, error } = await supabase
         .from('practical_lessons')
-        .select('id, module_id, title, description, location')
+        .select('id, module_id, title, description, location, thumbnail_url')
         .eq('id', practicalId)
         .single()
 
@@ -76,7 +76,8 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
 
       const resolvedLesson: PracticalLesson = {
         ...data,
-        video_url: (data as any).video_url ?? data.location ?? extractFirstUrl(data.description)
+        video_url: (data as any).video_url ?? data.location ?? extractFirstUrl(data.description),
+        thumbnail_url: (data as any).thumbnail_url ?? null
       }
 
       if (status !== 'ready' || !student) {
@@ -212,7 +213,7 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
                     >
                       <div className="relative w-16 h-10 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
                         <Image
-                          src={(item as any).thumbnail_url || 'https://placehold.co/160x90?text=Praktijk'}
+                          src={item.thumbnail_url || 'https://placehold.co/160x90?text=Praktijk'}
                           alt={item.title}
                           fill
                           className="object-cover"

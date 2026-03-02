@@ -33,22 +33,25 @@ export default function ModulePage({ params }: { params: { id: string } }) {
 
   const accessLevel = student?.access_level ?? 1
   const studentId = student?.id ?? null
+  const moduleIdParam = typeof params?.id === 'string' ? params.id : ''
 
   useEffect(() => {
     const load = async () => {
+      const id = moduleIdParam
+      if (!id) {
+        setLoading(false)
+        return
+      }
+      setModuleId(id)
+      const moduleIdNum = Number(id)
+      if (isNaN(moduleIdNum)) {
+        setLessons([])
+        setPracticalLessons([])
+        setLoading(false)
+        return
+      }
+
       try {
-        const id = params.id
-        setModuleId(id)
-        
-        const moduleIdNum = Number(id)
-        if (isNaN(moduleIdNum)) {
-          console.error('Invalid module ID:', id)
-          setLessons([])
-          setPracticalLessons([])
-          setLoading(false)
-          return
-        }
-        
         setLoading(true)
         const supabase = getSupabaseClient()
         
@@ -87,7 +90,12 @@ export default function ModulePage({ params }: { params: { id: string } }) {
 
         setLessons(sortedLessons || [])
 
-        const practicals = await getPracticalLessons(moduleIdNum)
+        let practicals: PracticalLesson[] = []
+        try {
+          practicals = await getPracticalLessons(moduleIdNum)
+        } catch (e) {
+          console.error('Error fetching practical lessons:', e)
+        }
         setPracticalLessons(practicals)
 
         if (status !== 'ready' || !student) {
@@ -137,16 +145,18 @@ export default function ModulePage({ params }: { params: { id: string } }) {
       }
     }
     load()
-  }, [params, status, studentId, accessLevel]) // Use specific values instead of whole student object
+  }, [moduleIdParam, status, studentId, accessLevel])
 
   useEffect(() => {
+    if (!moduleIdParam) return
+    const numId = Number(moduleIdParam)
+    if (isNaN(numId)) return
     const fetchExam = async () => {
-      const { id } = await params
-      const exam = await getExamByModuleId(Number(id))
+      const exam = await getExamByModuleId(numId)
       setExamId(exam?.id ?? null)
     }
     fetchExam()
-  }, [params])
+  }, [moduleIdParam])
 
   const unlockedIds = useMemo(() => {
     if (moduleLocked) return new Set<number>()
@@ -321,7 +331,7 @@ export default function ModulePage({ params }: { params: { id: string } }) {
                       <div className="flex items-center gap-4">
                         <div className="relative w-24 h-16 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
                           <Image
-                            src={(pl as any).thumbnail_url || 'https://placehold.co/320x180?text=Praktijk'}
+                            src={pl.thumbnail_url || 'https://placehold.co/320x180?text=Praktijk'}
                             alt={pl.title}
                             fill
                             className="object-cover"

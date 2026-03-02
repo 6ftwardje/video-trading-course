@@ -7,21 +7,18 @@ type Props = {
   role: string
   image: string
   isDisabled: boolean
-  isAlwaysLocked?: boolean
-  requiresCompletion?: boolean
-  overallProgress?: number
+  /** When true, show "Log in to book" message under the button. Use when user is known to be unauthenticated. */
+  showLoginPrompt?: boolean
   onBook: () => void
 }
 
-export default function MentorCard({ 
-  name, 
-  role, 
-  image, 
-  isDisabled, 
-  isAlwaysLocked = false,
-  requiresCompletion = false,
-  overallProgress = 0,
-  onBook 
+export default function MentorCard({
+  name,
+  role,
+  image,
+  isDisabled,
+  showLoginPrompt = false,
+  onBook
 }: Props) {
   return (
     <div
@@ -66,34 +63,14 @@ export default function MentorCard({
               ? 'cursor-not-allowed bg-gray-700 text-gray-500 opacity-50'
               : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
-          title={isDisabled ? 'Nog niet beschikbaar' : `Plan een gratis call met ${name}`}
+          title={isDisabled ? (showLoginPrompt ? 'Log in om een call in te plannen' : 'Laden…') : `Plan een gratis call met ${name}`}
         >
-          {isDisabled ? (
-            <span className="flex items-center justify-center gap-2">
-              <span>Plan een gratis call</span>
-              {requiresCompletion && overallProgress < 100 && (
-                <span className="text-xs">({overallProgress}%)</span>
-              )}
-            </span>
-          ) : (
-            'Plan een gratis call'
-          )}
+          {isDisabled ? (showLoginPrompt ? 'Log in om een call in te plannen' : 'Plan een gratis call') : 'Plan een gratis call'}
         </button>
 
-        {/* Disabled State Message */}
-        {isDisabled && isAlwaysLocked && (
+        {isDisabled && showLoginPrompt && (
           <p className="text-xs text-[var(--text-dim)] text-center">
-            Deze mentor is momenteel niet beschikbaar.
-          </p>
-        )}
-        {isDisabled && requiresCompletion && overallProgress < 100 && (
-          <p className="text-xs text-[#7C99E3] text-center">
-            Beschikbaar na het doornemen van de volledige cursus (100% voltooid).
-          </p>
-        )}
-        {isDisabled && !isAlwaysLocked && !requiresCompletion && (
-          <p className="text-xs text-[#7C99E3] text-center">
-            Vraag je mentor om een upgrade voor volledige toegang.
+            Log in om een gratis kennismakingscall in te plannen.
           </p>
         )}
       </div>

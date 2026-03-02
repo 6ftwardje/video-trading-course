@@ -455,7 +455,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
                       >
                         <div className="relative w-16 h-10 rounded-md overflow-hidden bg-[var(--muted)] flex-shrink-0">
                           <Image
-                            src="https://placehold.co/160x90?text=Praktijk"
+                            src={pl.thumbnail_url || 'https://placehold.co/160x90?text=Praktijk'}
                             alt={pl.title}
                             fill
                             className="object-cover"
