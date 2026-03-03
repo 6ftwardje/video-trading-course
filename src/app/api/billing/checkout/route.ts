@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       },
     ],
     client_reference_id: student.id,
-    success_url: `${request.nextUrl.origin}/billing/success`,
+    success_url: `${request.nextUrl.origin}/paymentconfirmed`,
     cancel_url: `${request.nextUrl.origin}/billing/cancel`,
   })
 
