@@ -17,13 +17,13 @@ const MENTORS: Mentor[] = [
   {
     name: 'Rousso',
     role: 'Technical Trading Mentor',
-    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/rousso.jpg',
+    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/rousso_nieuw.jpg',
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
   },
   {
     name: 'Jason',
     role: 'Technical Trading Mentor',
-    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/jason.jpg',
+    image: 'https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/mentor-photos/jason_nieuw.jpg',
     calendlyUrl: 'https://calendly.com/cryptoriez/30min',
   },
 ]
@@ -58,6 +58,27 @@ export default function MentorshipPage() {
               Krijg persoonlijke begeleiding op het gebied van technische analyse of mindset coaching.
             </p>
           </header>
+
+          {/* Video: belang van mentorship — centered, same alignment as mentor grid */}
+          <section className="mt-8 mb-16 space-y-4">
+            <h2 className="text-lg font-semibold tracking-tight sm:text-xl">Waarom mentorship?</h2>
+            <p className="max-w-2xl text-sm text-[var(--text-dim)]">
+              Bekijk onderstaande video over het belang van persoonlijke begeleiding en plan daarna gerust een call in met een van onze mentors.
+            </p>
+            <div className="w-full flex justify-center">
+              <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--border)] bg-black">
+                <div className="aspect-video w-full">
+                  <iframe
+                    src="https://player.vimeo.com/video/1169951421?badge=0&autopause=0&player_id=0&app_id=58479"
+                    title="Waarom mentorship?"
+                    className="h-full w-full rounded-2xl"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
 
           <div className="grid gap-6 sm:grid-cols-2">
             {MENTORS.map(mentor => (

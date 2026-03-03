@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Container from '@/components/ui/Container'
 import { useStudent } from '@/components/StudentProvider'
-import { BarChart3, MessageCircle, Users, Target } from 'lucide-react'
+import { BarChart3, Brain, GraduationCap, Users } from 'lucide-react'
 
 const DISCORD_INVITE_URL = 'https://discord.gg/RYNxDHvp'
 
@@ -25,35 +25,46 @@ const JoinButton = () => (
 const bentoItems = [
   {
     icon: BarChart3,
-    title: 'Marktupdates & charts',
-    items: ['Wekelijkse marktupdates', 'Live charts & breakdowns'],
+    title: 'Marktupdates & Charts',
+    items: [
+      'Wekelijkse marktupdates',
+      'Live chart breakdowns',
+      "Concrete scenario's & marktverwachtingen",
+    ],
     color: 'accent',
   },
   {
-    icon: MessageCircle,
-    title: 'Supply & demand',
-    items: ['Discussie over supply & demand', 'Q&A momenten'],
+    icon: Brain,
+    title: 'Accountability & Mindset',
+    items: [
+      'Structuur en consistentie in je trading',
+      'Accountability om discipline te waarborgen',
+      'Focus op mentale groei & emotionele controle',
+      'Reflectie en evaluatiemomenten',
+    ],
     color: 'orange',
   },
   {
-    icon: Target,
-    title: 'Accountability',
-    items: ['Accountability', 'Updates wanneer nieuwe content live staat'],
+    icon: GraduationCap,
+    title: 'Ondersteuning & Mentorship',
+    items: [
+      'Q&A momenten',
+      'Inhoudelijke feedback',
+      'Begeleiding bij je ontwikkeling',
+      'Updates wanneer nieuwe content live staat',
+    ],
     color: 'accent',
   },
   {
     icon: Users,
-    title: 'Directe toegang',
-    items: ['Directe toegang tot andere traders'],
+    title: 'Directe Toegang',
+    items: [
+      'Direct contact met andere serieuze traders',
+      'Snelle communicatie binnen de community',
+      'Samen sparren over setups en marktsituaties',
+    ],
     color: 'orange',
   },
-]
-
-const socialProofPlaceholders = [
-  { label: 'Actieve chats', type: 'screenshot' },
-  { label: 'Quotes van leden', type: 'quote' },
-  { label: 'Winmomenten', type: 'screenshot' },
-  { label: 'Discussies', type: 'screenshot' },
 ]
 
 export default function CommunityPage() {
@@ -98,10 +109,10 @@ export default function CommunityPage() {
           </p>
         </header>
 
-        {/* Bento: In onze community krijg je */}
+        {/* Bento: Wat je krijgt binnen de community */}
         <section>
           <h2 className="mb-6 text-sm font-semibold uppercase tracking-widest text-[var(--text-dim)]">
-            In onze community krijg je
+            Wat je krijgt binnen de community:
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {bentoItems.map((card) => {
@@ -137,41 +148,13 @@ export default function CommunityPage() {
           </div>
         </section>
 
-        {/* Social proof */}
-        <section>
-          <h2 className="mb-6 text-sm font-semibold uppercase tracking-widest text-[var(--text-dim)]">
-            Het leeft in de community
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {socialProofPlaceholders.map((block) => (
-              <div
-                key={block.label}
-                className="flex min-h-[140px] flex-col rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-5"
-              >
-                <span className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--accent)]">
-                  {block.label}
-                </span>
-                {block.type === 'quote' ? (
-                  <p className="text-sm italic text-[var(--text-dim)]">
-                    &ldquo;Hier komt een quote van een lid — echte ervaring, echte groei.&rdquo;
-                  </p>
-                ) : (
-                  <div className="mt-auto flex h-20 items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--muted)]/50 text-xs text-[var(--text-dim)]">
-                    Screenshot / afbeelding
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* CTA */}
         <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/80 px-6 py-10 text-center md:px-10 md:py-12">
           <p className="mb-2 text-xl font-semibold text-white sm:text-2xl">
-            Trading doe je alleen. Groeien niet.
+            Trading is individueel. Groei is collectief.
           </p>
           <p className="mb-6 text-sm text-[var(--text-dim)] sm:text-base">
-            Als je serieus bent over je groei, dan zie ik je daar.
+            Als jij écht wilt groeien, dan weet je waar je moet zijn.
           </p>
           <JoinButton />
         </section>
