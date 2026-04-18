@@ -327,7 +327,7 @@ export default function LandingPage() {
           <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
             <iframe
               className="absolute top-0 left-0 w-full h-full rounded-xl"
-              src="https://www.youtube.com/embed/5DjxIjcPoKc?si=_R_tcKxzcm4iQrPT"
+              src="https://www.youtube.com/embed/lUIUlcHAr1o"
               title="YouTube video player"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
