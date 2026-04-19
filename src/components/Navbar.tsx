@@ -6,7 +6,7 @@ import Image from "next/image";
 import { BRAND } from "@/components/ui/Brand";
 import Container from "@/components/ui/Container";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff, Book, MessageCircle } from "lucide-react";
+import { Menu, X, Home, BookOpen, LogOut, Users, User, ChevronDown, Pin, PinOff, Book, MessageCircle, FileText } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { useStudent } from "@/components/StudentProvider";
 import MobileNav from "@/components/ui/mobile-nav";
@@ -50,6 +50,12 @@ const adminStudentsLink: NavLink = {
   href: "/admin/students",
   label: "Students",
   icon: AdminPanelIcon,
+};
+
+const adminContentLink: NavLink = {
+  href: "/admin/content",
+  label: "Content beheren",
+  icon: FileText,
 };
 
 export default function Navbar() {
@@ -136,7 +142,10 @@ export default function Navbar() {
   // Conditionally include course material link for access level >= 2
   const links = useMemo(() => {
     const items = accessLevel != null && accessLevel >= 2 ? [...baseLinks, courseMaterialLink] : [...baseLinks];
-    if (accessLevel === 3) items.push(adminStudentsLink);
+    if (accessLevel === 3) {
+      items.push(adminStudentsLink);
+      items.push(adminContentLink);
+    }
     return items;
   }, [accessLevel]);
 

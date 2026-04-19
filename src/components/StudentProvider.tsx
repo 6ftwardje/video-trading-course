@@ -43,7 +43,19 @@ type StudentProviderProps = {
 }
 
 const LOAD_TIMEOUT_MS = 15000 // Match stable: give localhost/Supabase time to respond
-const PROTECTED_PATHS = ['/dashboard', '/module', '/lesson', '/exam', '/praktijk', '/mentorship', '/course-material', '/account', '/updates']
+const PROTECTED_PATHS = [
+  '/dashboard',
+  '/modules',
+  '/module',
+  '/lesson',
+  '/exam',
+  '/praktijk',
+  '/mentorship',
+  '/course-material',
+  '/account',
+  '/updates',
+  '/admin',
+]
 
 export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }: StudentProviderProps) {
   const pathname = usePathname()
@@ -54,11 +66,16 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
   const [errorReason, setErrorReason] = useState<ErrorReason>(null)
   const statusRef = useRef(status)
   const isLoadingRef = useRef(false)
+  const studentRef = useRef<Student | null>(null)
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
     statusRef.current = status
   }, [status])
+
+  useEffect(() => {
+    studentRef.current = student
+  }, [student])
 
   const retry = useCallback(() => {
     setErrorReason(null)
@@ -83,11 +100,34 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
     let isMounted = true
     let loadingTimeout: ReturnType<typeof setTimeout> | null = null
 
-    const loadStudent = async () => {
+    const loadStudentSoft = async () => {
+      if (isLoadingRef.current) return
+      isLoadingRef.current = true
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (!isMounted) return
+        if (!user) return
+
+        const studentData = await getStudentByAuthUserId(user.id)
+        if (!isMounted) return
+        if (studentData) {
+          setAuthUser(user)
+          setStudent(studentData)
+        }
+      } catch {
+        // Keep last known good UI on background refresh failure
+      } finally {
+        isLoadingRef.current = false
+      }
+    }
+
+    const loadStudentFull = async () => {
       if (isLoadingRef.current) return
       isLoadingRef.current = true
       const start = Date.now()
-      debugLog('StudentProvider', { event: 'loadStudent_start', ts: start })
+      debugLog('StudentProvider', { event: 'loadStudent_full_start', ts: start })
 
       try {
         setStatus('loading')
@@ -98,36 +138,45 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
           subscription = null
         }
 
-        let { data: { session } } = await supabase.auth.getSession()
-        debugLog('StudentProvider', { event: 'after_getSession', hasSession: !!session?.user, elapsed: Date.now() - start })
+        let {
+          data: { user },
+        } = await supabase.auth.getUser()
+        debugLog('StudentProvider', {
+          event: 'after_getUser',
+          hasUser: !!user,
+          elapsed: Date.now() - start,
+        })
 
         if (!isMounted) {
           isLoadingRef.current = false
           return
         }
 
-        // Always refresh once: getSession() can return a stale/expired session from localStorage
-        // (e.g. normal browser with old token). Refreshing ensures we use a valid token and fixes
-        // "works in incognito but loading loop in normal browser".
-        await supabase.auth.refreshSession()
-        const next = await supabase.auth.getSession()
-        session = next.data.session
-        debugLog('StudentProvider', { event: 'after_refreshSession', hasSession: !!session?.user })
+        if (!user) {
+          await supabase.auth.refreshSession()
+          if (!isMounted) {
+            isLoadingRef.current = false
+            return
+          }
+          ;({
+            data: { user },
+          } = await supabase.auth.getUser())
+        }
 
-        if (!session?.user) {
+        if (!user) {
           setAuthUser(null)
           setStudent(null)
           setStatus('unauthenticated')
           return
         }
 
-        setAuthUser(session.user)
+        setAuthUser(user)
         const getStudentStart = Date.now()
-        debugLog('StudentProvider', { event: 'getStudentByAuthUserId_start', userId: session.user.id })
+        debugLog('StudentProvider', { event: 'getStudentByAuthUserId_start', userId: user.id })
 
         let studentData: Student | null = null
         try {
-          studentData = await getStudentByAuthUserId(session.user.id)
+          studentData = await getStudentByAuthUserId(user.id)
         } catch (err) {
           const elapsed = Date.now() - getStudentStart
           debugLog('StudentProvider', { event: 'getStudentByAuthUserId_error', err, elapsed })
@@ -157,7 +206,7 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
         debugLog('StudentProvider', { event: 'ready', studentId: studentData.id, totalElapsed: Date.now() - start })
 
         const currentStudentData = studentData
-        const currentAuthUserId = session.user.id
+        const currentAuthUserId = user.id
 
         subscription = supabase
           .channel(`student:${studentData.id}`)
@@ -191,7 +240,7 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
                   // ignore
                 }
               }
-            }
+            },
           )
           .subscribe()
       } catch (error) {
@@ -209,10 +258,12 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
     loadingTimeout = setTimeout(async () => {
       if (statusRef.current !== 'loading' || !isMounted) return
       debugLog('StudentProvider', { event: 'LOAD_TIMEOUT', timeoutMs: LOAD_TIMEOUT_MS })
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!isMounted) return
       if (statusRef.current !== 'loading') return
-      if (!session?.user) {
+      if (!user) {
         setAuthUser(null)
         setStudent(null)
         setStatus('unauthenticated')
@@ -222,7 +273,7 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
       }
     }, LOAD_TIMEOUT_MS)
 
-    loadStudent()
+    void loadStudentFull()
 
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return
@@ -235,9 +286,16 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
         setAuthUser(null)
         setStudent(null)
         setStatus('unauthenticated')
-      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      } else if (event === 'SIGNED_IN') {
         if (!isLoadingRef.current) {
-          loadStudent()
+          void loadStudentFull()
+        }
+      } else if (event === 'TOKEN_REFRESHED') {
+        if (isLoadingRef.current) return
+        if (statusRef.current === 'ready' && studentRef.current) {
+          void loadStudentSoft()
+        } else {
+          void loadStudentFull()
         }
       }
     })

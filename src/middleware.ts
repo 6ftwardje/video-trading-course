@@ -11,6 +11,7 @@ export async function middleware(req: NextRequest) {
   // /dashboard, /module, /lesson, etc.
   const protectedPaths = [
     "/dashboard",
+    "/modules",
     "/module",
     "/lesson",
     "/exam",
@@ -19,6 +20,7 @@ export async function middleware(req: NextRequest) {
     "/course-material",
     "/account",
     "/updates",
+    "/admin",
   ];
 
   const isProtected = protectedPaths.some((p) =>
@@ -43,8 +45,8 @@ export async function middleware(req: NextRequest) {
           },
         },
       });
-      // Refresh the session to handle code exchange from email confirmation
-      await supabase.auth.getSession();
+      // Validate session with Auth server (avoids relying on unverified cookie payload)
+      await supabase.auth.getUser();
     }
     return res;
   }
@@ -75,16 +77,16 @@ export async function middleware(req: NextRequest) {
   });
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   debugLog("middleware", {
     pathname: req.nextUrl.pathname,
-    hasSession: !!session?.user,
-    userId: session?.user?.id ?? null,
+    hasUser: !!user,
+    userId: user?.id ?? null,
   });
 
-  if (!session?.user) {
+  if (!user) {
     const redirectUrl = new URL("/login", req.url);
     redirectUrl.searchParams.set("redirectedFrom", req.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
@@ -97,6 +99,8 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/modules",
+    "/modules/:path*",
     "/module/:path*",
     "/lesson/:path*",
     "/exam/:path*",
@@ -105,6 +109,7 @@ export const config = {
     "/course-material/:path*",
     "/account/:path*",
     "/updates/:path*",
+    "/admin/:path*",
     "/auth/callback",
   ],
 };

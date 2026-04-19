@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Home, BookOpen, LogOut, Users, User, Bell, Book } from "lucide-react";
+import { Menu, X, Home, BookOpen, LogOut, Users, User, Bell, Book, FileText } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
@@ -112,9 +112,10 @@ export default function MobileNav() {
       items.push({ href: "/course-material", label: "Cursus PDF", icon: Book });
     }
 
-    // Admin: Students (level 3)
+    // Admin: Students + content (level 3)
     if (accessLevel === 3) {
       items.push({ href: "/admin/students", label: "Students", icon: AdminPanelIcon });
+      items.push({ href: "/admin/content", label: "Content beheren", icon: FileText });
     }
 
     return items;

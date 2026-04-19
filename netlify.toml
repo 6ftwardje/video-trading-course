@@ -16,6 +16,20 @@
   NPM_FLAGS = "--legacy-peer-deps"
   # Mitigate static asset 404s when a new deploy goes live during a user session
   NETLIFY_NEXT_SKEW_PROTECTION = "true"
+  # next/image must run on Node (with sharp), not Edge — avoids "sharp missing" + read-only /var/task cache
+  NEXT_FORCE_EDGE_IMAGES = "false"
+
+[functions]
+  # Native module: keep out of esbuild bundle so the correct linux binary is used at runtime
+  external_node_modules = ["sharp"]
+
+# Allow Netlify Image CDN to fetch remote assets (matches next.config.js remotePatterns)
+[images]
+  remote_images = [
+    "https://trogwrgxxhsvixzglzpn.supabase.co/.*",
+    "https://images.unsplash.com/.*",
+    "https://placehold.co/.*"
+  ]
 
 # Ensure /_next/* and /api/* are never rewritten by a catch-all (netlify.toml runs before UI redirects).
 [[redirects]]
