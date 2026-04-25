@@ -8,6 +8,7 @@ import { useStudent } from '@/components/StudentProvider'
 import { getModulesSimple, getLessonsForModules, getWatchedLessonIds } from '@/lib/progress'
 import { getExamByModuleId } from '@/lib/exam'
 import { getModuleGateStatuses } from '@/lib/moduleGate'
+import { FREE_MODULE_ORDER_LIMIT } from '@/lib/access'
 
 type ModuleRow = { id: number; title: string; description: string | null; order: number | null; icon_url: string | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
@@ -88,21 +89,21 @@ export default function ModulesPage() {
   }, [status, studentId, accessLevel]) // Use specific values instead of whole student object
 
   return (
-    <Container className="pb-20 pt-8 md:pt-12">
-      <div className="space-y-10">
-        <header className="space-y-3">
-          <span className="text-xs font-medium uppercase tracking-widest text-[var(--text-dim)]">Overzicht</span>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Alle modules</h1>
-          <p className="max-w-2xl text-sm text-[var(--text-dim)]">
-            Bekijk jouw volledige traject. Je kan een module openen om verder te kijken, of herhaal een voltooid hoofdstuk
-            wanneer je dat nodig hebt.
+    <Container className="pb-20 pt-6 md:pt-10">
+      <div className="space-y-8">
+        <header className="rounded-xl border border-white/10 bg-[#101722]/70 p-5 sm:p-6">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Course overzicht</span>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl">Alle modules</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-dim)]">
+            Bekijk je volledige leertraject. Gratis modules zijn direct beschikbaar binnen je account;
+            betaalde modules blijven zichtbaar als preview.
           </p>
         </header>
 
         {!loading && accessLevel < 2 && (
-          <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
-            🔒 Je hebt momenteel Basic toegang. Modules zijn zichtbaar zodat je weet wat er komt, maar video's en examens worden
-            ontgrendeld zodra je mentor je account upgrade naar Full.
+          <div className="rounded-xl border border-[#7C99E3]/30 bg-[#7C99E3]/10 p-4 text-sm leading-6 text-[#b9c8ff]">
+            Je gratis account geeft toegang tot module 1-{FREE_MODULE_ORDER_LIMIT}, inclusief lessen, praktijklessen en examens.
+            Vanaf module {FREE_MODULE_ORDER_LIMIT + 1} heb je volledige toegang nodig.
           </div>
         )}
 
@@ -111,7 +112,7 @@ export default function ModulesPage() {
             <WaveLoader message="Laden..." />
           </div>
         ) : modules.length ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {modules.map(module => (
               <ModuleProgressCard key={module.id} module={{ ...module, accessLevel }} />
             ))}
@@ -125,7 +126,5 @@ export default function ModulesPage() {
     </Container>
   )
 }
-
-
 
 

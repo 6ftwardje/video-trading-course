@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
+import { AlertTriangle, Clock3, PhoneCall } from "lucide-react"
 
 type Session = {
   name: string
@@ -34,17 +35,23 @@ function getStatus(open: string, close: string) {
     (!isOverMidnight && now >= openTime && now <= closeTime) ||
     (isOverMidnight && (now >= openTime || now <= closeTime))
 
-  if (withinSession) return { state: "open", until: closeTime }
+  if (withinSession) {
+    const closeTarget = new Date(closeTime)
+    if (isOverMidnight && now >= openTime) {
+      closeTarget.setDate(closeTarget.getDate() + 1)
+    }
+    return { state: "open" as const, until: closeTarget }
+  }
 
   // next open
   const next =
     now < openTime ? openTime : new Date(openTime.getTime() + 24 * 60 * 60 * 1000)
 
-  return { state: "closed", until: next }
+  return { state: "closed" as const, until: next }
 }
 
 function formatCountdown(target: Date) {
-  const diff = target.getTime() - new Date().getTime()
+  const diff = Math.max(0, target.getTime() - new Date().getTime())
   const hours = Math.floor(diff / 1000 / 60 / 60)
   const minutes = Math.floor((diff / 1000 / 60) % 60)
   return `${hours}u ${minutes}m`
@@ -65,67 +72,113 @@ export default function TradingSessions({ accessLevel = 2 }: TradingSessionsProp
     return () => clearInterval(int)
   }, [])
 
+  const sessionRows = sessions.map((session) => {
+    const status = now ? getStatus(session.open, session.close) : { state: "closed" as const, until: new Date() }
+    return {
+      ...session,
+      status,
+      countdown: now ? formatCountdown(status.until) : "--",
+    }
+  })
+  const openSessions = sessionRows.filter((session) => session.status.state === "open")
+  const nextSession = [...sessionRows]
+    .filter((session) => session.status.state === "closed")
+    .sort((a, b) => a.status.until.getTime() - b.status.until.getTime())[0]
+  const isBasic = accessLevel < 2
+
+  const handleCallClick = () => {
+    window.open('https://calendly.com/hettradeplatform/30min', '_blank', 'noopener,noreferrer')
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Trading Sessions</h2>
-          <p className="text-sm text-[var(--text-dim)]">
-            Live status per marktsessie
-          </p>
+    <section className="overflow-hidden rounded-xl border border-white/10 bg-[#101722]/75">
+      <div className="border-b border-white/10 p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Tool</p>
+            <h2 className="mt-2 text-lg font-semibold text-white">Trading sessions</h2>
+            <p className="mt-1 text-sm leading-5 text-white/55">
+              Bekijk welke marktsessies nu open zijn.
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-white/60">
+              <Clock3 className="h-3.5 w-3.5" aria-hidden />
+              {mounted && now
+                ? now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                : "--:--"}
+            </div>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-[var(--text-dim)]">HUIDIGE TIJD</p>
-          <p className="text-lg font-semibold">
-            {mounted && now
-              ? now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-              : "--:--:--"}
+
+        <div className="mt-5 rounded-lg border border-[#7C99E3]/25 bg-[#7C99E3]/10 p-4">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#b9c8ff]">
+            Nu open
+          </p>
+          <p className="mt-1 text-xl font-semibold text-white">
+            {openSessions.length ? openSessions.map((session) => session.name).join(" + ") : "Geen grote sessie open"}
+          </p>
+          <p className="mt-1 text-xs text-white/55">
+            {openSessions.length
+              ? `Sluit over ${openSessions[0]?.countdown ?? "--"}`
+              : nextSession
+                ? `${nextSession.name} opent over ${nextSession.countdown}`
+                : "Tijden worden geladen"}
           </p>
         </div>
       </div>
 
-      {/* Sessions grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-        {sessions.map((s) => {
-          const status = now ? getStatus(s.open, s.close) : { state: "closed" as const, until: new Date() }
-          const countdown = now ? formatCountdown(status.until) : "--"
+      <div className="divide-y divide-white/10">
+        {sessionRows.map((session, index) => (
+          <motion.div
+            key={session.name}
+            className="flex items-center justify-between gap-4 px-5 py-3.5"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.04 }}
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${
+                  session.status.state === "open" ? "bg-emerald-400" : "bg-white/25"
+                }`}
+                aria-hidden
+              />
+              <div>
+                <p className="text-sm font-semibold text-white">{session.name}</p>
+                <p className="text-xs text-white/45">
+                  {session.open} - {session.close}
+                </p>
+              </div>
+            </div>
+            <p className={`text-right text-xs font-medium ${
+              session.status.state === "open" ? "text-emerald-300" : "text-white/50"
+            }`}>
+              {session.status.state === "open" ? "Open" : `Over ${session.countdown}`}
+            </p>
+          </motion.div>
+        ))}
+      </div>
 
-          return (
-            <motion.div
-              key={s.name}
-              className="rounded-xl border border-[var(--border)] bg-[var(--card)]/50 p-5 flex flex-col justify-between shadow-lg"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+      <div className="border-t border-white/10 bg-black/15 p-5">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#F79939]" aria-hidden />
+          <div className="space-y-3">
+            <p className="text-xs leading-5 text-white/58">
+              Gebruik deze tijden om te leren observeren. Trade niet met echt kapitaal zonder
+              plan, risicomanagement of begeleiding{isBasic ? " vanuit mentorship" : ""}.
+            </p>
+            <button
+              type="button"
+              onClick={handleCallClick}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-[#b9c8ff] transition hover:text-white"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-[var(--text)] flex items-center gap-2">
-                  <span
-                    className={`inline-block w-3 h-3 rounded-full ${
-                      status.state === "open" ? "bg-green-500" : "bg-gray-500"
-                    }`}
-                  ></span>
-                  {s.name}
-                </h3>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-3xl font-semibold tracking-tight">{s.open}</p>
-                <p className="text-sm text-[var(--text-dim)]">Openingstijd (jouw tijd)</p>
-              </div>
-
-              <div className="pt-3 text-sm font-medium text-[var(--text-dim)]">
-                {status.state === "open" ? (
-                  <span className="text-green-500">Open</span>
-                ) : (
-                  <>Opent over {countdown}</>
-                )}
-              </div>
-            </motion.div>
-          )
-        })}
+              <PhoneCall className="h-3.5 w-3.5" aria-hidden />
+              Plan gratis call
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
-

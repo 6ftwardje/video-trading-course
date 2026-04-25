@@ -7,9 +7,10 @@ import { Play } from 'lucide-react'
 type IntroVideoProps = {
   className?: string
   thumbnailUrl?: string
+  fillContainer?: boolean
 }
 
-export default function IntroVideo({ className = '', thumbnailUrl }: IntroVideoProps) {
+export default function IntroVideo({ className = '', thumbnailUrl, fillContainer = false }: IntroVideoProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -39,8 +40,11 @@ export default function IntroVideo({ className = '', thumbnailUrl }: IntroVideoP
   const thumbnail = thumbnailUrl || 'https://placehold.co/1920x1080?text=Intro+Video+Thumbnail'
 
   return (
-    <div className={`w-full ${className}`}>
-      <div ref={containerRef} style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
+    <div className={`w-full ${fillContainer ? 'h-full' : ''} ${className}`}>
+      <div
+        ref={containerRef}
+        className={`relative overflow-hidden ${fillContainer ? 'aspect-video lg:h-full lg:min-h-full lg:aspect-auto' : 'aspect-video'}`}
+      >
         <iframe
           ref={iframeRef}
           src="https://player.vimeo.com/video/1144453792?badge=0&autopause=0&player_id=0&app_id=58479"
@@ -72,8 +76,8 @@ export default function IntroVideo({ className = '', thumbnailUrl }: IntroVideoP
               />
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="rounded-full bg-white/90 p-4 group-hover:bg-white group-hover:scale-110 transition-all shadow-lg">
-                  <Play className="w-12 h-12 text-black ml-1" fill="currentColor" />
+                <div className="rounded-full bg-white/90 p-3 shadow-lg transition-all group-hover:scale-105 group-hover:bg-white sm:p-4">
+                  <Play className="ml-0.5 h-8 w-8 text-black sm:h-10 sm:w-10" fill="currentColor" />
                 </div>
               </div>
             </div>
@@ -83,4 +87,3 @@ export default function IntroVideo({ className = '', thumbnailUrl }: IntroVideoP
     </div>
   )
 }
-

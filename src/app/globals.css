@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-:root {
+:root,
+html[data-theme="dark-blue"] {
   --background: #0b0f17;
   --foreground: #ededed;
   --bg: #0b0f17;
@@ -8,6 +9,43 @@
   --muted: #1a2234;
   --border: #1e2638;
   --accent: #7c99e3;
+  --accent-strong: #4670db;
+  --accent-contrast: #05070c;
+  --accent-soft: rgba(124, 153, 227, 0.12);
+  --accent-line: rgba(124, 153, 227, 0.35);
+  --accent-text: #b9c8ff;
+  --panel: rgba(16, 23, 34, 0.72);
+  --panel-strong: rgba(16, 23, 34, 0.9);
+  --panel-soft: rgba(255, 255, 255, 0.035);
+  --line-subtle: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --text-dim: #9aa4b2;
+  --text-muted: rgba(255, 255, 255, 0.62);
+  --text-subtle: rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme="light"] {
+  --background: #f5f7fb;
+  --foreground: #101624;
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --muted: #e9edf6;
+  --border: #d8e0ee;
+  --accent: #4670db;
+  --accent-strong: #3158bf;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(70, 112, 219, 0.1);
+  --accent-line: rgba(70, 112, 219, 0.28);
+  --accent-text: #3158bf;
+  --panel: rgba(255, 255, 255, 0.82);
+  --panel-strong: #ffffff;
+  --panel-soft: rgba(16, 22, 36, 0.035);
+  --line-subtle: rgba(16, 22, 36, 0.11);
+  --line-strong: rgba(16, 22, 36, 0.2);
+  --text-dim: #657185;
+  --text-muted: rgba(16, 22, 36, 0.66);
+  --text-subtle: rgba(16, 22, 36, 0.48);
+  --shadow-soft: 0 18px 46px rgba(34, 48, 74, 0.12);
 }
 
 @theme inline {
@@ -37,8 +75,123 @@
 
 html, body {
   background: var(--bg);
-  color: white;
+  color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.theme-scope {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--foreground);
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.theme-logo-plate {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 0.75rem;
+  transition: background-color 180ms ease, border-color 180ms ease, padding 180ms ease;
+}
+
+html[data-theme="light"] .theme-scope .theme-logo-plate {
+  border: 1px solid rgba(16, 22, 36, 0.08);
+  background: #101722;
+  padding: 0.65rem 0.75rem;
+}
+
+.theme-scope main,
+.theme-scope footer,
+.theme-scope nav,
+.theme-scope aside,
+.theme-scope section,
+.theme-scope div,
+.theme-scope button,
+.theme-scope a {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+
+html[data-theme="light"] .theme-scope .bg-\[\#101722\],
+html[data-theme="light"] .theme-scope .bg-\[\#101722\]\/70,
+html[data-theme="light"] .theme-scope .bg-\[\#101722\]\/75,
+html[data-theme="light"] .theme-scope .bg-\[\#101722\]\/80 {
+  background-color: var(--panel) !important;
+}
+
+html[data-theme="light"] .theme-scope .bg-\[\#0b0f17\],
+html[data-theme="light"] .theme-scope .bg-\[\#0B0F17\],
+html[data-theme="light"] .theme-scope .bg-\[\#080b11\]\/80,
+html[data-theme="light"] .theme-scope .bg-\[\#0d1119\] {
+  background-color: var(--bg) !important;
+}
+
+html[data-theme="light"] .theme-scope .bg-white\/\[0\.03\],
+html[data-theme="light"] .theme-scope .bg-white\/\[0\.035\],
+html[data-theme="light"] .theme-scope .bg-white\/5 {
+  background-color: var(--panel-soft) !important;
+}
+
+html[data-theme="light"] .theme-scope .bg-white\/10 {
+  background-color: rgba(16, 22, 36, 0.08) !important;
+}
+
+html[data-theme="light"] .theme-scope .bg-black\/15,
+html[data-theme="light"] .theme-scope .bg-black\/20 {
+  background-color: rgba(16, 22, 36, 0.04) !important;
+}
+
+html[data-theme="light"] .theme-scope .border-white\/10,
+html[data-theme="light"] .theme-scope .border-white\/20 {
+  border-color: var(--line-subtle) !important;
+}
+
+html[data-theme="light"] .theme-scope .border-white\/25,
+html[data-theme="light"] .theme-scope .border-white\/30 {
+  border-color: var(--line-strong) !important;
+}
+
+html[data-theme="light"] .theme-scope .text-white,
+html[data-theme="light"] .theme-scope .text-white\/90,
+html[data-theme="light"] .theme-scope .text-white\/80,
+html[data-theme="light"] .theme-scope .text-white\/72,
+html[data-theme="light"] .theme-scope .text-white\/70 {
+  color: var(--foreground) !important;
+}
+
+html[data-theme="light"] .theme-scope .text-white\/65,
+html[data-theme="light"] .theme-scope .text-white\/62,
+html[data-theme="light"] .theme-scope .text-white\/60,
+html[data-theme="light"] .theme-scope .text-white\/58,
+html[data-theme="light"] .theme-scope .text-white\/55,
+html[data-theme="light"] .theme-scope .text-white\/50 {
+  color: var(--text-muted) !important;
+}
+
+html[data-theme="light"] .theme-scope .text-white\/48,
+html[data-theme="light"] .theme-scope .text-white\/45,
+html[data-theme="light"] .theme-scope .text-white\/30 {
+  color: var(--text-subtle) !important;
+}
+
+html[data-theme="light"] .theme-scope .text-\[\#9fb5ff\],
+html[data-theme="light"] .theme-scope .text-\[\#b9c8ff\],
+html[data-theme="light"] .theme-scope .text-\[\#7C99E3\] {
+  color: var(--accent-text) !important;
+}
+
+html[data-theme="light"] .theme-scope .bg-\[\#7C99E3\]\/10,
+html[data-theme="light"] .theme-scope .bg-\[\#7C99E3\]\/12,
+html[data-theme="light"] .theme-scope .bg-\[\#7C99E3\]\/15,
+html[data-theme="light"] .theme-scope .bg-\[\#7C99E3\]\/20 {
+  background-color: var(--accent-soft) !important;
+}
+
+html[data-theme="light"] .theme-scope .border-\[\#7C99E3\]\/25,
+html[data-theme="light"] .theme-scope .border-\[\#7C99E3\]\/30,
+html[data-theme="light"] .theme-scope .border-\[\#7C99E3\]\/35,
+html[data-theme="light"] .theme-scope .border-\[\#7C99E3\]\/40 {
+  border-color: var(--accent-line) !important;
 }
 
 @keyframes pulse-glow {

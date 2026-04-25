@@ -2,19 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import HeroDashboard from '@/components/HeroDashboard'
-import Container from '@/components/ui/Container'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardModulesSection from '@/components/DashboardModulesSection'
 import DashboardProgress from '@/components/DashboardProgress'
 import TradingSessions from '@/components/TradingSessions'
-import IntroductionCallPopup from '@/components/IntroductionCallPopup'
 import IntroductionCallCTA from '@/components/IntroductionCallCTA'
 import { useStudent } from '@/components/StudentProvider'
 import { getLessonsForModules, getModulesSimple, getWatchedLessonIds, findNextLesson } from '@/lib/progress'
 import { getExamByModuleId } from '@/lib/exam'
-import { getSupabaseClient } from '@/lib/supabaseClient'
+import { FREE_MODULE_ORDER_LIMIT, canAccessModuleByOrder } from '@/lib/access'
+import { getModuleGateStatuses } from '@/lib/moduleGate'
 
 type ModuleRow = { id: number; title: string; description: string | null; order: number | null; icon_url: string | null }
 type LessonRow = { id: number; module_id: number; order: number | null; title: string }
@@ -28,7 +26,6 @@ export default function DashboardPage() {
   const [activeModule, setActiveModule] = useState<ModuleWithProgress | null>(null)
   const [nextLessonHref, setNextLessonHref] = useState<string | null>(null)
   const [progressText, setProgressText] = useState<string>('Welkom terug')
-  const [showPopup, setShowPopup] = useState(false)
 
   const accessLevel = student?.access_level ?? 1
   const studentId = student?.id ?? null
@@ -56,6 +53,7 @@ export default function DashboardPage() {
       const exams = await Promise.all(examPromises)
       const examMap = new Map(exams.map((exam, idx) => [mods[idx].id, exam]))
 
+      const gateMap = await getModuleGateStatuses(mods, studentId, accessLevel)
       const byModule: ModuleWithProgress[] = []
       for (const m of mods) {
         const ls = lessons.filter(l => l.module_id === m.id)
@@ -68,23 +66,25 @@ export default function DashboardPage() {
 
       setModules(byModule)
 
-      const next = findNextLesson(mods, lessons, watchedSet)
-      if (accessLevel >= 2) {
-        if (next?.lesson?.id) setNextLessonHref(`/lesson/${next.lesson.id}`)
-        else if (mods[0]?.id) setNextLessonHref(`/module/${mods[0].id}`)
-        else setNextLessonHref(null)
-      } else {
-        setNextLessonHref(null)
-      }
+      const accessibleMods = mods.filter(m => {
+        const gate = gateMap.get(m.id)
+        return canAccessModuleByOrder(accessLevel, m.order) && !gate?.isLockedByExam
+      })
+      const accessibleModuleIds = new Set(accessibleMods.map(m => m.id))
+      const accessibleLessons = lessons.filter(l => accessibleModuleIds.has(l.module_id))
+      const next = findNextLesson(accessibleMods, accessibleLessons, watchedSet)
+      if (next?.lesson?.id) setNextLessonHref(`/lesson/${next.lesson.id}`)
+      else if (accessibleMods[0]?.id) setNextLessonHref(`/module/${accessibleMods[0].id}`)
+      else setNextLessonHref('/modules')
 
       if (accessLevel < 2) {
-        setProgressText('Je hebt een gratis account. Upgrade voor de volledige video course.')
+        setProgressText(`Je hebt gratis toegang tot module 1-${FREE_MODULE_ORDER_LIMIT}. Upgrade wanneer je verder wil met de volledige video course, alle modules en de extra materialen.`)
       } else if (next?.module && next?.lesson) {
-        const modLessons = lessons.filter(l => l.module_id === next.module.id)
+        const modLessons = accessibleLessons.filter(l => l.module_id === next.module.id)
         const modWatched = modLessons.reduce((acc, l) => acc + (watchedSet.has(l.id) ? 1 : 0), 0)
         setProgressText(`Je staat op ${modWatched}/${modLessons.length} lessen in ${next.module.title}`)
-      } else if (mods.length > 0 && byModule.length > 0) {
-        const firstMod = byModule[0]
+      } else if (accessibleMods.length > 0 && byModule.length > 0) {
+        const firstMod = byModule.find(m => canAccessModuleByOrder(accessLevel, m.order) && !gateMap.get(m.id)?.isLockedByExam) ?? byModule[0]
         setProgressText(`Je staat op ${firstMod.watchedCount}/${firstMod.totalLessons} lessen in ${firstMod.title}`)
       } else {
         setProgressText('Welkom terug')
@@ -94,8 +94,9 @@ export default function DashboardPage() {
         const byId = new Map(byModule.map(m => [m.id, m]))
         let candidate: ModuleWithProgress | null = null
         if (next?.module?.id) candidate = byId.get(next.module.id) ?? null
-        if (!candidate) candidate = byModule.find(m => m.pct < 100) ?? null
-        if (!candidate) candidate = byModule[byModule.length - 1] ?? null
+        if (candidate && gateMap.get(candidate.id)?.isLockedByExam) candidate = null
+        if (!candidate) candidate = byModule.find(m => canAccessModuleByOrder(accessLevel, m.order) && !gateMap.get(m.id)?.isLockedByExam && m.pct < 100) ?? null
+        if (!candidate) candidate = byModule.find(m => canAccessModuleByOrder(accessLevel, m.order) && !gateMap.get(m.id)?.isLockedByExam) ?? byModule[byModule.length - 1] ?? null
         setActiveModule(candidate)
       } else {
         setActiveModule(null)
@@ -107,32 +108,6 @@ export default function DashboardPage() {
     run()
   }, [router, status, studentId, accessLevel]) // Use specific values instead of whole student object
 
-  // Popup logic: show after delay if not dismissed
-  useEffect(() => {
-    if (loading || status !== 'ready') return
-
-    // Wait for page to be fully interactive before checking localStorage
-    if (typeof window === 'undefined') return
-
-    // Check if popup was already dismissed
-    const dismissed = localStorage.getItem('intro-call-popup-dismissed')
-    if (dismissed === 'true') return
-
-    // Show popup after 6 seconds delay (only after page is fully loaded)
-    const timer = setTimeout(() => {
-      setShowPopup(true)
-    }, 6000)
-
-    return () => clearTimeout(timer)
-  }, [loading, status])
-
-  const handlePopupClose = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('intro-call-popup-dismissed', 'true')
-    }
-    setShowPopup(false)
-  }
-
   const progressPanel = {
     loading,
     activeModule: activeModule
@@ -143,78 +118,59 @@ export default function DashboardPage() {
           pct: activeModule.pct,
         }
       : null,
-    totalCompleted: modules.reduce((acc, mod) => acc + mod.watchedCount, 0),
-    totalLessons: modules.reduce((acc, mod) => acc + mod.totalLessons, 0),
+    totalCompleted: modules
+      .filter(mod => canAccessModuleByOrder(accessLevel, mod.order))
+      .reduce((acc, mod) => acc + mod.watchedCount, 0),
+    totalLessons: modules
+      .filter(mod => canAccessModuleByOrder(accessLevel, mod.order))
+      .reduce((acc, mod) => acc + mod.totalLessons, 0),
     nextLessonUrl: nextLessonHref || undefined,
   }
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-10 pb-20">
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 lg:gap-12">
-        {/* LEFT COLUMN */}
-        <div className="space-y-8">
-          {/* Hero Dashboard - WITH card wrapper */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
-            <HeroDashboard
-              userName={student?.name ?? email ?? undefined}
-              nextLessonUrl={nextLessonHref || undefined}
-              progressText={progressText}
-              accessLevel={accessLevel}
-              progressPanel={progressPanel}
-            />
-          </div>
+    <div className="w-full px-4 pb-20 pt-6 sm:px-6 lg:px-8 xl:px-12">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
+        <div className="space-y-7">
+          <HeroDashboard
+            userName={student?.name ?? email ?? undefined}
+            nextLessonUrl={nextLessonHref || undefined}
+            progressText={progressText}
+            accessLevel={accessLevel}
+            progressPanel={progressPanel}
+          />
 
-          {/* Intro Video - NO card wrapper */}
-          <DashboardHeader thumbnailUrl="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/still intro vid.webp" />
+          <DashboardHeader
+            thumbnailUrl="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/still intro vid.webp"
+            nextLessonUrl={nextLessonHref || undefined}
+          />
 
-          {/* Trading Sessions - appears here on mobile, after HeroDashboard */}
-          <div className="lg:hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+          <div className="lg:hidden">
             <TradingSessions accessLevel={accessLevel} />
           </div>
 
-          {/* Progress Section - WITH card wrapper */}
-          {accessLevel >= 2 && (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
-              <DashboardProgress
-                loading={progressPanel.loading}
-                accessLevel={accessLevel}
-                activeModule={progressPanel.activeModule}
-                totalCompleted={progressPanel.totalCompleted}
-                totalLessons={progressPanel.totalLessons}
-                nextLessonUrl={progressPanel.nextLessonUrl}
-              />
-            </div>
-          )}
+          <DashboardProgress
+            loading={progressPanel.loading}
+            accessLevel={accessLevel}
+            activeModule={progressPanel.activeModule}
+            totalCompleted={progressPanel.totalCompleted}
+            totalLessons={progressPanel.totalLessons}
+            nextLessonUrl={progressPanel.nextLessonUrl}
+          />
 
-          {/* Active Module - WITH card wrapper */}
-          {accessLevel >= 2 && (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
-              <DashboardModulesSection
-                loading={loading}
-                activeModule={activeModule}
-                accessLevel={accessLevel}
-              />
-            </div>
-          )}
+          <DashboardModulesSection
+            loading={loading}
+            activeModule={activeModule}
+            accessLevel={accessLevel}
+          />
         </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="space-y-8 lg:sticky lg:top-10 h-fit">
-          {/* Trading Sessions - WITH card wrapper, sticky on desktop */}
-          <div className="hidden lg:block rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
+        <aside className="space-y-5 lg:sticky lg:top-8 lg:h-fit">
+          <div className="hidden lg:block">
             <TradingSessions accessLevel={accessLevel} />
           </div>
-          {/* Introduction Call CTA */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/60 p-6 shadow-lg">
-            <IntroductionCallCTA />
-          </div>
-        </div>
+          <IntroductionCallCTA />
+        </aside>
       </div>
-
-      {/* Introduction Call Popup */}
-      <IntroductionCallPopup isOpen={showPopup} onClose={handlePopupClose} />
     </div>
   )
 }
-
-

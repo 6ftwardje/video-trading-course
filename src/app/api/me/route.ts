@@ -38,16 +38,27 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: student } = await supabase
+  const { data: student, error: studentError } = await supabase
     .from("students")
-    .select("*")
+    .select("id,email,access_level,auth_user_id,name,updated_at")
     .eq("auth_user_id", user.id)
-    .single();
+    .maybeSingle();
+
+  if (studentError) {
+    return NextResponse.json({ error: "Failed to load student profile" }, { status: 500 });
+  }
 
   if (!student) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(student);
+  return NextResponse.json({
+    ...student,
+    auth_user: {
+      id: user.id,
+      email: user.email,
+      created_at: user.created_at,
+      user_metadata: user.user_metadata,
+    },
+  });
 }
-

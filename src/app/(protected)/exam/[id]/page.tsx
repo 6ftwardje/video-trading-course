@@ -5,9 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useStudent } from '@/components/StudentProvider'
 import { getExamById, getExamByModuleId, getExamQuestions, getModuleLessons, getWatchedLessonIds, insertExamResult, getNextModule } from '@/lib/exam'
+import { getModulesSimple } from '@/lib/progress'
+import { getModuleGateStatus } from '@/lib/moduleGate'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { WaveLoader } from '@/components/ui/wave-loader'
 import { RequireAccess } from '@/components/RequireAccess'
+import { FREE_MODULE_ORDER_LIMIT, canAccessModuleByOrder } from '@/lib/access'
 
 type Question = {
   id: number
@@ -42,6 +45,8 @@ export default function ExamPage({ params }: { params: { id: string } }) {
   const [result, setResult] = useState<{ score: number; passed: boolean } | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [gatedBlocked, setGatedBlocked] = useState(false)
+  const [accessBlocked, setAccessBlocked] = useState(false)
+  const [gateBlockedMessage, setGateBlockedMessage] = useState<string | null>(null)
   const [started, setStarted] = useState(false)
   const [confirmSubmit, setConfirmSubmit] = useState(false)
   const [nextModuleId, setNextModuleId] = useState<number | null>(null)
@@ -90,6 +95,8 @@ export default function ExamPage({ params }: { params: { id: string } }) {
       setLoading(true)
       setErrorMsg(null)
       setGatedBlocked(false)
+      setAccessBlocked(false)
+      setGateBlockedMessage(null)
 
       if (status !== 'ready' || !student) {
         if (status === 'unauthenticated') {
@@ -103,6 +110,25 @@ export default function ExamPage({ params }: { params: { id: string } }) {
 
       if (!studentId) {
         setErrorMsg('Geen student gevonden. Log opnieuw in om verder te gaan.')
+        setLoading(false)
+        return
+      }
+
+      const allModules = await getModulesSimple()
+      const currentModule = allModules.find(mod => mod.id === moduleId)
+      if (!canAccessModuleByOrder(accessLevel, currentModule?.order ?? null)) {
+        setAccessBlocked(true)
+        setLoading(false)
+        return
+      }
+
+      const gateStatus = await getModuleGateStatus(allModules, moduleId, studentId, accessLevel)
+      if (gateStatus.isLockedByExam) {
+        const previousModuleLabel = gateStatus.previousModule?.order
+          ? `Module ${gateStatus.previousModule.order}`
+          : gateStatus.previousModule?.title || 'de vorige module'
+        setGateBlockedMessage(`Voltooi eerst het examen van ${previousModuleLabel} om dit examen te ontgrendelen.`)
+        setGatedBlocked(true)
         setLoading(false)
         return
       }
@@ -123,6 +149,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
 
       const allWatched = lessonIds.length > 0 && lessonIds.every(id => watchedSet.has(id))
       if (!allWatched) {
+        setGateBlockedMessage('Je moet eerst alle lessen van deze module volledig bekijken.')
         setGatedBlocked(true)
         setLoading(false)
         return
@@ -141,7 +168,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
       setLoading(false)
     }
     load()
-  }, [examId, moduleId])
+  }, [examId, moduleId, status, student, studentId, accessLevel, router])
 
   const total = questions.length
   const current = questions[idx]
@@ -237,12 +264,28 @@ export default function ExamPage({ params }: { params: { id: string } }) {
     )
   }
 
+  if (accessBlocked) {
+    return (
+      <div className="space-y-4 pt-8 md:pt-12 px-4">
+        <h1 className="text-2xl font-semibold text-[var(--accent)]">Volledige toegang nodig</h1>
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6">
+          <p className="text-gray-300">
+            Module {FREE_MODULE_ORDER_LIMIT + 1} en verder horen bij de volledige cursus.
+          </p>
+          <Link href="/upgrade" className="mt-4 inline-block px-4 py-2 rounded-lg bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-[var(--accent)]">
+            Volledige cursus ontgrendelen
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   if (gatedBlocked) {
     return (
       <div className="space-y-4 pt-8 md:pt-12 px-4">
         <h1 className="text-2xl font-semibold text-[var(--accent)]">Examen geblokkeerd</h1>
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6">
-          <p className="text-gray-300">Je moet eerst alle lessen van deze module volledig bekijken.</p>
+          <p className="text-gray-300">{gateBlockedMessage}</p>
           <Link href={`/module/${moduleId}`} className="mt-4 inline-block px-4 py-2 rounded-lg bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 transition text-[var(--accent)]">
             Ga naar de module
           </Link>
@@ -256,7 +299,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
   // Intro screen before exam starts
   if (!started && !result && !loading && questions.length > 0) {
     return (
-      <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+      <RequireAccess requiredLevel={1} accessLevel={accessLevel}>
         <div className="max-w-2xl mx-auto pt-8 md:pt-12 px-4">
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-8 md:p-12 text-center space-y-6">
             <h1 className="text-3xl font-semibold text-[var(--accent)]">Examen: {title}</h1>
@@ -299,7 +342,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
     })
     
     return (
-      <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+      <RequireAccess requiredLevel={1} accessLevel={accessLevel}>
         <div className="space-y-6 max-w-3xl mx-auto pt-8 md:pt-12 px-4">
         <h1 className="text-3xl font-semibold text-[var(--accent)] text-center">{title}</h1>
         <div className={`bg-[var(--card)] border rounded-xl p-8 md:p-10 ${result.passed ? 'border-green-500/50 bg-green-900/10' : 'border-red-500/50 bg-red-900/10'}`}>
@@ -415,7 +458,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
   const answeredCount = Object.keys(answers).length
 
   return (
-    <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+    <RequireAccess requiredLevel={1} accessLevel={accessLevel}>
       <div className="space-y-6 max-w-4xl mx-auto pb-20 pt-8 md:pt-12 px-4">
         {/* Progress bar at top */}
         <div className="space-y-3">
@@ -536,4 +579,3 @@ export default function ExamPage({ params }: { params: { id: string } }) {
     </RequireAccess>
   )
 }
-

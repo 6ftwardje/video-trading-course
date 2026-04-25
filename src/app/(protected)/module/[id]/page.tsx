@@ -13,6 +13,7 @@ import Image from 'next/image'
 import Container from '@/components/ui/Container'
 import { WaveLoader } from '@/components/ui/wave-loader'
 import { RequireAccess } from '@/components/RequireAccess'
+import { FREE_MODULE_ORDER_LIMIT, canAccessModuleByOrder } from '@/lib/access'
 
 type Lesson = { id: number; title: string; order: number; module_id: number; thumbnail_url?: string | null }
 type ProgressRow = { lesson_id: number; watched: boolean }
@@ -22,6 +23,7 @@ export default function ModulePage({ params }: { params: { id: string } }) {
   const { student, status } = useStudent()
   const [moduleId, setModuleId] = useState<string>('')
   const [moduleTitle, setModuleTitle] = useState<string>('')
+  const [moduleOrder, setModuleOrder] = useState<number | null>(null)
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [progress, setProgress] = useState<Record<number, boolean>>({})
   const [loading, setLoading] = useState(true)
@@ -58,7 +60,7 @@ export default function ModulePage({ params }: { params: { id: string } }) {
         // Fetch module information
         const { data: moduleData, error: moduleError } = await supabase
           .from('modules')
-          .select('title')
+          .select('title,"order"')
           .eq('id', moduleIdNum)
           .single()
         
@@ -66,6 +68,7 @@ export default function ModulePage({ params }: { params: { id: string } }) {
           console.error('Error fetching module:', moduleError)
         } else if (moduleData) {
           setModuleTitle(moduleData.title || '')
+          setModuleOrder(moduleData.order ?? null)
         }
         
         const { data: ls, error: lessonsError } = await supabase
@@ -105,14 +108,14 @@ export default function ModulePage({ params }: { params: { id: string } }) {
 
         // Check module locking: Module 1 is always unlocked for access level 2+
         // Module N is only unlocked if exam of module N-1 is passed
-        if (studentId && accessLevel >= 2) {
+        if (studentId && canAccessModuleByOrder(accessLevel, moduleData?.order ?? null)) {
           const allModules = await getModulesSimple()
           const gateStatus = await getModuleGateStatus(allModules, moduleIdNum, studentId, accessLevel)
           setModuleLocked(gateStatus.isLockedByExam)
           setPreviousModuleOrder(gateStatus.previousModule?.order ?? null)
           setPreviousModuleTitle(gateStatus.previousModule?.title ?? null)
         } else {
-          // Access level < 2 means locked by access
+          // Not included in the student's current access level.
           setModuleLocked(true)
           setPreviousModuleOrder(null)
           setPreviousModuleTitle(null)
@@ -180,6 +183,8 @@ export default function ModulePage({ params }: { params: { id: string } }) {
   const previousModuleLabel = previousModuleOrder
     ? `Module ${previousModuleOrder}`
     : previousModuleTitle || 'de vorige module'
+  const isLockedByAccess = moduleOrder !== null && !canAccessModuleByOrder(accessLevel, moduleOrder)
+  const requiredAccessLevel = isLockedByAccess ? 2 : 1
 
   return (
     <Container className="pt-8 md:pt-12 pb-16">
@@ -214,6 +219,15 @@ export default function ModulePage({ params }: { params: { id: string } }) {
         </div>
       )}
 
+      {isLockedByAccess && (
+        <div className="mb-6 rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
+          Module {FREE_MODULE_ORDER_LIMIT + 1} en verder horen bij de volledige cursus. Ontgrendel volledige toegang om verder te gaan.
+          <Link href="/upgrade" className="ml-2 font-semibold underline underline-offset-4">
+            Volledige cursus ontgrendelen
+          </Link>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <WaveLoader message="Laden..." />
@@ -228,7 +242,7 @@ export default function ModulePage({ params }: { params: { id: string } }) {
               
               if (!lessonLocked) {
                 return (
-                  <RequireAccess key={lesson.id} requiredLevel={2} accessLevel={accessLevel}>
+                  <RequireAccess key={lesson.id} requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
                     <Link
                       href={`/lesson/${lesson.id}`}
                       className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 hover:border-[var(--accent)]/40 transition cursor-pointer"
@@ -318,7 +332,7 @@ export default function ModulePage({ params }: { params: { id: string } }) {
           </div>
 
           {practicalLessons.length > 0 && !moduleLocked && (
-            <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+            <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
               <section className="mt-10">
                 <h2 className="text-xl font-semibold mb-4 text-[#7C99E3]">Praktijklessen</h2>
                 <div className="space-y-3">
@@ -357,14 +371,14 @@ export default function ModulePage({ params }: { params: { id: string } }) {
 
           {/* EXAMEN CTA (zichtbaar als alle lessen watched zijn) */}
           {lessons.length > 0 && watchedCount === total && practicalLessons.length > 0 && !moduleLocked && (
-            <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+            <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
               <div className="mt-8 rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-4 text-sm text-[#7C99E3]">
                 ✅ Je hebt alle lessen bekeken. Vergeet niet de praktijklessen van deze module door te nemen.
               </div>
             </RequireAccess>
           )}
           {lessons.length > 0 && watchedCount === total && examId && !moduleLocked && (
-            <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+            <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
             <div className="mt-8 bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 flex items-center justify-between">
               <div>
                 <div className="font-semibold">Examen van deze module is klaar</div>
@@ -385,4 +399,3 @@ export default function ModulePage({ params }: { params: { id: string } }) {
     </Container>
   )
 }
-

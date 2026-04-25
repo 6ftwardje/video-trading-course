@@ -10,8 +10,11 @@ import { ArrowLeft } from 'lucide-react'
 import Container from '@/components/ui/Container'
 import { getExamByModuleId, hasPassedExamForModule, getNextModule } from '@/lib/exam'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
+import { getModulesSimple } from '@/lib/progress'
+import { getModuleGateStatus } from '@/lib/moduleGate'
 import { WaveLoader } from '@/components/ui/wave-loader'
 import { RequireAccess } from '@/components/RequireAccess'
+import { FREE_MODULE_ORDER_LIMIT, canAccessModuleByOrder } from '@/lib/access'
 
 type Lesson = {
   id: number
@@ -68,6 +71,10 @@ export default function LessonPage({ params }: { params: { id: string } }) {
   const [examPassed, setExamPassed] = useState<boolean>(false)
   const [nextModuleId, setNextModuleId] = useState<number | null>(null)
   const [practicalLessons, setPracticalLessons] = useState<PracticalLesson[]>([])
+  const [moduleOrder, setModuleOrder] = useState<number | null>(null)
+  const [moduleLocked, setModuleLocked] = useState(false)
+  const [previousModuleOrder, setPreviousModuleOrder] = useState<number | null>(null)
+  const [previousModuleTitle, setPreviousModuleTitle] = useState<string | null>(null)
   const playerRef = useRef<HTMLDivElement>(null)
 
   const accessLevel = student?.access_level ?? 1
@@ -116,6 +123,15 @@ export default function LessonPage({ params }: { params: { id: string } }) {
 
         setLesson(currentLesson)
 
+        const { data: moduleData } = await supabase
+          .from('modules')
+          .select('title,"order"')
+          .eq('id', currentLesson.module_id)
+          .single()
+
+        const resolvedModuleOrder = moduleData?.order ?? null
+        setModuleOrder(resolvedModuleOrder)
+
         // Alle lessen in module
         const { data: all, error: allError } = await supabase
           .from('lessons')
@@ -157,6 +173,22 @@ export default function LessonPage({ params }: { params: { id: string } }) {
         }
 
         // Bepaal vorige/volgende
+        const canAccessModule = canAccessModuleByOrder(accessLevel, resolvedModuleOrder)
+
+        let resolvedModuleLocked = true
+        if (studentId && canAccessModule) {
+          const allModules = await getModulesSimple()
+          const gateStatus = await getModuleGateStatus(allModules, currentLesson.module_id, studentId, accessLevel)
+          resolvedModuleLocked = gateStatus.isLockedByExam
+          setModuleLocked(resolvedModuleLocked)
+          setPreviousModuleOrder(gateStatus.previousModule?.order ?? null)
+          setPreviousModuleTitle(gateStatus.previousModule?.title ?? null)
+        } else {
+          setModuleLocked(true)
+          setPreviousModuleOrder(null)
+          setPreviousModuleTitle(null)
+        }
+
         if (sortedAll.length > 0) {
           const idx = sortedAll.findIndex(l => l.id === currentLesson.id)
           setPrevLesson(sortedAll[idx - 1] || null)
@@ -168,7 +200,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
           const idx = sortedAll.findIndex(l => l.id === currentLesson.id)
           const isLastLesson = idx === sortedAll.length - 1
           
-          if (isLastLesson && studentId && accessLevel >= 2) {
+          if (isLastLesson && studentId && canAccessModule) {
             // Check of exam bestaat voor deze module
             const exam = await getExamByModuleId(currentLesson.module_id)
             if (exam) {
@@ -189,7 +221,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
         }
 
         // Player instellen
-        if (accessLevel >= 2 && currentLesson.video_url && playerRef.current) {
+        if (canAccessModule && !resolvedModuleLocked && currentLesson.video_url && playerRef.current) {
           const videoId = getVimeoVideoId(currentLesson.video_url)
           if (videoId) {
             player = new Player(playerRef.current, { 
@@ -288,6 +320,12 @@ export default function LessonPage({ params }: { params: { id: string } }) {
     )
   }
 
+  const isLockedByAccess = moduleOrder !== null && !canAccessModuleByOrder(accessLevel, moduleOrder)
+  const requiredAccessLevel = isLockedByAccess ? 2 : 1
+  const previousModuleLabel = previousModuleOrder
+    ? `Module ${previousModuleOrder}`
+    : previousModuleTitle || 'de vorige module'
+
   return (
     <Container className="pt-8 md:pt-12 pb-16">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -304,11 +342,24 @@ export default function LessonPage({ params }: { params: { id: string } }) {
           </Link>
 
           {/* Video */}
-          <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
-            <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
-              <div ref={playerRef} className="h-full w-full" />
+          {moduleLocked && previousModuleOrder ? (
+            <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-5 text-sm text-[#7C99E3]">
+              Deze les is nog vergrendeld. Voltooi eerst het examen van {previousModuleLabel}.
             </div>
-          </RequireAccess>
+          ) : isLockedByAccess ? (
+            <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-5 text-sm text-[#7C99E3]">
+              Module {FREE_MODULE_ORDER_LIMIT + 1} en verder horen bij de volledige cursus.
+              <Link href="/upgrade" className="ml-2 font-semibold underline underline-offset-4">
+                Volledige cursus ontgrendelen
+              </Link>
+            </div>
+          ) : (
+            <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
+              <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
+                <div ref={playerRef} className="h-full w-full" />
+              </div>
+            </RequireAccess>
+          )}
 
           {/* Titel en beschrijving */}
           <div>
@@ -328,7 +379,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
           {/* Navigatieknoppen */}
           <div className="flex items-center justify-between pt-6 border-t border-[var(--border)]">
             {prevLesson ? (
-              <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+              <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
                 <Link
                   href={`/lesson/${prevLesson.id}`}
                   className="px-4 py-2 rounded-md border transition text-white bg-[var(--card)] hover:bg-[var(--muted)] border-[var(--border)]"
@@ -339,7 +390,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
             ) : <div />}
 
             {nextLesson ? (
-              <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+              <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
                 {progress[lesson.id] ? (
                 <Link
                   href={`/lesson/${nextLesson.id}`}
@@ -359,7 +410,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
               </RequireAccess>
             ) : (
               // Laatste les: toon exam link of volgende module link
-              <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+              <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
                 {examId && examPassed && nextModuleId ? (
                 <Link
                   href={`/module/${nextModuleId}`}
@@ -405,7 +456,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
                 
                 return (
                   <li key={l.id}>
-                    <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                    <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
                       <Link
                         href={!isUnlocked ? '#' : `/lesson/${l.id}`}
                         onClick={(e) => {
@@ -448,7 +499,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
               <ul className="space-y-3">
                 {practicalLessons.map((pl) => (
                   <li key={pl.id}>
-                    <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                    <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
                       <Link
                         href={`/praktijk/${pl.id}`}
                         className="flex items-center gap-3 p-2 rounded-lg border border-[var(--border)] transition hover:border-[#7C99E3]/40"
@@ -482,4 +533,3 @@ export default function LessonPage({ params }: { params: { id: string } }) {
     </Container>
   )
 }
-

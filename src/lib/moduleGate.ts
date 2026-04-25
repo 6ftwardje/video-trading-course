@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '@/lib/supabaseClient'
+import { canAccessModuleByOrder } from '@/lib/access'
 
 type ModuleRow = {
   id: number
@@ -82,7 +83,7 @@ export async function getModuleGateStatuses(
   const result = new Map<number, ModuleGateStatus>()
   if (!modules || modules.length === 0) return result
 
-  if (!studentId || accessLevel < 2) {
+  if (!studentId) {
     for (const mod of modules) {
       result.set(mod.id, { isLockedByExam: false, previousModule: null })
     }
@@ -97,6 +98,11 @@ export async function getModuleGateStatuses(
   const { examIdsByModuleId, passedExamIds } = await getPassedExamIdsForModules(studentId, previousModuleIds)
 
   for (const mod of modules) {
+    if (!canAccessModuleByOrder(accessLevel, mod.order)) {
+      result.set(mod.id, { isLockedByExam: false, previousModule: null })
+      continue
+    }
+
     const previousModule = previousByModuleId.get(mod.id) ?? null
     if (!previousModule) {
       result.set(mod.id, { isLockedByExam: false, previousModule: null })

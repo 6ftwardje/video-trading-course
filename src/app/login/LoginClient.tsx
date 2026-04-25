@@ -15,6 +15,11 @@ import { sendPasswordResetEmail } from '@/lib/auth/resetPassword'
 type Mode = 'login' | 'register'
 
 const MIN_PASSWORD_LENGTH = 6
+const AUTH_HIGHLIGHTS = [
+  'Module 1 t/m 6 direct beschikbaar',
+  'Video lessen, praktijk en examens in 1 flow',
+  'Start gratis, upgraden wanneer jij klaar bent',
+]
 
 export default function LoginClient() {
   const router = useRouter()
@@ -362,107 +367,96 @@ export default function LoginClient() {
   // Show reset form if active
   if (showResetForm) {
     return (
-      <div className="min-h-screen bg-[#0B0F17] text-white">
-        {/* Navigation */}
-        <nav className="w-full border-b border-slate-800/50 bg-[#0B0F17]/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <Link href="/">
-                <Image 
-                  src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform white.png"
-                  alt="Het Trade Platform"
-                  width={160}
-                  height={32}
-                  className="h-8 w-auto"
-                  priority
-                  unoptimized
-                />
-              </Link>
-              <Link
-                href="/"
-                className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-              >
-                Terug naar homepagina
-              </Link>
-            </div>
+      <div className="relative min-h-screen overflow-hidden bg-[#080b11] text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_16%,rgba(124,153,227,0.2),transparent_38%),radial-gradient(circle_at_84%_12%,rgba(247,153,57,0.12),transparent_32%)]" />
+        <nav className="sticky top-0 z-20 border-b border-white/10 bg-[#080b11]/80 backdrop-blur-xl">
+          <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <Link href="/" aria-label="Het Trade Platform home">
+              <Image
+                src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform white.png"
+                alt="Het Trade Platform"
+                width={168}
+                height={34}
+                className="h-8 w-auto"
+                priority
+                unoptimized
+              />
+            </Link>
+            <Link href="/" className="text-sm font-medium text-white/70 transition hover:text-white">
+              Terug naar homepagina
+            </Link>
           </div>
         </nav>
 
-        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-          <div className="w-full max-w-sm space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
-          <div className="space-y-3">
-            <div className="flex justify-center mb-4">
-              <Image 
-                src={BRAND.logoWithTextUrl} 
-                alt="Het Trade Platform Logo" 
-                width={232} 
-                height={40} 
-                className="h-10 w-auto"
+        <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-7xl items-center px-4 py-10 sm:px-6 lg:px-8">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0f1521]/85 p-6 backdrop-blur-xl sm:p-8">
+            <div className="space-y-3 border-b border-white/10 pb-5">
+              <Image
+                src={BRAND.logoWithTextUrl}
+                alt="Het Trade Platform Logo"
+                width={232}
+                height={40}
+                className="h-9 w-auto"
               />
-            </div>
-            <div className="space-y-1">
-              <h1 className="text-center text-2xl font-semibold text-[#7C99E3]">
-                Wachtwoord vergeten?
-              </h1>
-              <p className="text-center text-sm text-gray-400">
-                Vul je e-mailadres in en we sturen je een link om je wachtwoord opnieuw in te stellen.
+              <h1 className="text-2xl font-semibold text-[#b9c8ff]">Wachtwoord vergeten?</h1>
+              <p className="text-sm leading-6 text-white/65">
+                Vul je e-mailadres in en we sturen je direct een reset link.
               </p>
             </div>
-          </div>
 
-          {resetSuccess ? (
-            <div className="space-y-4">
-              <div className="rounded-lg bg-[#7C99E3]/10 border border-[#7C99E3]/30 p-4">
-                <p className="text-sm text-[#7C99E3]" role="alert">
-                  Als dit e-mailadres bestaat, ontvang je een reset link.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleCancelReset}
-                className="w-full rounded bg-[#7C99E3] py-2 font-semibold text-black transition hover:opacity-90"
-              >
-                Terug naar login
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <input
-                type="email"
-                placeholder="E-mailadres"
-                className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
-                value={resetEmail}
-                autoComplete="email"
-                onChange={e => setResetEmail(e.target.value)}
-                disabled={resetLoading}
-                required
-              />
-
-              {errorMessage && (
-                <p className="text-sm text-red-400" role="alert">
-                  {errorMessage}
-                </p>
-              )}
-
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={resetLoading}
-                  className="flex-1 rounded bg-[#7C99E3] py-2 font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {resetLoading ? 'Verzenden...' : 'Reset link versturen'}
-                </button>
+            {resetSuccess ? (
+              <div className="mt-6 space-y-4">
+                <div className="rounded-lg border border-[#7C99E3]/30 bg-[#7C99E3]/10 p-4">
+                  <p className="text-sm text-[#c5d3ff]" role="alert">
+                    Als dit e-mailadres bestaat, ontvang je binnen enkele minuten een reset link.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={handleCancelReset}
-                  disabled={resetLoading}
-                  className="rounded border border-gray-600 bg-gray-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-lg bg-[#7C99E3] px-4 py-2.5 text-sm font-semibold text-[#05070c] transition hover:bg-[#9db4ff]"
                 >
-                  Annuleren
+                  Terug naar login
                 </button>
               </div>
-            </form>
-          )}
+            ) : (
+              <form onSubmit={handleResetPassword} className="mt-6 space-y-4">
+                <input
+                  type="email"
+                  placeholder="E-mailadres"
+                  className="w-full rounded-lg border border-white/15 bg-[#0a1019] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#7C99E3]/70 focus:ring-2 focus:ring-[#7C99E3]/35"
+                  value={resetEmail}
+                  autoComplete="email"
+                  onChange={e => setResetEmail(e.target.value)}
+                  disabled={resetLoading}
+                  required
+                />
+
+                {errorMessage && (
+                  <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200" role="alert">
+                    {errorMessage}
+                  </p>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="flex-1 rounded-lg bg-[#7C99E3] px-4 py-2.5 text-sm font-semibold text-[#05070c] transition hover:bg-[#9db4ff] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {resetLoading ? 'Verzenden...' : 'Reset link versturen'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelReset}
+                    disabled={resetLoading}
+                    className="rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white/90 transition hover:border-white/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </div>
@@ -470,253 +464,234 @@ export default function LoginClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-white">
-      {/* Navigation */}
-      <nav className="w-full border-b border-slate-800/50 bg-[#0B0F17]/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/">
-              <Image 
-                src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform white.png"
-                alt="Het Trade Platform"
-                width={160}
-                height={32}
-                className="h-8 w-auto"
-                priority
-              />
-            </Link>
-            <Link
-              href="/"
-              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-            >
-              Terug naar homepagina
-            </Link>
-          </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#080b11] text-white">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(124,153,227,0.22),transparent_34%),radial-gradient(circle_at_82%_8%,rgba(247,153,57,0.14),transparent_30%),linear-gradient(180deg,#080b11_0%,#080b11_100%)]" />
+
+      <nav className="sticky top-0 z-20 border-b border-white/10 bg-[#080b11]/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" aria-label="Het Trade Platform home">
+            <Image
+              src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/The Trade Platform white.png"
+              alt="Het Trade Platform"
+              width={168}
+              height={34}
+              className="h-8 w-auto"
+              priority
+              unoptimized
+            />
+          </Link>
+          <Link href="/" className="text-sm font-medium text-white/70 transition hover:text-white">
+            Terug naar homepagina
+          </Link>
         </div>
       </nav>
 
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+      <div className="relative z-10 mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_460px] lg:px-8">
+        <section className="hidden lg:block">
+          <div className="max-w-xl space-y-6">
+            <h1 className="text-5xl font-bold leading-[1.03] text-white">
+              Leer traden in een platform dat je stap voor stap begeleidt.
+            </h1>
+            <p className="max-w-lg text-base leading-7 text-white/70">
+              Log in om verder te gaan met je cursus, of maak een gratis account en start direct met de eerste modules.
+            </p>
+            <ul className="space-y-3 border-t border-white/10 pt-5">
+              {AUTH_HIGHLIGHTS.map(item => (
+                <li key={item} className="flex items-start gap-3 text-sm text-white/75">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-[#7C99E3]" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
         {registrationSuccess && mode === 'register' ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="w-full max-w-md text-center"
+            transition={{ duration: 0.5 }}
+            className="w-full rounded-2xl border border-white/10 bg-[#0f1521]/88 p-6 backdrop-blur-xl sm:p-8"
           >
-            <div className="space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
-              {/* Check icon */}
-              <div className="flex items-center justify-center mb-6">
-                <div className="w-16 h-16 flex items-center justify-center rounded-full bg-[#7C99E3]/20 border border-[#7C99E3]/30">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-8 w-8 text-[#7C99E3]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Title */}
-              <h1 className="text-2xl font-semibold text-[#7C99E3] mb-3">
-                Registratie succesvol!
-              </h1>
-
-              {/* Message */}
-              {infoMessage ? (
-                <p className="text-gray-400 mb-8 text-sm leading-relaxed">
-                  {infoMessage}
-                </p>
-              ) : (
-                <p className="text-gray-400 mb-8 text-sm leading-relaxed">
-                  Je account is aangemaakt! Bevestig je e-mailadres via de link in je mailbox. Na bevestiging word je automatisch ingelogd.
-                </p>
-              )}
-
-              {/* CTA */}
-              <div className="flex flex-col items-center gap-3">
-                <Link
-                  href="/"
-                  className="px-6 py-2 bg-[#7C99E3] text-black font-semibold rounded-md hover:opacity-90 transition"
-                >
-                  Terug naar homepagina
-                </Link>
-              </div>
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-[#7C99E3]/35 bg-[#7C99E3]/15">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-7 w-7 text-[#b9c8ff]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
+            <h2 className="text-2xl font-semibold text-[#b9c8ff]">Registratie succesvol</h2>
+            <p className="mt-3 text-sm leading-6 text-white/70">
+              {infoMessage ??
+                'Je account is aangemaakt! Bevestig je e-mailadres via de link in je mailbox. Na bevestiging word je automatisch ingelogd.'}
+            </p>
+            <Link
+              href="/"
+              className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#7C99E3] px-5 py-2.5 text-sm font-semibold text-[#05070c] transition hover:bg-[#9db4ff]"
+            >
+              Terug naar homepagina
+            </Link>
           </motion.div>
         ) : (
-          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 rounded-xl bg-gray-900 p-8 shadow-lg">
-        <div className="space-y-3">
-          <div className="flex justify-center mb-4">
-            <Image 
-              src={BRAND.logoWithTextUrl} 
-              alt="Het Trade Platform Logo" 
-              width={232} 
-              height={40} 
-              className="h-10 w-auto"
-            />
-          </div>
-          <div className="flex gap-2 rounded-lg bg-gray-800 p-1">
-            <button
-              type="button"
-              onClick={() => toggleMode('login')}
-              className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${
-                mode === 'login' ? 'bg-[#7C99E3] text-black' : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Inloggen
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleMode('register')}
-              className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${
-                mode === 'register' ? 'bg-[#7C99E3] text-black' : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Registreren
-            </button>
-          </div>
-
-          <div className="space-y-1">
-            <h1 className="text-center text-2xl font-semibold text-[#7C99E3]">
-              {mode === 'login' ? 'Login' : 'Maak je account aan'}
-            </h1>
-            <p className="text-center text-sm text-gray-400">
-              {mode === 'login'
-                ? 'Gebruik je inloggegevens voor het Cryptoriez Trade Platform.'
-                : 'Registreer jezelf en krijg direct toegang tot de basiscontent.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {mode === 'register' && (
-            <input
-              type="text"
-              placeholder="Naam"
-              className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
-              value={name}
-              autoComplete="name"
-              onChange={e => setName(e.target.value)}
-              required
-            />
-          )}
-          <input
-            type="email"
-            placeholder="E-mailadres"
-            className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
-            value={email}
-            autoComplete={mode === 'login' ? 'email' : 'new-email'}
-            onChange={e => setEmail(e.target.value)}
-          />
-          <div className="space-y-2">
-            <input
-              type="password"
-              placeholder="Wachtwoord"
-              className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
-              value={password}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              onChange={e => setPassword(e.target.value)}
-            />
-            {mode === 'login' && (
-              <button
-                type="button"
-                onClick={handleShowResetForm}
-                className="text-xs text-gray-400 hover:text-[#7C99E3] transition underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-[#7C99E3]/40 focus:rounded"
-              >
-                Wachtwoord vergeten?
-              </button>
-            )}
-          </div>
-          {mode === 'register' && (
-            <>
-              <input
-                type="password"
-                placeholder="Bevestig wachtwoord"
-                className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
-                value={confirmPassword}
-                autoComplete="new-password"
-                onChange={e => setConfirmPassword(e.target.value)}
+          <form
+            onSubmit={handleSubmit}
+            className="w-full rounded-2xl border border-white/10 bg-[#0f1521]/88 p-6 backdrop-blur-xl sm:p-8"
+          >
+            <div className="space-y-5 border-b border-white/10 pb-5">
+              <Image
+                src={BRAND.logoWithTextUrl}
+                alt="Het Trade Platform Logo"
+                width={232}
+                height={40}
+                className="h-9 w-auto"
               />
+              <div className="flex gap-2 rounded-lg border border-white/10 bg-[#0b111b] p-1">
+                <button
+                  type="button"
+                  onClick={() => toggleMode('login')}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
+                    mode === 'login' ? 'bg-[#7C99E3] text-[#05070c]' : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  Inloggen
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleMode('register')}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
+                    mode === 'register' ? 'bg-[#7C99E3] text-[#05070c]' : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  Registreren
+                </button>
+              </div>
               <div className="space-y-1">
-                <input
-                  type="tel"
-                  placeholder="+31 6 12345678"
-                  className="w-full rounded bg-gray-800 p-2 outline-none transition focus:border-[#7C99E3] focus:ring-2 focus:ring-[#7C99E3]/40"
-                  value={phone}
-                  autoComplete="tel"
-                  onChange={e => setPhone(e.target.value)}
-                />
-                <p className="text-xs text-gray-400">
-                  Optioneel – alleen gebruikt voor persoonlijke onboarding, geen spam.
+                <h2 className="text-2xl font-semibold text-[#b9c8ff]">
+                  {mode === 'login' ? 'Welkom terug' : 'Maak je account aan'}
+                </h2>
+                <p className="text-sm text-white/65">
+                  {mode === 'login'
+                    ? 'Log in en ga direct verder waar je bent gebleven.'
+                    : 'Start gratis en krijg direct toegang tot module 1 t/m 6.'}
                 </p>
               </div>
-            </>
-          )}
-        </div>
+            </div>
 
-        {errorMessage && (
-          <div className="space-y-2">
-            <p className="text-sm text-red-400" role="alert">
-              {errorMessage}
-            </p>
-            {rateLimitCooldown !== null && rateLimitCooldown > 0 && (
-              <p className="text-xs text-gray-400">
-                Cooldown: {Math.floor(rateLimitCooldown / 60)}:{String(rateLimitCooldown % 60).padStart(2, '0')}
-              </p>
+            <div className="mt-5 space-y-4">
+              {mode === 'register' && (
+                <input
+                  type="text"
+                  placeholder="Naam"
+                  className="w-full rounded-lg border border-white/15 bg-[#0a1019] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#7C99E3]/70 focus:ring-2 focus:ring-[#7C99E3]/35"
+                  value={name}
+                  autoComplete="name"
+                  onChange={e => setName(e.target.value)}
+                  required
+                />
+              )}
+              <input
+                type="email"
+                placeholder="E-mailadres"
+                className="w-full rounded-lg border border-white/15 bg-[#0a1019] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#7C99E3]/70 focus:ring-2 focus:ring-[#7C99E3]/35"
+                value={email}
+                autoComplete={mode === 'login' ? 'email' : 'new-email'}
+                onChange={e => setEmail(e.target.value)}
+              />
+              <div className="space-y-2">
+                <input
+                  type="password"
+                  placeholder="Wachtwoord"
+                  className="w-full rounded-lg border border-white/15 bg-[#0a1019] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#7C99E3]/70 focus:ring-2 focus:ring-[#7C99E3]/35"
+                  value={password}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  onChange={e => setPassword(e.target.value)}
+                />
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={handleShowResetForm}
+                    className="text-xs text-white/60 transition hover:text-[#b9c8ff] hover:underline"
+                  >
+                    Wachtwoord vergeten?
+                  </button>
+                )}
+              </div>
+              {mode === 'register' && (
+                <>
+                  <input
+                    type="password"
+                    placeholder="Bevestig wachtwoord"
+                    className="w-full rounded-lg border border-white/15 bg-[#0a1019] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#7C99E3]/70 focus:ring-2 focus:ring-[#7C99E3]/35"
+                    value={confirmPassword}
+                    autoComplete="new-password"
+                    onChange={e => setConfirmPassword(e.target.value)}
+                  />
+                  <div className="space-y-1">
+                    <input
+                      type="tel"
+                      placeholder="+31 6 12345678"
+                      className="w-full rounded-lg border border-white/15 bg-[#0a1019] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#7C99E3]/70 focus:ring-2 focus:ring-[#7C99E3]/35"
+                      value={phone}
+                      autoComplete="tel"
+                      onChange={e => setPhone(e.target.value)}
+                    />
+                    <p className="text-xs text-white/50">Optioneel - alleen voor persoonlijke onboarding.</p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {errorMessage && (
+              <div className="mt-4 space-y-2 rounded-lg border border-red-400/30 bg-red-500/10 p-3">
+                <p className="text-sm text-red-200" role="alert">
+                  {errorMessage}
+                </p>
+                {rateLimitCooldown !== null && rateLimitCooldown > 0 && (
+                  <p className="text-xs text-red-200/80">
+                    Cooldown: {Math.floor(rateLimitCooldown / 60)}:{String(rateLimitCooldown % 60).padStart(2, '0')}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        {infoMessage && (
-          <div className="space-y-2 rounded-lg bg-[#7C99E3]/10 border border-[#7C99E3]/30 p-3">
-            <p className="text-sm text-[#7C99E3]" role="alert">
-              {infoMessage}
+            {infoMessage && (
+              <div className="mt-4 rounded-lg border border-[#7C99E3]/35 bg-[#7C99E3]/10 p-3">
+                <p className="text-sm text-[#c5d3ff]" role="alert">
+                  {infoMessage}
+                </p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || (rateLimitCooldown !== null && rateLimitCooldown > 0)}
+              className="mt-5 w-full rounded-lg bg-[#7C99E3] px-4 py-2.5 text-sm font-semibold text-[#05070c] transition hover:bg-[#9db4ff] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading
+                ? mode === 'login'
+                  ? 'Bezig met inloggen...'
+                  : 'Account wordt aangemaakt...'
+                : mode === 'login'
+                  ? 'Inloggen'
+                  : 'Registreren'}
+            </button>
+
+            <p className="mt-4 text-center text-xs text-white/50">
+              {mode === 'login' ? 'Nog geen account?' : 'Al een account?'}{' '}
+              <button
+                type="button"
+                onClick={() => toggleMode(mode === 'login' ? 'register' : 'login')}
+                className="text-[#b9c8ff] underline-offset-4 transition hover:underline"
+              >
+                {mode === 'login' ? 'Registreer je direct' : 'Log hier in'}
+              </button>
             </p>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading || (rateLimitCooldown !== null && rateLimitCooldown > 0)}
-          className="w-full rounded bg-[#7C99E3] py-2 font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading
-            ? mode === 'login'
-              ? 'Bezig met inloggen…'
-              : 'Account wordt aangemaakt…'
-            : mode === 'login'
-            ? 'Inloggen'
-            : 'Registreren'}
-        </button>
-
-        {mode === 'login' ? (
-          <p className="text-center text-xs text-gray-500">
-            Nog geen account?{' '}
-            <button
-              type="button"
-              onClick={() => toggleMode('register')}
-              className="text-[#7C99E3] underline-offset-4 hover:underline"
-            >
-              Registreer je direct
-            </button>
-          </p>
-        ) : (
-          <p className="text-center text-xs text-gray-500">
-            Al een account?{' '}
-            <button
-              type="button"
-              onClick={() => toggleMode('login')}
-              className="text-[#7C99E3] underline-offset-4 hover:underline"
-            >
-              Log hier in
-            </button>
-          </p>
-        )}
-      </form>
+          </form>
         )}
       </div>
     </div>

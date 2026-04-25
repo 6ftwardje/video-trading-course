@@ -16,6 +16,10 @@ type Student = {
   updated_at?: string
 }
 
+type MeResponse = Student & {
+  auth_user?: Partial<User> | null
+}
+
 export type StudentStatus = 'idle' | 'loading' | 'ready' | 'unauthenticated' | 'error'
 export type ErrorReason = 'STUDENT_NOT_FOUND' | 'STUDENT_LOAD_TIMEOUT' | 'RLS' | 'NETWORK' | 'UNKNOWN' | null
 
@@ -43,6 +47,7 @@ type StudentProviderProps = {
 }
 
 const LOAD_TIMEOUT_MS = 15000 // Match stable: give localhost/Supabase time to respond
+const API_ME_TIMEOUT_MS = 8000
 const PROTECTED_PATHS = [
   '/dashboard',
   '/modules',
@@ -83,6 +88,60 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
     setRetryCount((c) => c + 1)
   }, [])
 
+  const loadStudentFromApi = useCallback(async (timeoutMs = API_ME_TIMEOUT_MS) => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    const start = Date.now()
+
+    try {
+      debugLog('StudentProvider', { event: 'api_me_start', timeoutMs })
+      const response = await fetch('/api/me', {
+        method: 'GET',
+        headers: { accept: 'application/json' },
+        credentials: 'same-origin',
+        signal: controller.signal,
+      })
+
+      debugLog('StudentProvider', {
+        event: 'api_me_response',
+        status: response.status,
+        ok: response.ok,
+        elapsed: Date.now() - start,
+      })
+
+      if (response.status === 401) {
+        return { studentData: null, authUserData: null, errorReason: null as ErrorReason, unauthenticated: true }
+      }
+
+      if (response.status === 404) {
+        return { studentData: null, authUserData: null, errorReason: 'STUDENT_NOT_FOUND' as ErrorReason, unauthenticated: false }
+      }
+
+      if (!response.ok) {
+        return { studentData: null, authUserData: null, errorReason: 'NETWORK' as ErrorReason, unauthenticated: false }
+      }
+
+      const json = (await response.json()) as MeResponse
+      const { auth_user: authUserData, ...studentData } = json
+
+      if (!studentData?.id) {
+        return { studentData: null, authUserData: null, errorReason: 'STUDENT_NOT_FOUND' as ErrorReason, unauthenticated: false }
+      }
+
+      return {
+        studentData,
+        authUserData: authUserData ? (authUserData as User) : null,
+        errorReason: null as ErrorReason,
+        unauthenticated: false,
+      }
+    } catch (error) {
+      debugLog('StudentProvider', { event: 'api_me_error', error, elapsed: Date.now() - start })
+      return { studentData: null, authUserData: null, errorReason: 'NETWORK' as ErrorReason, unauthenticated: false }
+    } finally {
+      clearTimeout(timeout)
+    }
+  }, [])
+
   // Extra safety: redirect to login when unauthenticated on protected route (middleware is primary guard)
   useEffect(() => {
     if (status !== 'unauthenticated') return
@@ -104,16 +163,10 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
       if (isLoadingRef.current) return
       isLoadingRef.current = true
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        if (!isMounted) return
-        if (!user) return
-
-        const studentData = await getStudentByAuthUserId(user.id)
+        const { studentData, authUserData } = await loadStudentFromApi(5000)
         if (!isMounted) return
         if (studentData) {
-          setAuthUser(user)
+          if (authUserData) setAuthUser(authUserData)
           setStudent(studentData)
         }
       } catch {
@@ -124,7 +177,10 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
     }
 
     const loadStudentFull = async () => {
-      if (isLoadingRef.current) return
+      if (isLoadingRef.current) {
+        debugLog('StudentProvider', { event: 'loadStudentFull_skipped_already_loading' })
+        return
+      }
       isLoadingRef.current = true
       const start = Date.now()
       debugLog('StudentProvider', { event: 'loadStudent_full_start', ts: start })
@@ -136,6 +192,74 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
         if (subscription) {
           await subscription.unsubscribe()
           subscription = null
+        }
+
+        const apiResult = await loadStudentFromApi()
+        if (!isMounted) {
+          isLoadingRef.current = false
+          return
+        }
+
+        if (apiResult.studentData) {
+          setAuthUser(apiResult.authUserData)
+          setStudent(apiResult.studentData)
+          setStatus('ready')
+          debugLog('StudentProvider', { event: 'ready_from_api_me', studentId: apiResult.studentData.id, totalElapsed: Date.now() - start })
+
+          const currentStudentData = apiResult.studentData
+          const currentAuthUserId = apiResult.authUserData?.id ?? apiResult.studentData.auth_user_id
+
+          subscription = supabase
+            .channel(`student:${apiResult.studentData.id}`)
+            .on(
+              'postgres_changes',
+              {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'students',
+                filter: `id=eq.${apiResult.studentData.id}`,
+              },
+              async (payload) => {
+                if (!isMounted) return
+                try {
+                  const updatedStudent = payload.new as Student
+                  if (!updatedStudent?.id) {
+                    const reloaded = currentAuthUserId ? await getStudentByAuthUserId(currentAuthUserId) : null
+                    if (reloaded && isMounted) setStudent(reloaded)
+                    return
+                  }
+                  const oldLevel = currentStudentData?.access_level
+                  const newLevel = updatedStudent.access_level
+                  if (oldLevel !== newLevel || !currentStudentData) {
+                    setStudent(updatedStudent)
+                  }
+                } catch {
+                  try {
+                    const reloaded = currentAuthUserId ? await getStudentByAuthUserId(currentAuthUserId) : null
+                    if (reloaded && isMounted) setStudent(reloaded)
+                  } catch {
+                    // ignore
+                  }
+                }
+              },
+            )
+            .subscribe()
+
+          return
+        }
+
+        if (apiResult.unauthenticated) {
+          setAuthUser(null)
+          setStudent(null)
+          setStatus('unauthenticated')
+          return
+        }
+
+        if (apiResult.errorReason === 'STUDENT_NOT_FOUND') {
+          setStudent(null)
+          setStatus('error')
+          setErrorReason('STUDENT_NOT_FOUND')
+          return
         }
 
         let {
@@ -301,12 +425,14 @@ export function StudentProvider({ children, hideLoadingOnPublicRoutes = false }:
     })
 
     return () => {
+      debugLog('StudentProvider', { event: 'cleanup', status: statusRef.current })
       isMounted = false
+      isLoadingRef.current = false
       if (loadingTimeout) clearTimeout(loadingTimeout)
       authSubscription.unsubscribe()
       if (subscription) subscription.unsubscribe()
     }
-  }, [retryCount])
+  }, [retryCount, loadStudentFromApi])
 
   // Loader only when status is loading (or idle before first load) on protected routes
   const showFullscreenLoader = (status === 'loading' || status === 'idle') && !hideLoadingOnPublicRoutes

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { Lock, BookOpen, GraduationCap, CheckCircle2 } from 'lucide-react'
+import { canAccessModuleByOrder, getModuleAccessLabel, isFreeModuleOrder } from '@/lib/access'
 
 type ModuleProgress = {
   id: number
@@ -11,6 +12,7 @@ type ModuleProgress = {
   watchedCount: number
   pct: number
   examId: number | null
+  order?: number | null
   accessLevel?: number
   isLockedByExam?: boolean
   previousModuleOrder?: number | null
@@ -49,7 +51,7 @@ function ExamCallout({
       : 'bg-white/10 text-[var(--text-dim)]'
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+    <div className="rounded-lg border border-white/10 bg-black/15 p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-1 items-start gap-3">
           <GraduationCap className="mt-0.5 h-5 w-5 shrink-0 text-[var(--text-dim)]" aria-hidden />
@@ -102,7 +104,8 @@ function ExamCallout({
 
 export default function ModuleProgressCard({ module }: Props) {
   const router = useRouter()
-  const isLockedByAccess = typeof module.accessLevel === 'number' && module.accessLevel < 2
+  const isFreeModule = isFreeModuleOrder(module.order)
+  const isLockedByAccess = !canAccessModuleByOrder(module.accessLevel, module.order)
   const isLocked = isLockedByAccess || (module.isLockedByExam ?? false)
   const previousModuleLabel = module.previousModuleOrder
     ? `Module ${module.previousModuleOrder}`
@@ -127,6 +130,20 @@ export default function ModuleProgressCard({ module }: Props) {
           )}
           <div className="min-w-0">
             <h3 className="text-xl font-semibold text-white">{module.title}</h3>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                  isFreeModule
+                    ? 'border border-[#7C99E3]/40 bg-[#7C99E3]/15 text-[#9fb5ff]'
+                    : 'border border-white/10 bg-white/5 text-white/60'
+                }`}
+              >
+                {getModuleAccessLabel(module.order)}
+              </span>
+              {isFreeModule && module.accessLevel === 1 && (
+                <span className="text-xs text-white/55">Inbegrepen in je gratis account</span>
+              )}
+            </div>
             {module.description && (
               <p className="mt-2 text-sm text-white/70">{module.description}</p>
             )}
@@ -154,12 +171,12 @@ export default function ModuleProgressCard({ module }: Props) {
     </>
   )
 
-  const cardWrapperClass = `relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-all duration-200 ${
-    isLocked ? '' : 'hover:bg-white/[0.07]'
+  const cardWrapperClass = `relative overflow-hidden rounded-xl border border-white/10 bg-[#101722]/70 transition-all duration-200 ${
+    isLocked ? '' : 'hover:border-[#7C99E3]/35 hover:bg-[#111b2a]'
   }`
 
   const inner = (
-    <div className={`p-5 md:p-6 ${isLockedByAccess ? 'opacity-50 blur-sm' : ''}`}>
+    <div className={`p-5 ${isLockedByAccess ? 'opacity-50 blur-sm' : ''}`}>
       {cardContent}
     </div>
   )
@@ -175,7 +192,7 @@ export default function ModuleProgressCard({ module }: Props) {
       )}
 
       {isLockedByAccess && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/40 backdrop-blur-sm">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/55 backdrop-blur-sm">
           <div className="space-y-3 p-4 text-center">
             <Lock className="mx-auto h-6 w-6 text-[#7C99E3]" aria-hidden />
             <p className="text-sm font-medium text-white">Beschikbaar bij volledige toegang</p>
@@ -184,14 +201,14 @@ export default function ModuleProgressCard({ module }: Props) {
               onClick={() => router.push('/upgrade')}
               className="inline-flex items-center justify-center rounded-lg bg-[#7C99E3] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#7C99E3]/90"
             >
-              Ontgrendelen
+              Volledige cursus ontgrendelen
             </button>
           </div>
         </div>
       )}
 
       {!isLockedByAccess && module.isLockedByExam && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/40 backdrop-blur-sm">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/55 backdrop-blur-sm">
           <div className="space-y-2 p-4 text-center">
             <Lock className="mx-auto h-6 w-6 text-[#7C99E3]" aria-hidden />
             <p className="text-sm font-medium text-white">Vergrendeld</p>

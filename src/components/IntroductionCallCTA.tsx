@@ -1,7 +1,6 @@
 'use client'
 
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { ArrowRight, PhoneCall } from 'lucide-react'
 
 export default function IntroductionCallCTA() {
   const handleCallClick = () => {
@@ -9,23 +8,29 @@ export default function IntroductionCallCTA() {
   }
 
   return (
-    <Card className="border-0 bg-transparent shadow-none">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle className="text-lg font-semibold text-white">Gratis kennismakingscall</CardTitle>
-      </CardHeader>
-      <CardContent className="px-0 pb-0 space-y-4">
-        <p className="text-sm leading-relaxed text-[var(--text-dim)]">
-          Wil je extra uitleg of even sparren?
-          <br />
-          Je kan een gratis kennismakingscall inplannen met een mentor.
-        </p>
-        <Button
-          onClick={handleCallClick}
-          className="w-full bg-[var(--accent)] text-black hover:opacity-90"
-        >
-          Plan mijn gratis call
-        </Button>
-      </CardContent>
-    </Card>
+    <section className="overflow-hidden rounded-xl border border-[#7C99E3]/25 bg-[#7C99E3]/10 p-5">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#7C99E3]/15 text-[#b9c8ff]">
+          <PhoneCall className="h-4 w-4" aria-hidden />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b9c8ff]">
+            Gratis begeleiding
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-white">Plan een kennismakingscall</h2>
+          <p className="mt-2 text-sm leading-6 text-white/62">
+            Bespreek je start, je doelen en hoe je veilig door de eerste modules werkt.
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={handleCallClick}
+        className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-black transition hover:bg-white"
+      >
+        Plan gratis call
+        <ArrowRight className="h-4 w-4" aria-hidden />
+      </button>
+    </section>
   )
 }

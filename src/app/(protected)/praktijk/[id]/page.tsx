@@ -8,8 +8,11 @@ import Container from '@/components/ui/Container'
 import { ArrowLeft } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getPracticalLessons, type PracticalLessonRecord } from '@/lib/practical'
+import { getModulesSimple } from '@/lib/progress'
+import { getModuleGateStatus } from '@/lib/moduleGate'
 import { useStudent } from '@/components/StudentProvider'
 import { RequireAccess } from '@/components/RequireAccess'
+import { FREE_MODULE_ORDER_LIMIT, canAccessModuleByOrder } from '@/lib/access'
 
 type PracticalLesson = PracticalLessonRecord
 
@@ -41,6 +44,10 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
   const { student, status } = useStudent()
   const [lesson, setLesson] = useState<PracticalLesson | null>(null)
   const [lessons, setLessons] = useState<PracticalLesson[]>([])
+  const [moduleOrder, setModuleOrder] = useState<number | null>(null)
+  const [moduleLocked, setModuleLocked] = useState(false)
+  const [previousModuleOrder, setPreviousModuleOrder] = useState<number | null>(null)
+  const [previousModuleTitle, setPreviousModuleTitle] = useState<string | null>(null)
   const playerRef = useRef<HTMLDivElement>(null)
 
   const accessLevel = student?.access_level ?? 1
@@ -86,15 +93,36 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
 
       setLesson(resolvedLesson)
 
+      const { data: moduleData } = await supabase
+        .from('modules')
+        .select('title,"order"')
+        .eq('id', resolvedLesson.module_id)
+        .single()
+
+      const resolvedModuleOrder = moduleData?.order ?? null
+      setModuleOrder(resolvedModuleOrder)
+
+      if (studentId && canAccessModuleByOrder(accessLevel, resolvedModuleOrder)) {
+        const allModules = await getModulesSimple()
+        const gateStatus = await getModuleGateStatus(allModules, resolvedLesson.module_id, studentId, accessLevel)
+        setModuleLocked(gateStatus.isLockedByExam)
+        setPreviousModuleOrder(gateStatus.previousModule?.order ?? null)
+        setPreviousModuleTitle(gateStatus.previousModule?.title ?? null)
+      } else {
+        setModuleLocked(true)
+        setPreviousModuleOrder(null)
+        setPreviousModuleTitle(null)
+      }
+
       const modulePracticals = await getPracticalLessons(resolvedLesson.module_id)
       setLessons(modulePracticals)
     }
 
     load()
-  }, [id])
+  }, [id, status, student, studentId, accessLevel])
 
   useEffect(() => {
-    if (!lesson || !lesson.video_url || !playerRef.current || (accessLevel ?? 1) < 2) return
+    if (!lesson || !lesson.video_url || !playerRef.current || !canAccessModuleByOrder(accessLevel, moduleOrder) || moduleLocked) return
 
     const videoId = getVimeoVideoId(lesson.video_url)
     if (!videoId) return
@@ -107,7 +135,7 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
     return () => {
       player.destroy().catch(console.error)
     }
-  }, [lesson, accessLevel])
+  }, [lesson, accessLevel, moduleOrder, moduleLocked])
 
   const orderedLessons = useMemo(() => {
     return [...lessons].sort((a, b) => a.id - b.id)
@@ -130,6 +158,12 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
     )
   }
 
+  const isLockedByAccess = moduleOrder !== null && !canAccessModuleByOrder(accessLevel, moduleOrder)
+  const requiredAccessLevel = isLockedByAccess ? 2 : 1
+  const previousModuleLabel = previousModuleOrder
+    ? `Module ${previousModuleOrder}`
+    : previousModuleTitle || 'de vorige module'
+
   return (
     <Container className="pt-20 pb-16">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -143,15 +177,28 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
             <span className="text-sm font-medium">Terug naar module</span>
           </Link>
 
-          <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
-            <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black" ref={playerRef}>
-              {!lesson.video_url ? (
-                <div className="w-full h-full flex items-center justify-center text-[var(--text-dim)]">
-                  Geen video beschikbaar voor deze praktijkles.
-                </div>
-              ) : null}
+          {moduleLocked && previousModuleOrder ? (
+            <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-5 text-sm text-[#7C99E3]">
+              Deze praktijkles is nog vergrendeld. Voltooi eerst het examen van {previousModuleLabel}.
             </div>
-          </RequireAccess>
+          ) : isLockedByAccess ? (
+            <div className="rounded-xl border border-[#7C99E3]/40 bg-[#7C99E3]/10 p-5 text-sm text-[#7C99E3]">
+              Module {FREE_MODULE_ORDER_LIMIT + 1} en verder horen bij de volledige cursus.
+              <Link href="/upgrade" className="ml-2 font-semibold underline underline-offset-4">
+                Volledige cursus ontgrendelen
+              </Link>
+            </div>
+          ) : (
+            <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
+              <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black" ref={playerRef}>
+                {!lesson.video_url ? (
+                  <div className="w-full h-full flex items-center justify-center text-[var(--text-dim)]">
+                    Geen video beschikbaar voor deze praktijkles.
+                  </div>
+                ) : null}
+              </div>
+            </RequireAccess>
+          )}
 
           <div>
             <h1 className="text-3xl font-semibold text-white">{lesson.title}</h1>
@@ -164,7 +211,7 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
             )}
           </div>
 
-          <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+          <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
             <div className="flex items-center justify-between pt-6 border-t border-[var(--border)]">
               {navigation.prev ? (
                 <Link
@@ -202,7 +249,7 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
             <ul className="space-y-3">
               {orderedLessons.map((item) => (
                 <li key={item.id}>
-                  <RequireAccess requiredLevel={2} accessLevel={accessLevel}>
+                  <RequireAccess requiredLevel={requiredAccessLevel} accessLevel={accessLevel}>
                     <Link
                       href={`/praktijk/${item.id}`}
                       className={`flex items-center gap-3 p-2 rounded-lg border transition ${
@@ -232,4 +279,3 @@ export default function PracticalLessonPage({ params }: { params: { id: string }
     </Container>
   )
 }
-

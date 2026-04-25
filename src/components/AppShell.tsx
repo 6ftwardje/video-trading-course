@@ -6,8 +6,9 @@ import Footer from '@/components/Footer'
 import Navbar from '@/components/Navbar'
 import ChatbotOverlay from '@/components/ChatbotOverlay'
 import { StudentProvider } from '@/components/StudentProvider'
+import { ThemeProvider } from '@/components/theme/ThemeProvider'
 
-const HIDDEN_ROUTES = ['/login', '/confirmed', '/privacy', '/terms', '/reset-password', '/paymentconfirmed']
+const HIDDEN_ROUTES = ['/login', '/confirmed', '/privacy', '/terms', '/reset-password', '/paymentconfirmed', '/upgrade']
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -24,15 +25,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   // Always wrap with StudentProvider, but it will only show loading state when chrome is visible
   return (
-    <StudentProvider hideLoadingOnPublicRoutes={hideChrome}>
-      <div className={hideChrome ? '' : 'md:pl-16'}>
-        {!hideChrome && <Navbar />}
-        {!hideChrome && <ChatbotOverlay />}
-        <main className={`min-h-screen ${hideChrome ? '' : 'pt-16 md:pt-0'}`}>{children}</main>
-        {!hideChrome && <Footer />}
-      </div>
-    </StudentProvider>
+    <ThemeProvider>
+      <StudentProvider hideLoadingOnPublicRoutes={hideChrome}>
+        <div className={`${pathname === '/' ? '' : 'theme-scope'} ${hideChrome ? '' : 'md:pl-16'}`}>
+          {!hideChrome && <Navbar />}
+          {!hideChrome && <ChatbotOverlay />}
+          <main className={`min-h-screen ${hideChrome ? '' : 'pt-16 md:pt-0'}`}>{children}</main>
+          {!hideChrome && <Footer />}
+        </div>
+      </StudentProvider>
+    </ThemeProvider>
   )
 }
-
-

@@ -23,23 +23,19 @@ export default function DashboardModulesSection({
   activeModule,
   accessLevel,
 }: DashboardModulesSectionProps) {
-  // Don't show current module for level 1 users
-  if (accessLevel < 2) {
-    return null;
-  }
-
   return (
-    <div className="space-y-4">
+    <section className="space-y-4">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
-          <h2 className="text-xl font-semibold">Jouw huidige module</h2>
-          <p className="text-sm text-[var(--text-dim)]">
-            Werk verder waar je gebleven bent. Je kan steeds terugkeren naar het overzicht.
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Course</p>
+          <h2 className="mt-2 text-xl font-semibold text-white">Huidige module</h2>
+          <p className="mt-1 text-sm text-[var(--text-dim)]">
+            Werk verder waar je gebleven bent.
           </p>
         </div>
         <a
           href="/modules"
-          className="text-sm font-medium text-[var(--accent)] underline-offset-4 transition-colors hover:text-[var(--accent)]/80 hover:underline"
+          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/10 px-3 py-2 text-sm font-semibold text-white/70 transition hover:border-white/25 hover:text-white"
         >
           Bekijk alle modules
         </a>
@@ -56,7 +52,6 @@ export default function DashboardModulesSection({
           Nog geen modules beschikbaar. Kom later terug voor nieuwe content.
         </div>
       )}
-    </div>
+    </section>
   )
 }
-

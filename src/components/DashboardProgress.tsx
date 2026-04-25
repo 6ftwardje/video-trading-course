@@ -22,7 +22,7 @@ type Props = {
 function LoadingState({ className }: { className?: string }) {
   return (
     <div
-      className={`rounded-2xl border border-[var(--border)] bg-[var(--card)]/80 p-6 shadow-[var(--shadow-soft)] backdrop-blur flex items-center justify-center min-h-[200px] ${className ?? ""
+      className={`flex min-h-[180px] items-center justify-center rounded-xl border border-white/10 bg-[#101722]/70 p-6 ${className ?? ""
         }`}
     >
       <WaveLoader message="Laden..." />
@@ -43,20 +43,16 @@ export default function DashboardProgress({
     return <LoadingState className={className} />;
   }
 
-  // Don't show progress for level 1 users
-  if (accessLevel < 2) {
-    return null;
-  }
-
   const overallPct = totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0;
   const modulePct = activeModule?.totalLessons
     ? Math.round((activeModule.watchedCount / activeModule.totalLessons) * 100)
     : 0;
+  const accessLabel = accessLevel < 2 ? "Gratis traject" : "Volledige cursus";
 
   if (!totalLessons) {
     return (
       <div
-        className={`rounded-2xl border border-[var(--border)] bg-[var(--card)]/80 p-6 shadow-[var(--shadow-soft)] backdrop-blur ${className}`}
+        className={`rounded-xl border border-white/10 bg-[#101722]/70 p-5 sm:p-6 ${className}`}
       >
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Start jouw eerste module</h3>
@@ -79,14 +75,14 @@ export default function DashboardProgress({
 
   return (
     <div
-      className={`rounded-2xl border border-[var(--border)] bg-[var(--card)]/90 p-6 shadow-[var(--shadow-soft)] backdrop-blur ${className}`}
+      className={`rounded-xl border border-white/10 bg-[#101722]/70 p-5 sm:p-6 ${className}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-white/60">Jouw voortgang</p>
-          <h3 className="text-lg font-semibold text-white">Zet de volgende stap</h3>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">{accessLabel}</p>
+          <h3 className="mt-2 text-lg font-semibold text-white">Voortgang</h3>
         </div>
-        <span className="inline-flex min-w-[3.5rem] justify-center rounded-full border border-[var(--accent)]/40 bg-[var(--accent)]/15 px-3 py-1 text-sm font-semibold text-[var(--accent)]">
+        <span className="inline-flex min-w-[3.5rem] justify-center rounded-full border border-[#7C99E3]/35 bg-[#7C99E3]/12 px-3 py-1 text-sm font-semibold text-[#b9c8ff]">
           {overallPct}%
         </span>
       </div>
@@ -98,7 +94,7 @@ export default function DashboardProgress({
             {totalCompleted}/{totalLessons} lessen
           </span>
         </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--muted)]/60">
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
           <div
             className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
             style={{ width: `${overallPct}%` }}
@@ -106,7 +102,7 @@ export default function DashboardProgress({
         </div>
       </div>
 
-      <div className="mt-5 rounded-xl border border-white/5 bg-black/20 p-4">
+      <div className="mt-5 border-t border-white/10 pt-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-wide text-[var(--text-dim)]">Actieve module</p>
@@ -128,7 +124,7 @@ export default function DashboardProgress({
 
         <Link
           href={nextHref}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition hover:bg-white"
+          className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#7C99E3]/35 bg-[#7C99E3]/10 px-4 py-2 text-sm font-semibold text-[#b9c8ff] transition hover:bg-[#7C99E3]/20"
         >
           {activeModule ? "Ga verder met de les" : "Start met leren"}
           <ArrowRight className="h-4 w-4" />
@@ -137,4 +133,3 @@ export default function DashboardProgress({
     </div>
   );
 }
-
