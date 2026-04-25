@@ -436,7 +436,7 @@ export default function LandingPage() {
         <section className="relative isolate overflow-hidden px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
           <div className="absolute inset-0 z-0">
             <div
-              className="h-full w-full bg-cover bg-center opacity-[0.2] lg:bg-fixed"
+              className="h-full w-full bg-cover bg-center opacity-[0.1] lg:bg-fixed"
               style={{ backgroundImage: "url(https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/section_human.webp)" }}
             />
           </div>
