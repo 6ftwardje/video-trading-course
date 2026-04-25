@@ -136,12 +136,19 @@ const steps = [
 ];
 
 const floatingModules = [
-  { number: 1, title: "Module 1", subtitle: "De basis van traden" },
-  { number: 2, title: "Module 2", subtitle: "Market Structure" },
-  { number: 3, title: "Module 3", subtitle: "Risk Management" },
+  { number: 1, title: "Module 1", subtitle: "Introductie en basisbegrippen", progress: 94 },
+  { number: 2, title: "Module 2", subtitle: "Wat is traden echt?", progress: 76 },
+  { number: 3, title: "Module 3", subtitle: "Mindset deel I", progress: 58 },
 ];
 
-const lockedModules = ["Technische Analyse", "Trading Strategieen", "Psychologie"];
+const lockedModules = [
+  { number: 4, title: "Marktbewegingen en price action", progress: 34 },
+  { number: 5, title: "Technische analyse deel I", progress: 18 },
+  { number: 6, title: "Technische analyse deel II", progress: 7 },
+];
+
+const WHY_IT_WORKS_PHOTO_PLACEHOLDER =
+  "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/section_human.webp";
 
 function PrimaryCta({ className = "" }: { className?: string }) {
   return (
@@ -177,11 +184,15 @@ function FloatingModuleCard({
   number,
   title,
   subtitle,
+  progress,
+  badge = "Gratis",
   decorative = false,
 }: {
   number: number;
   title: string;
   subtitle: string;
+  progress: number;
+  badge?: string;
   decorative?: boolean;
 }) {
   return (
@@ -199,20 +210,26 @@ function FloatingModuleCard({
       <p className="text-[11px] text-white/70">{subtitle}</p>
       <div className="mt-2 flex items-center justify-between">
         <span className="rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
-          Gratis
+          {badge}
         </span>
-        <span className="text-[10px] font-semibold text-white/80">100%</span>
+        <span className="text-[10px] font-semibold text-white/80">{progress}%</span>
       </div>
       <div className="mt-1.5 h-1 rounded-full bg-white/10">
-        <div className="h-full w-full rounded-full bg-[#7C99E3]" />
+        <div className="h-full rounded-full bg-[#7C99E3]" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({
+  children,
+  className = "text-[#7C99E3]",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#F79939]">
+    <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${className}`}>
       {children}
     </p>
   );
@@ -318,36 +335,29 @@ export default function LandingPage() {
             </motion.div>
 
             <div className="relative hidden h-full min-h-[560px] items-center lg:flex" aria-hidden>
-              <motion.div
-                initial={prefersReducedMotion ? false : { opacity: 0, x: 28, scale: 0.98 }}
-                animate={prefersReducedMotion ? {} : { opacity: 1, x: 0, scale: 1 }}
-                transition={{ duration: 0.65, ease: "easeOut", delay: 0.08 }}
-                className="relative ml-auto w-full max-w-[760px]"
-              >
-                <div className="absolute inset-[12%_6%_18%_18%] -z-10 rounded-[3rem] bg-[#4972db]/25 blur-3xl" />
-                <Image
-                  src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/laptop_mockup.png"
-                  alt="Laptop met Het Trade Platform dashboard"
-                  width={1400}
-                  height={875}
-                  priority
-                  sizes="(max-width: 1440px) 52vw, 760px"
-                  className="h-auto w-full object-contain drop-shadow-[0_24px_50px_rgba(21,36,74,0.45)]"
-                  unoptimized
-                />
-              </motion.div>
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute left-10 top-24 h-56 w-56 rounded-full bg-[#3764d8]/22 blur-[78px]" />
+                <div className="absolute left-44 top-52 h-72 w-72 rounded-full bg-[#3f6de6]/18 blur-[96px]" />
+                <div className="absolute left-24 top-[23.5rem] h-64 w-64 rounded-full bg-[#2f57c0]/14 blur-[88px]" />
+              </div>
 
-              <div className="pointer-events-none absolute left-0 top-16 z-10 space-y-3">
-                {floatingModules.map((item, index) => (
+              {floatingModules.map((item, index) => {
+                const positions = [
+                  "left-0 top-12",
+                  "left-40 top-40",
+                  "left-16 top-[17.8rem]",
+                ];
+                return (
                   <motion.div
                     key={item.number}
+                    className={`pointer-events-none absolute z-10 ${positions[index]}`}
                     initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
                     animate={
                       prefersReducedMotion
                         ? {}
                         : {
                             opacity: 1,
-                            y: [0, -6, 0],
+                            y: [0, -7, 0],
                           }
                     }
                     transition={
@@ -356,7 +366,7 @@ export default function LandingPage() {
                         : {
                             opacity: { duration: 0.35, delay: 0.1 + index * 0.08 },
                             y: {
-                              duration: 4.5 + index * 0.4,
+                              duration: 4.8 + index * 0.45,
                               repeat: Infinity,
                               ease: "easeInOut",
                               delay: index * 0.25,
@@ -368,30 +378,40 @@ export default function LandingPage() {
                       number={item.number}
                       title={item.title}
                       subtitle={item.subtitle}
+                      progress={item.progress}
                     />
                   </motion.div>
-                ))}
-              </div>
+                );
+              })}
 
-              <div className="pointer-events-none absolute left-10 top-[23.5rem] z-0 space-y-2">
-                {lockedModules.map((title, index) => (
+              {lockedModules.map((item, index) => {
+                const positions = [
+                  "left-44 top-[20.5rem]",
+                  "left-[17.5rem] top-[27rem]",
+                  "left-10 top-[31rem]",
+                ];
+                return (
                   <motion.div
-                    key={title}
+                    key={item.title}
                     initial={prefersReducedMotion ? false : { opacity: 0 }}
                     animate={prefersReducedMotion ? {} : { opacity: 1 }}
                     transition={{ delay: 0.24 + index * 0.08, duration: 0.4 }}
-                    className="relative"
+                    className={`pointer-events-none absolute z-0 ${positions[index]}`}
                   >
-                    <FloatingModuleCard
-                      number={index + 4}
-                      title={`Module ${index + 4}`}
-                      subtitle={title}
-                      decorative
-                    />
-                    <LockKeyhole className="absolute right-3 top-3 h-3.5 w-3.5 text-white/40" />
+                    <div className="relative">
+                      <FloatingModuleCard
+                        number={item.number}
+                        title={`Module ${item.number}`}
+                        subtitle={item.title}
+                        progress={item.progress}
+                        badge="Preview"
+                        decorative
+                      />
+                      <LockKeyhole className="absolute right-3 top-3 h-3.5 w-3.5 text-white/40" />
+                    </div>
                   </motion.div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -413,8 +433,17 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+        <section className="relative isolate overflow-hidden px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+          <div className="absolute inset-0 z-0">
+            <div
+              className="h-full w-full bg-cover bg-center opacity-[0.2] lg:bg-fixed"
+              style={{ backgroundImage: "url(https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/section_human.webp)" }}
+            />
+          </div>
+          <div className="absolute inset-0 z-10 bg-[linear-gradient(135deg,rgba(8,12,20,0.48)_0%,rgba(8,12,20,0.26)_46%,rgba(8,12,20,0.54)_100%)]" />
+          <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_76%_48%,rgba(124,153,227,0.16),transparent_56%)]" />
+
+          <div className="relative z-20 mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
             <div className="space-y-5">
               <SectionLabel>Waarom dit werkt</SectionLabel>
               <h2 className="max-w-lg text-3xl font-bold leading-tight sm:text-5xl">
@@ -439,15 +468,68 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-lg border border-white/10 bg-[#101722]">
-              <Image
-                src="/assets/landing/curriculum-path.png"
-                alt="Visuele weergave van een gestructureerd leerpad"
-                width={2048}
-                height={1024}
-                className="h-auto w-full object-cover"
-                sizes="(max-width: 1024px) 100vw, 54vw"
-              />
+            <div className="hidden lg:block" aria-hidden>
+              <div className="rounded-2xl border border-white/10 bg-[#0c1422]/78 p-3 shadow-[0_24px_60px_rgba(5,10,20,0.45)] backdrop-blur-xl">
+                <div className="grid gap-3 xl:grid-cols-[1.35fr_1fr]">
+                  <div className="rounded-xl border border-white/10 bg-[#09101b] p-2">
+                    <div className="relative overflow-hidden rounded-lg border border-white/10">
+                      <Image
+                        src="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/lesson-thumbnails/lesson-1.jpg"
+                        alt=""
+                        width={1600}
+                        height={900}
+                        className="h-[220px] w-full object-cover opacity-78"
+                        sizes="(max-width: 1280px) 56vw, 420px"
+                      />
+                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,11,18,0.1),rgba(7,11,18,0.72))]" />
+                      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white/80">
+                        <span className="rounded bg-black/45 px-2 py-1">Introductie</span>
+                        <span className="rounded bg-black/45 px-2 py-1">06:19</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-lg border border-white/10 bg-[#0d1624] px-3 py-2">
+                      <p className="text-sm font-semibold text-white">Introductie</p>
+                      <p className="mt-1 text-xs text-white/65">
+                        In deze les leer je wat trading inhoudt, hoe markten werken en waarom psychologie cruciaal is.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-[#0a121f] p-3">
+                    <h3 className="mb-2 text-sm font-semibold text-white">Lessen in deze module</h3>
+                    <div className="space-y-2">
+                      {[
+                        { label: "Introductie", active: true },
+                        { label: "Bullish & Bearish", active: false },
+                        { label: "Long & Short", active: false },
+                        { label: "Spot VS Leverage", active: false },
+                        { label: "Onderdelen van een trade", active: false },
+                      ].map(item => (
+                        <div
+                          key={item.label}
+                          className={`flex items-center justify-between rounded-lg border px-2.5 py-2 ${
+                            item.active
+                              ? "border-[#7C99E3]/45 bg-[#7C99E3]/12"
+                              : "border-white/10 bg-[#0d1624]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="h-7 w-12 rounded bg-white/10" />
+                            <span className="text-xs text-white/85">{item.label}</span>
+                          </div>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-[#7C99E3]" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 rounded-lg border border-white/10 bg-[#0d1624] p-2.5">
+                      <p className="text-xs font-semibold text-white/90">Praktijklessen</p>
+                      <p className="mt-1 text-xs text-white/65">
+                        TradingView correct instellen en je eerste setup professioneel opzetten.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -549,7 +631,7 @@ export default function LandingPage() {
         <section className="px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
           <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
             <div className="space-y-5">
-              <SectionLabel>Gemaakt met Cryptoriez</SectionLabel>
+              <SectionLabel className="text-[#F79939]">Gemaakt met Cryptoriez</SectionLabel>
               <h2 className="max-w-lg text-3xl font-bold leading-tight sm:text-5xl">
                 Trading educatie voor NL en BE.
               </h2>
