@@ -25,25 +25,25 @@ const testimonials = [
   {
     image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/1.webp",
     quote: "De modules brengen eindelijk structuur in alles wat ik los op YouTube zag.",
-    name: "Voornaam Achternaam",
+    name: "Bryan de Soete",
     detail: "Student module 1-6",
   },
   {
     image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/2.webp",
     quote: "Door de examens wist ik meteen waar ik nog moest bijsturen.",
-    name: "Voornaam Achternaam",
+    name: "Dennis",
     detail: "Student technische analyse",
   },
   {
     image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/3.webp",
     quote: "Geen hype, maar duidelijke uitleg over risico, mindset en probability.",
-    name: "Voornaam Achternaam",
+    name: "Mehdi Askeur",
     detail: "Student riskmanagement",
   },
   {
     image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/4.webp",
     quote: "Ik kon meteen starten zonder eerst te betalen en zag snel of het bij mij paste.",
-    name: "Voornaam Achternaam",
+    name: "Uncle Jezz",
     detail: "Gratis account",
   },
 ];
