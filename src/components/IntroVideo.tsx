@@ -8,9 +8,19 @@ type IntroVideoProps = {
   className?: string
   thumbnailUrl?: string
   fillContainer?: boolean
+  videoUrl?: string
+  title?: string
+  showThumbnailOverlay?: boolean
 }
 
-export default function IntroVideo({ className = '', thumbnailUrl, fillContainer = false }: IntroVideoProps) {
+export default function IntroVideo({
+  className = '',
+  thumbnailUrl,
+  fillContainer = false,
+  videoUrl = 'https://player.vimeo.com/video/1144453792?badge=0&autopause=0&player_id=0&app_id=58479',
+  title = 'final',
+  showThumbnailOverlay = true,
+}: IntroVideoProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -47,7 +57,7 @@ export default function IntroVideo({ className = '', thumbnailUrl, fillContainer
       >
         <iframe
           ref={iframeRef}
-          src="https://player.vimeo.com/video/1144453792?badge=0&autopause=0&player_id=0&app_id=58479"
+          src={videoUrl}
           frameBorder="0"
           allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
           referrerPolicy="strict-origin-when-cross-origin"
@@ -58,9 +68,9 @@ export default function IntroVideo({ className = '', thumbnailUrl, fillContainer
             width: '100%',
             height: '100%',
           }}
-          title="final"
+          title={title}
         />
-        {!isPlaying && (
+        {showThumbnailOverlay && !isPlaying && (
           <div
             className="absolute inset-0 cursor-pointer group"
             onClick={handlePlay}

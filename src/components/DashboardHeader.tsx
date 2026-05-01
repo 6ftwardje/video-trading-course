@@ -4,10 +4,9 @@ import { ArrowRight, PlayCircle } from 'lucide-react'
 
 type DashboardHeaderProps = {
   thumbnailUrl?: string
-  nextLessonUrl?: string
 }
 
-export default function DashboardHeader({ thumbnailUrl, nextLessonUrl = '/modules' }: DashboardHeaderProps) {
+export default function DashboardHeader({ thumbnailUrl }: DashboardHeaderProps) {
   return (
     <section className="overflow-hidden rounded-xl border border-white/10 bg-[#101722]/70">
       <div className="grid gap-0 lg:grid-cols-[0.82fr_1.18fr] lg:items-stretch">
@@ -18,24 +17,26 @@ export default function DashboardHeader({ thumbnailUrl, nextLessonUrl = '/module
               Start hier
             </div>
             <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-              Bekijk eerst hoe je het platform gebruikt.
+              Waarom mentorship belangrijk is.
             </h2>
             <p className="mt-3 text-sm leading-6 text-white/62">
-              In deze introductie krijg je de volgorde, examens en manier van werken uitgelegd.
-              Zo begin je met de juiste context voordat je de course induikt.
+              Plan een-op-een sessies met onze ervaren mentors om je trading skills naar het
+              volgende niveau te brengen. Krijg persoonlijke begeleiding op het gebied van
+              technische analyse of mindset coaching.
             </p>
           </div>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row lg:flex-col">
             <Link
-              href={nextLessonUrl}
+              href="/mentorship"
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#7C99E3]/40 bg-[#7C99E3]/10 px-4 py-2.5 text-sm font-semibold text-[#b9c8ff] transition hover:bg-[#7C99E3]/20"
             >
-              Daarna naar huidige module
+              Plan je mentorship call
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
             <p className="text-xs leading-5 text-white/45">
-              Tip: kijk deze video eenmalig volledig voordat je aan module 1 begint.
+              Bekijk de video over het belang van persoonlijke begeleiding en plan daarna gerust
+              een call in met een van onze mentors.
             </p>
           </div>
         </div>
@@ -45,6 +46,9 @@ export default function DashboardHeader({ thumbnailUrl, nextLessonUrl = '/module
             className="h-full overflow-hidden"
             thumbnailUrl={thumbnailUrl}
             fillContainer
+            videoUrl="https://player.vimeo.com/video/1169951421?badge=0&autopause=0&player_id=0&app_id=58479"
+            title="Waarom mentorship?"
+            showThumbnailOverlay={false}
           />
         </div>
       </div>

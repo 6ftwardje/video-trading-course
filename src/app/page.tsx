@@ -21,11 +21,40 @@ import ImageModal from "@/components/ImageModal";
 import { FREE_MODULE_ORDER_LIMIT } from "@/lib/access";
 
 const testimonials = [
-  "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/1.webp",
-  "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/2.webp",
-  "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/3.webp",
-  "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/4.webp",
+  // Replace the quote, name, detail and image with real student proof.
+  {
+    image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/1.webp",
+    quote: "De modules brengen eindelijk structuur in alles wat ik los op YouTube zag.",
+    name: "Voornaam Achternaam",
+    detail: "Student module 1-6",
+  },
+  {
+    image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/2.webp",
+    quote: "Door de examens wist ik meteen waar ik nog moest bijsturen.",
+    name: "Voornaam Achternaam",
+    detail: "Student technische analyse",
+  },
+  {
+    image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/3.webp",
+    quote: "Geen hype, maar duidelijke uitleg over risico, mindset en probability.",
+    name: "Voornaam Achternaam",
+    detail: "Student riskmanagement",
+  },
+  {
+    image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/4.webp",
+    quote: "Ik kon meteen starten zonder eerst te betalen en zag snel of het bij mij paste.",
+    name: "Voornaam Achternaam",
+    detail: "Gratis account",
+  },
 ];
+
+const landingMedia = {
+  // Replace these URLs with the final hero intro, platform demo and poster images.
+  heroHostVideoPoster: "/assets/landing/free-modules-hero.png",
+  heroHostVideoSrc: "",
+  dashboardIntroVimeoEmbed: "https://player.vimeo.com/video/1144453792?badge=0&autopause=0&player_id=0&app_id=58479",
+  module10VimeoEmbed: "https://player.vimeo.com/video/1188443112?badge=0&autopause=0&player_id=0&app_id=58479",
+};
 
 const modules = [
   {
@@ -131,24 +160,9 @@ const steps = [
   },
   {
     title: "Slaag voor je examen",
-    copy: "Behaal het examen om de volgende module vrij te spelen.",
+    copy: "Haal 75% of meer om de volgende module vrij te spelen. Je kunt opnieuw oefenen en herkansen.",
   },
 ];
-
-const floatingModules = [
-  { number: 1, title: "Module 1", subtitle: "Introductie en basisbegrippen", progress: 94 },
-  { number: 2, title: "Module 2", subtitle: "Wat is traden echt?", progress: 76 },
-  { number: 3, title: "Module 3", subtitle: "Mindset deel I", progress: 58 },
-];
-
-const lockedModules = [
-  { number: 4, title: "Marktbewegingen en price action", progress: 34 },
-  { number: 5, title: "Technische analyse deel I", progress: 18 },
-  { number: 6, title: "Technische analyse deel II", progress: 7 },
-];
-
-const WHY_IT_WORKS_PHOTO_PLACEHOLDER =
-  "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/section_human.webp";
 
 function PrimaryCta({ className = "" }: { className?: string }) {
   return (
@@ -156,7 +170,7 @@ function PrimaryCta({ className = "" }: { className?: string }) {
       href="/login?mode=register"
       className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#7C99E3] px-5 py-3 text-sm font-bold text-[#05070c] transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#7C99E3] focus:ring-offset-2 focus:ring-offset-[#0B0F17] active:scale-[0.99] sm:px-6 ${className}`}
     >
-      Maak gratis account
+      Begin gratis met module 1
       <ArrowRight className="h-4 w-4" aria-hidden />
     </Link>
   );
@@ -180,47 +194,6 @@ function StatItem({ value, label }: { value: string; label: string }) {
   );
 }
 
-function FloatingModuleCard({
-  number,
-  title,
-  subtitle,
-  progress,
-  badge = "Gratis",
-  decorative = false,
-}: {
-  number: number;
-  title: string;
-  subtitle: string;
-  progress: number;
-  badge?: string;
-  decorative?: boolean;
-}) {
-  return (
-    <div
-      className={`w-[220px] rounded-2xl border border-[rgba(130,160,255,0.2)] bg-[rgba(11,16,28,0.72)] p-3 shadow-[0_12px_30px_rgba(49,91,212,0.18)] backdrop-blur-xl ${
-        decorative ? "opacity-30 blur-[1px]" : ""
-      }`}
-    >
-      <div className="mb-2 flex items-center gap-2">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#7C99E3]/20 text-[11px] font-semibold text-[#c5d3ff]">
-          {number}
-        </span>
-        <p className="text-xs font-semibold text-white">{title}</p>
-      </div>
-      <p className="text-[11px] text-white/70">{subtitle}</p>
-      <div className="mt-2 flex items-center justify-between">
-        <span className="rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
-          {badge}
-        </span>
-        <span className="text-[10px] font-semibold text-white/80">{progress}%</span>
-      </div>
-      <div className="mt-1.5 h-1 rounded-full bg-white/10">
-        <div className="h-full rounded-full bg-[#7C99E3]" style={{ width: `${progress}%` }} />
-      </div>
-    </div>
-  );
-}
-
 function SectionLabel({
   children,
   className = "text-[#7C99E3]",
@@ -232,6 +205,75 @@ function SectionLabel({
     <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${className}`}>
       {children}
     </p>
+  );
+}
+
+function VideoPlaceholder({
+  poster,
+  videoSrc,
+  embedSrc,
+  title,
+  eyebrow,
+  duration,
+}: {
+  poster: string;
+  videoSrc?: string;
+  embedSrc?: string;
+  title: string;
+  eyebrow: string;
+  duration: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-white/10 bg-black shadow-[0_24px_70px_rgba(3,8,18,0.42)]">
+      <div className="group relative aspect-video w-full">
+        {embedSrc ? (
+          <iframe
+            className="absolute inset-0 h-full w-full"
+            src={embedSrc}
+            title={title}
+            allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        ) : videoSrc ? (
+          <video
+            className="h-full w-full object-cover"
+            src={videoSrc}
+            poster={poster}
+            controls
+            playsInline
+          />
+        ) : (
+          <Image
+            src={poster}
+            alt=""
+            fill
+            className="object-cover opacity-80"
+            sizes="(max-width: 1024px) 92vw, 46vw"
+            priority={poster === landingMedia.heroHostVideoPoster}
+          />
+        )}
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(3,7,13,0.04),rgba(3,7,13,0.82))]" />
+        {!videoSrc && !embedSrc && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/25 bg-white/15 backdrop-blur-md">
+              <PlayCircle className="h-8 w-8 text-white" aria-hidden />
+            </div>
+          </div>
+        )}
+        <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex flex-col items-start gap-2 transition-opacity duration-200 group-hover:opacity-0 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b9c8ff]">
+              {eyebrow}
+            </p>
+            <p className="mt-1 text-lg font-bold leading-tight text-white">{title}</p>
+          </div>
+          <span className="shrink-0 rounded bg-black/45 px-2 py-1 text-xs font-semibold text-white/80">
+            {duration}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -285,7 +327,7 @@ export default function LandingPage() {
               href="/login?mode=register"
               className="inline-flex min-h-10 items-center rounded-lg border border-[#7C99E3]/50 bg-[#7C99E3]/10 px-3 py-2 text-xs font-bold text-[#b9c8ff] transition hover:bg-[#7C99E3]/20 sm:text-sm"
             >
-              Start gratis
+              Start module 1
             </Link>
           </div>
         </div>
@@ -293,8 +335,7 @@ export default function LandingPage() {
 
       <main>
         <section className="relative isolate overflow-hidden">
-
-          <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center px-4 pb-8 pt-10 sm:px-6 sm:pb-10 lg:grid-cols-[minmax(0,1fr)_minmax(520px,1.05fr)] lg:gap-10 lg:px-8 lg:py-14">
+          <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-9 px-4 pb-10 pt-9 sm:px-6 sm:pb-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(520px,1.08fr)] lg:gap-12 lg:px-8 lg:py-12">
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
               animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
@@ -308,13 +349,13 @@ export default function LandingPage() {
 
               <div className="space-y-4">
                 <h1 className="text-[2.6rem] font-bold leading-[0.95] sm:text-6xl lg:text-[4.1rem]">
-                  <span className="block">Start gratis</span>
-                  <span className="block">met de eerste</span>
-                  <span className="block text-[#7C99E3]">{FREE_MODULE_ORDER_LIMIT} modules.</span>
+                  <span className="block">Leer traden</span>
+                  <span className="block">vanaf nul.</span>
+                  <span className="block text-[#7C99E3]">Gratis gestart.</span>
                 </h1>
                 <p className="max-w-xl text-base leading-7 text-white/80 sm:text-lg">
-                  Maak een gratis account en krijg direct toegang tot de basis van traden,
-                  inclusief lessen, praktijkvoorbeelden en examens. Geen creditcard nodig.
+                  Volg een gestructureerd Nederlands traject met lessen, praktijkvoorbeelden en
+                  examens. Je krijgt module 1 t/m {FREE_MODULE_ORDER_LIMIT} gratis, zonder creditcard.
                 </p>
               </div>
 
@@ -323,96 +364,36 @@ export default function LandingPage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-white/60 sm:text-sm">
                   <TrustPoint>Direct toegang</TrustPoint>
                   <TrustPoint>Geen creditcard</TrustPoint>
-                  <TrustPoint>Examens inbegrepen</TrustPoint>
+                  <TrustPoint>Educatief traject</TrustPoint>
                 </div>
+                <p className="max-w-xl text-xs leading-5 text-white/45">
+                  Educatief platform. Geen beleggingsadvies. Traden brengt risico's met zich mee en
+                  resultaten zijn nooit gegarandeerd.
+                </p>
               </div>
 
               <div className="grid grid-cols-3 gap-2 border-y border-white/10 py-4 sm:max-w-lg sm:gap-4">
+                <StatItem value="4600+" label="abonnees" />
+                <StatItem value="400+" label="video's" />
                 <StatItem value={`${FREE_MODULE_ORDER_LIMIT}`} label="gratis modules" />
-                <StatItem value="0 euro" label="om te starten" />
-                <StatItem value="75%" label="examen target" />
               </div>
             </motion.div>
 
-            <div className="relative hidden h-full min-h-[560px] items-center lg:flex" aria-hidden>
-              <div className="pointer-events-none absolute inset-0">
-                <div className="absolute left-10 top-24 h-56 w-56 rounded-full bg-[#3764d8]/22 blur-[78px]" />
-                <div className="absolute left-44 top-52 h-72 w-72 rounded-full bg-[#3f6de6]/18 blur-[96px]" />
-                <div className="absolute left-24 top-[23.5rem] h-64 w-64 rounded-full bg-[#2f57c0]/14 blur-[88px]" />
-              </div>
-
-              {floatingModules.map((item, index) => {
-                const positions = [
-                  "left-0 top-12",
-                  "left-40 top-40",
-                  "left-16 top-[17.8rem]",
-                ];
-                return (
-                  <motion.div
-                    key={item.number}
-                    className={`pointer-events-none absolute z-10 ${positions[index]}`}
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
-                    animate={
-                      prefersReducedMotion
-                        ? {}
-                        : {
-                            opacity: 1,
-                            y: [0, -7, 0],
-                          }
-                    }
-                    transition={
-                      prefersReducedMotion
-                        ? {}
-                        : {
-                            opacity: { duration: 0.35, delay: 0.1 + index * 0.08 },
-                            y: {
-                              duration: 4.8 + index * 0.45,
-                              repeat: Infinity,
-                              ease: "easeInOut",
-                              delay: index * 0.25,
-                            },
-                          }
-                    }
-                  >
-                    <FloatingModuleCard
-                      number={item.number}
-                      title={item.title}
-                      subtitle={item.subtitle}
-                      progress={item.progress}
-                    />
-                  </motion.div>
-                );
-              })}
-
-              {lockedModules.map((item, index) => {
-                const positions = [
-                  "left-44 top-[20.5rem]",
-                  "left-[17.5rem] top-[27rem]",
-                  "left-10 top-[31rem]",
-                ];
-                return (
-                  <motion.div
-                    key={item.title}
-                    initial={prefersReducedMotion ? false : { opacity: 0 }}
-                    animate={prefersReducedMotion ? {} : { opacity: 1 }}
-                    transition={{ delay: 0.24 + index * 0.08, duration: 0.4 }}
-                    className={`pointer-events-none absolute z-0 ${positions[index]}`}
-                  >
-                    <div className="relative">
-                      <FloatingModuleCard
-                        number={item.number}
-                        title={`Module ${item.number}`}
-                        subtitle={item.title}
-                        progress={item.progress}
-                        badge="Preview"
-                        decorative
-                      />
-                      <LockKeyhole className="absolute right-3 top-3 h-3.5 w-3.5 text-white/40" />
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+            <motion.div
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 22 }}
+              animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.58, ease: "easeOut", delay: 0.08 }}
+              className="relative"
+            >
+              <VideoPlaceholder
+                poster={landingMedia.heroHostVideoPoster}
+                videoSrc={landingMedia.heroHostVideoSrc}
+                embedSrc={landingMedia.dashboardIntroVimeoEmbed}
+                eyebrow="Het Trade Platform"
+                title="Hoe het platform tot stand kwam"
+                duration="Korte uitleg"
+              />
+            </motion.div>
           </div>
         </section>
 
@@ -465,6 +446,13 @@ export default function LandingPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="border-t border-white/10 pt-5">
+                <h3 className="font-semibold text-white">Examen zonder onduidelijkheid</h3>
+                <p className="mt-2 text-sm leading-6 text-white/62">
+                  De 75% is een checkpoint, geen eindstation. Haal je het niet, dan zie je waar
+                  je moet bijsturen en kun je opnieuw proberen voor je doorgaat.
+                </p>
               </div>
             </div>
 
@@ -629,43 +617,40 @@ export default function LandingPage() {
         </section>
 
         <section className="px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-            <div className="space-y-5">
-              <SectionLabel className="text-[#F79939]">Gemaakt met Cryptoriez</SectionLabel>
-              <h2 className="max-w-lg text-3xl font-bold leading-tight sm:text-5xl">
-                Trading educatie voor NL en BE.
-              </h2>
-              <p className="max-w-xl text-base leading-7 text-white/70">
-                Het Trade Platform is ontwikkeld in samenwerking met Cryptoriez:
-                een educatief kanaal dat trading helder en praktisch uitlegt.
-              </p>
-              <div className="grid grid-cols-3 gap-3 border-y border-white/10 py-5">
-                <div>
-                  <p className="text-2xl font-bold text-[#F79939]">4600+</p>
-                  <p className="text-xs text-white/50">abonnees</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-[#F79939]">400+</p>
-                  <p className="text-xs text-white/50">video's</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-[#F79939]">NL/BE</p>
-                  <p className="text-xs text-white/50">focus</p>
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div className="overflow-hidden rounded-lg border border-white/10 bg-black shadow-[0_24px_70px_rgba(3,8,18,0.42)]">
+              <div className="group relative aspect-video w-full">
+                <iframe
+                  className="absolute inset-0 h-full w-full"
+                  src={landingMedia.module10VimeoEmbed}
+                  title="Module 10 preview: Supply & Demand deel 2"
+                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(3,7,13,0),rgba(3,7,13,0.82))] p-4 transition-opacity duration-200 group-hover:opacity-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b9c8ff]">
+                    Module 10 preview
+                  </p>
+                  <p className="mt-1 text-lg font-bold leading-tight text-white">
+                    Supply & Demand deel 2
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-white/10 bg-black">
-              <div className="relative aspect-video w-full">
-                <iframe
-                  className="absolute inset-0 h-full w-full"
-                  src="https://www.youtube.com/embed/lUIUlcHAr1o"
-                  title="Cryptoriez video"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                />
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <SectionLabel>Module 10 · Supply & Demand deel 2</SectionLabel>
+                <h2 className="max-w-lg text-3xl font-bold leading-tight sm:text-5xl">
+                  Leer kijken met de ogen van de market maker.
+                </h2>
+                <p className="max-w-xl text-base leading-7 text-white/70">
+                  In deze module ontdek je waarom prijs vaak eerst naar stoplosses beweegt
+                  voordat de echte move begint. Je leert hoe instituten liquiditeit zoeken,
+                  hoe accumulatie eruitziet op de chart en hoe je order flow leest zonder
+                  te vertrouwen op lagging indicators.
+                </p>
               </div>
             </div>
           </div>
@@ -693,23 +678,32 @@ export default function LandingPage() {
 
             <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
               {testimonials.map((testimonial, index) => (
-                <button
-                  key={testimonial}
-                  type="button"
-                  className="group relative min-w-[78%] snap-center overflow-hidden rounded-lg border border-white/10 bg-[#101722] text-left transition hover:border-[#7C99E3]/40 sm:min-w-0"
-                  onClick={() => setSelectedImage(testimonial)}
-                  aria-label={`Open testimonial ${index + 1}`}
+                <div
+                  key={testimonial.image}
+                  className="group min-w-[78%] snap-center overflow-hidden rounded-lg border border-white/10 bg-[#101722] text-left transition hover:border-[#7C99E3]/40 sm:min-w-0"
                 >
-                  <Image
-                    src={testimonial}
-                    alt={`Testimonial ${index + 1}`}
-                    width={900}
-                    height={1200}
-                    className="h-auto w-full object-cover transition group-hover:opacity-90"
-                    sizes="(max-width: 640px) 78vw, (max-width: 1024px) 45vw, 22vw"
-                    unoptimized
-                  />
-                </button>
+                  <button
+                    type="button"
+                    className="block w-full"
+                    onClick={() => setSelectedImage(testimonial.image)}
+                    aria-label={`Open testimonial ${index + 1}`}
+                  >
+                    <Image
+                      src={testimonial.image}
+                      alt={`Testimonial ${index + 1}`}
+                      width={900}
+                      height={1200}
+                      className="aspect-[4/5] w-full object-cover transition group-hover:opacity-90"
+                      sizes="(max-width: 640px) 78vw, (max-width: 1024px) 45vw, 22vw"
+                      unoptimized
+                    />
+                  </button>
+                  <div className="border-t border-white/10 p-4">
+                    <p className="text-sm leading-6 text-white/80">"{testimonial.quote}"</p>
+                    <p className="mt-4 text-sm font-semibold text-white">{testimonial.name}</p>
+                    <p className="mt-1 text-xs text-white/45">{testimonial.detail}</p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -750,7 +744,13 @@ export default function LandingPage() {
 
       <footer className="border-t border-white/10 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-white/50 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} {BRAND.name} / Cryptoriez</p>
+          <div className="space-y-2">
+            <p>&copy; {new Date().getFullYear()} {BRAND.name} / Cryptoriez</p>
+            <p className="max-w-2xl text-xs leading-5 text-white/40">
+              Educatieve content, geen financieel of beleggingsadvies. Traden brengt risico's met
+              zich mee; resultaten uit het verleden bieden geen garantie voor de toekomst.
+            </p>
+          </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <Link href="/privacy" className="transition hover:text-white">
               Privacy

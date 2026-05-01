@@ -141,7 +141,6 @@ export default function DashboardPage() {
 
           <DashboardHeader
             thumbnailUrl="https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/still intro vid.webp"
-            nextLessonUrl={nextLessonHref || undefined}
           />
 
           <div className="lg:hidden">
