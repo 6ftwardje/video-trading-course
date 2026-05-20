@@ -17,34 +17,38 @@ import {
   ShieldCheck,
   Star,
 } from "lucide-react";
-import ImageModal from "@/components/ImageModal";
 import { FREE_MODULE_ORDER_LIMIT } from "@/lib/access";
 
-const testimonials = [
-  // Replace the quote, name, detail and image with real student proof.
+const testimonialVideos = [
   {
-    image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/1.webp",
-    quote: "De modules brengen eindelijk structuur in alles wat ik los op YouTube zag.",
-    name: "Bryan de Soete",
-    detail: "Student module 1-6",
+    name: "Mark",
+    src: "/assets/testimonials/mark.mp4",
+    poster: "/assets/testimonials/mark.jpg",
+    duration: "1:01",
   },
   {
-    image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/2.webp",
-    quote: "Door de examens wist ik meteen waar ik nog moest bijsturen.",
-    name: "Dennis",
-    detail: "Student technische analyse",
+    name: "Jens",
+    src: "/assets/testimonials/jens.mp4",
+    poster: "/assets/testimonials/jens.jpg",
+    duration: "0:22",
   },
   {
-    image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/3.webp",
-    quote: "Geen hype, maar duidelijke uitleg over risico, mindset en probability.",
-    name: "Mehdi Askeur",
-    detail: "Student riskmanagement",
+    name: "Laurens",
+    src: "/assets/testimonials/laurens.mp4",
+    poster: "/assets/testimonials/laurens.jpg",
+    duration: "0:35",
   },
   {
-    image: "https://trogwrgxxhsvixzglzpn.supabase.co/storage/v1/object/public/HTP/4.webp",
-    quote: "Ik kon meteen starten zonder eerst te betalen en zag snel of het bij mij paste.",
-    name: "Uncle Jezz",
-    detail: "Gratis account",
+    name: "Domi",
+    src: "/assets/testimonials/domi.mp4",
+    poster: "/assets/testimonials/domi.jpg",
+    duration: "0:14",
+  },
+  {
+    name: "Dean",
+    src: "/assets/testimonials/dean.mp4",
+    poster: "/assets/testimonials/dean.jpg",
+    duration: "0:26",
   },
 ];
 
@@ -277,8 +281,50 @@ function VideoPlaceholder({
   );
 }
 
+function TestimonialVideoCard({
+  testimonial,
+  index,
+}: {
+  testimonial: (typeof testimonialVideos)[number];
+  index: number;
+}) {
+  return (
+    <article className="group min-w-[76%] snap-center overflow-hidden rounded-lg border border-white/10 bg-[#101722] transition hover:border-[#7C99E3]/40 sm:min-w-0">
+      <div className="relative aspect-[9/16] bg-black">
+        <video
+          className="h-full w-full object-cover"
+          src={testimonial.src}
+          poster={testimonial.poster}
+          controls
+          playsInline
+          preload="none"
+          aria-label={`Testimonial video van ${testimonial.name}`}
+        />
+        <div className="pointer-events-none absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/35 backdrop-blur-md transition group-hover:scale-105 sm:left-4 sm:top-4">
+          <PlayCircle className="h-5 w-5 text-white" aria-hidden />
+        </div>
+      </div>
+      <div className="border-t border-white/10 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/42">
+          Student {index + 1}
+        </p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <h3 className="text-base font-bold leading-tight text-white">
+            {testimonial.name}
+          </h3>
+          <span className="shrink-0 rounded bg-white/10 px-2 py-1 text-xs font-semibold text-white/72">
+            {testimonial.duration}
+          </span>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-white/70">
+          Ervaring uit een echte call met een student van Het Trade Platform.
+        </p>
+      </div>
+    </article>
+  );
+}
+
 export default function LandingPage() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [openModules, setOpenModules] = useState<Set<number>>(() => new Set([1]));
   const prefersReducedMotion = useReducedMotion();
 
@@ -296,13 +342,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#080b11] text-white">
-      {selectedImage && (
-        <ImageModal
-          src={selectedImage}
-          onClose={() => setSelectedImage(null)}
-        />
-      )}
-
       <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#080b11]/80 backdrop-blur-xl">
         <div className="mx-auto flex h-[3.75rem] max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-8">
           <Link href="/" aria-label="Het Trade Platform home">
@@ -656,14 +695,20 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="bg-[#0d1119] px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
-          <div className="mx-auto max-w-6xl">
+        <section
+          id="student-testimonials"
+          className="bg-[#0d1119] px-4 py-14 sm:px-6 sm:py-20 lg:px-8"
+        >
+          <div className="mx-auto max-w-7xl">
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="space-y-3">
-                <SectionLabel>Reviews</SectionLabel>
+                <SectionLabel>Student testimonials</SectionLabel>
                 <h2 className="text-3xl font-bold leading-tight sm:text-5xl">
-                  Studenten over het platform.
+                  Echte calls. Echte ervaringen.
                 </h2>
+                <p className="max-w-2xl text-base leading-7 text-white/70">
+                  Korte verticale fragmenten uit gesprekken met studenten, geoptimaliseerd voor snel laden op mobiel.
+                </p>
               </div>
               <div className="flex items-center gap-2 text-sm text-white/60">
                 <div className="flex items-center gap-0.5 text-[#7C99E3]" aria-hidden>
@@ -676,34 +721,13 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
-              {testimonials.map((testimonial, index) => (
-                <div
-                  key={testimonial.image}
-                  className="group min-w-[78%] snap-center overflow-hidden rounded-lg border border-white/10 bg-[#101722] text-left transition hover:border-[#7C99E3]/40 sm:min-w-0"
-                >
-                  <button
-                    type="button"
-                    className="block w-full"
-                    onClick={() => setSelectedImage(testimonial.image)}
-                    aria-label={`Open testimonial ${index + 1}`}
-                  >
-                    <Image
-                      src={testimonial.image}
-                      alt={`Testimonial ${index + 1}`}
-                      width={900}
-                      height={1200}
-                      className="aspect-[4/5] w-full object-cover transition group-hover:opacity-90"
-                      sizes="(max-width: 640px) 78vw, (max-width: 1024px) 45vw, 22vw"
-                      unoptimized
-                    />
-                  </button>
-                  <div className="border-t border-white/10 p-4">
-                    <p className="text-sm leading-6 text-white/80">"{testimonial.quote}"</p>
-                    <p className="mt-4 text-sm font-semibold text-white">{testimonial.name}</p>
-                    <p className="mt-1 text-xs text-white/45">{testimonial.detail}</p>
-                  </div>
-                </div>
+            <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-5">
+              {testimonialVideos.map((testimonial, index) => (
+                <TestimonialVideoCard
+                  key={testimonial.src}
+                  testimonial={testimonial}
+                  index={index}
+                />
               ))}
             </div>
           </div>
