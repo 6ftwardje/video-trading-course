@@ -21,34 +21,39 @@ import { FREE_MODULE_ORDER_LIMIT } from "@/lib/access";
 
 const testimonialVideos = [
   {
-    name: "Mark",
+    name: "Marc",
     src: "/assets/testimonials/mark.mp4",
     poster: "/assets/testimonials/mark.jpg",
     duration: "1:01",
+    quote: "De videocursus staat boordevol informatie, en de mentorlessen zijn fantastisch",
   },
   {
     name: "Jens",
     src: "/assets/testimonials/jens.mp4",
     poster: "/assets/testimonials/jens.jpg",
     duration: "0:22",
+    quote: "Heel straf dat ik elke week de call kan doen wanneer het mij uitkomt",
   },
   {
     name: "Laurens",
     src: "/assets/testimonials/laurens.mp4",
     poster: "/assets/testimonials/laurens.jpg",
     duration: "0:35",
+    quote: "Alles is perfect stap per stap, zodat ik alles écht goed begrijp",
   },
   {
     name: "Domi",
     src: "/assets/testimonials/domi.mp4",
     poster: "/assets/testimonials/domi.jpg",
     duration: "0:14",
+    quote: "Je kan op elk moment opnieuw de lessen volgen om alles op te frissen",
   },
   {
     name: "Dean",
     src: "/assets/testimonials/dean.mp4",
     poster: "/assets/testimonials/dean.jpg",
     duration: "0:26",
+    quote: "Prijs-kwaliteit is ongezien goed. De persoonlijke begeleiding is top",
   },
 ];
 
@@ -317,7 +322,7 @@ function TestimonialVideoCard({
           </span>
         </div>
         <p className="mt-3 text-sm leading-6 text-white/70">
-          Ervaring uit een echte call met een student van Het Trade Platform.
+          &ldquo;{testimonial.quote}&rdquo;
         </p>
       </div>
     </article>
